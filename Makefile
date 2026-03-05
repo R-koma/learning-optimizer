@@ -8,3 +8,12 @@ adr:
 	sed -i.bak "s/ADR-XXX: \[タイトル\]/ADR-$${number}: $(name)/g" $$filename; \
 	rm -f $$filename.bak; \
 	echo "Created $$filename"
+
+dev-db:
+	docker compose up -d
+
+dev-server:
+	cd server && uv run fastapi dev main.py
+
+dev-client:
+	cd client && npm run dev

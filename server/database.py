@@ -1,6 +1,6 @@
 import os
-import asyncpg
 
+import asyncpg
 from dotenv import load_dotenv
 
 load_dotenv()

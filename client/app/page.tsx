@@ -10,6 +10,7 @@ export default async function Home() {
     dbConnected = data.db;
   } catch (error) {
     status = "error";
+    console.error(error);
   }
   return (
     <main>

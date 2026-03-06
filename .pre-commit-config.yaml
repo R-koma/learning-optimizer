@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.12
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^server/
+      - id: ruff-format
+        files: ^server/
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: bash -c 'cd client && npx prettier --write "${@/client\//}"' --
+        language: system
+        files: ^client/.*\.(ts|tsx)$

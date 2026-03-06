@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import get_pool, close_pool
+from database import close_pool, get_pool
 
 
 @asynccontextmanager
@@ -10,6 +11,7 @@ async def lifespan(app: FastAPI):
     await get_pool()
     yield
     await close_pool()
+
 
 app = FastAPI(title="Learning Optimizer API", lifespan=lifespan)
 

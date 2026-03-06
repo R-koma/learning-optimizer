@@ -12,3 +12,25 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.48",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.5",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+]
+
+[tool.ruff.format]
+quote-style = "double"

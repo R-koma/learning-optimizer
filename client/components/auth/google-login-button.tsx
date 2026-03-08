@@ -12,9 +12,14 @@ export default function GoogleLoginButton() {
     });
   };
   return (
-    <Button variant="outline" size="lg" onClick={handleGoogleSignIn}>
+    <Button
+      variant="outline"
+      size="lg"
+      className="w-full p-6 cursor-pointer"
+      onClick={handleGoogleSignIn}
+    >
       <FcGoogle />
-      Googleでログイン
+      <p className="text-lg">Continue with Google</p>
     </Button>
   );
 }

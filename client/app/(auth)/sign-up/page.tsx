@@ -15,15 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 import GoogleLoginButton from "@/components/auth/google-login-button";
+import Link from "next/link";
 
 const signUpSchema = z
   .object({
@@ -84,25 +80,37 @@ export default function SignUpPage() {
   };
 
   return (
-    <>
-      <Card className="w-full sm:max-w-md">
+    <div className="min-h-screen flex items-center justify-center">
+      <Card className="w-full max-w-md mx-auto min-h-125 flex flex-col justify-center p-6 ring-0 border-0 shadow-none">
         <CardHeader>
-          <CardTitle>新規登録</CardTitle>
+          <CardTitle className="text-center text-2xl">Sign up</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6 p-0">
+          <div className="flex justify-center">
+            <GoogleLoginButton />
+          </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">OR</span>
+            </div>
+          </div>
           <form id="sign-up-form" onSubmit={form.handleSubmit(handleSignUp)}>
-            <FieldGroup>
+            <FieldGroup className="gap-4">
               <Controller
                 name="name"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="name">名前</FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="w-full">
                     <Input
                       {...field}
                       id="name"
                       aria-invalid={fieldState.invalid}
+                      placeholder="Name"
                       autoComplete="off"
+                      className="p-6"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -114,13 +122,14 @@ export default function SignUpPage() {
                 name="email"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="w-full">
                     <Input
                       {...field}
                       id="email"
                       aria-invalid={fieldState.invalid}
+                      placeholder="Email address"
                       autoComplete="off"
+                      className="p-6"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -132,14 +141,15 @@ export default function SignUpPage() {
                 name="password"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="password">パスワード</FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="w-full">
                     <Input
                       {...field}
                       type="password"
                       id="password"
                       aria-invalid={fieldState.invalid}
+                      placeholder="Password"
                       autoComplete="off"
+                      className="p-6"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -151,16 +161,15 @@ export default function SignUpPage() {
                 name="passwordConfirmation"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="passwordConfirmation">
-                      パスワード確認用
-                    </FieldLabel>
+                  <Field data-invalid={fieldState.invalid} className="w-full">
                     <Input
                       {...field}
                       type="password"
                       id="passwordConfirmation"
                       aria-invalid={fieldState.invalid}
+                      placeholder="Password Confirmation"
                       autoComplete="off"
+                      className="p-6"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -168,24 +177,34 @@ export default function SignUpPage() {
                   </Field>
                 )}
               />
+              {serverError && (
+                <p className="text-sm text-destructive">{serverError}</p>
+              )}
             </FieldGroup>
           </form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="p-0 pt-6 border-t-0 bg-transparent">
           <Field orientation="horizontal">
             <Button
               type="submit"
               form="sign-up-form"
-              className="w-full bg-blue-600 cursor-pointer"
+              disabled={isLoading}
+              className="w-full p-6 bg-blue-600 hover:bg-blue-800 text-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              続ける
+              {isLoading ? "Loading..." : "Continue"}
             </Button>
           </Field>
         </CardFooter>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            href="/sign-in"
+            className="text-primary underline underline-offset-4 hover:opacity-80"
+          >
+            Log in
+          </Link>
+        </p>
       </Card>
-      {isLoading && <div>Loading...</div>}
-      {serverError && <p>エラーが発生</p>}
-      <GoogleLoginButton />
-    </>
+    </div>
   );
 }

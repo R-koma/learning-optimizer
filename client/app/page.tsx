@@ -1,5 +1,4 @@
 import { fetchAPI } from "@/lib/api";
-import SignUpPage from "./(auth)/sign-up/page";
 
 export default async function Home() {
   let status = "unknown";
@@ -16,7 +15,6 @@ export default async function Home() {
   return (
     <main>
       <h1>Learning Optimizer</h1>
-      <SignUpPage />
       <p className="mt-8">API Status: {status}</p>
       <p>DB Connected: {dbConnected ? "Yes" : "No"}</p>
     </main>

@@ -3,31 +3,73 @@
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Form from "next/form";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+
 import GoogleLoginButton from "@/components/auth/google-login-button";
+
+const signUpSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, { message: "名前は2文字以上で入力してください。" })
+      .max(50, { message: "名前は50文字以内で入力してください。" }),
+    email: z.email({ error: "有効なメールアドレスを入力してください。" }),
+    password: z
+      .string()
+      .min(8, { message: "パスワードは8文字以上で入力してください。" }),
+    passwordConfirmation: z
+      .string()
+      .min(1, { message: "確認用パスワードを入力してください。" }),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "パスワードが一致しません。",
+    path: ["passwordConfirmation"],
+  });
+
+type SignUpValues = z.infer<typeof signUpSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
 
-  const handleSignUp = async () => {
-    if (password !== passwordConfirmation) {
-      setError("パスワードが一致しません");
-    }
+  const form = useForm<SignUpValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      passwordConfirmation: "",
+    },
+  });
+
+  const handleSignUp = async (values: SignUpValues) => {
+    setIsLoading(true);
+    setServerError("");
+
     await authClient.signUp.email(
-      { email, password, name },
+      { email: values.email, password: values.password, name: values.name },
       {
         onRequest: () => {
           setIsLoading(true);
-          setError("");
         },
         onSuccess: () => {
           setIsLoading(false);
@@ -35,7 +77,7 @@ export default function SignUpPage() {
         },
         onError: (ctx) => {
           setIsLoading(false);
-          setError(ctx.error.message);
+          setServerError(ctx.error.message);
         },
       },
     );
@@ -43,61 +85,107 @@ export default function SignUpPage() {
 
   return (
     <>
-      <Form action={handleSignUp}>
-        <input
-          type="text"
-          name="name"
-          placeholder="name"
-          onChange={(e) => setName(e.target.value)}
-          value={name}
-        />
-        <input
-          type="text"
-          name="email"
-          placeholder="email"
-          onChange={(e) => setEmail(e.target.value)}
-          value={email}
-        />
-
-        <button type="submit">Submit</button>
-        {isLoading ? "送信中" : ""}
-        {error && <div>エラー発生中</div>}
-      </Form>
-      <Card className="w-[400px]">
+      <Card className="w-full sm:max-w-md">
         <CardHeader>
-          <CardTitle>ログイン</CardTitle>
+          <CardTitle>新規登録</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* ベース部品の Input と Label を組み合わせる */}
-          <div className="space-y-2">
-            <Label htmlFor="email">メールアドレス</Label>
-            <Input id="email" type="email" placeholder="example@gmail.com" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">パスワード</Label>
-            <Input
-              id="password"
-              type="password"
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="passwordConfirmation">パスワード確認</Label>
-            <Input
-              id="passwordConfirmation"
-              type="passwordConfirmation"
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              value={passwordConfirmation}
-            />
-          </div>
-
-          {/* 先ほど作ったGoogleボタンを配置 */}
-          <div className="pt-4">
-            <GoogleLoginButton />
-          </div>
+        <CardContent>
+          <form id="sign-up-form" onSubmit={form.handleSubmit(handleSignUp)}>
+            <FieldGroup>
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="name">名前</FieldLabel>
+                    <Input
+                      {...field}
+                      id="name"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                    <Input
+                      {...field}
+                      id="email"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="password">パスワード</FieldLabel>
+                    <Input
+                      {...field}
+                      type="password"
+                      id="password"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="passwordConfirmation"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="passwordConfirmation">
+                      パスワード確認用
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      type="password"
+                      id="passwordConfirmation"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </form>
         </CardContent>
+        <CardFooter>
+          <Field orientation="horizontal">
+            <Button
+              type="submit"
+              form="sign-up-form"
+              className="w-full bg-blue-600 cursor-pointer"
+            >
+              続ける
+            </Button>
+          </Field>
+        </CardFooter>
       </Card>
+      {isLoading && <div>Loading...</div>}
+      {serverError && <p>エラーが発生</p>}
+      <GoogleLoginButton />
     </>
   );
 }

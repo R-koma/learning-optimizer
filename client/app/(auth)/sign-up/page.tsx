@@ -36,6 +36,14 @@ export default function SignUpPage() {
       },
     );
   };
+
+  const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    });
+  };
+
   return (
     <>
       <Form action={handleSignUp}>
@@ -71,6 +79,7 @@ export default function SignUpPage() {
         {isLoading ? "送信中" : ""}
         {error && <div>エラー発生中</div>}
       </Form>
+      <button onClick={handleGoogleSignIn}>Google</button>
     </>
   );
 }

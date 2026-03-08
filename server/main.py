@@ -24,8 +24,8 @@ app.add_middleware(
 )
 
 
-@app.get("/api/helth")
-async def helth_check():
+@app.get("/api/health")
+async def health_check():
     pool = await get_pool()
     row = await pool.fetchrow("SELECT 1 as check")
     return {"status": "ok", "db": row["check"] == 1}

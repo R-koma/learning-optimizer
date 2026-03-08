@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Form from "next/form";
+import GoogleLoginButton from "@/components/auth/google-login-button";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -35,13 +36,6 @@ export default function SignUpPage() {
         },
       },
     );
-  };
-
-  const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-    });
   };
 
   return (
@@ -79,7 +73,7 @@ export default function SignUpPage() {
         {isLoading ? "送信中" : ""}
         {error && <div>エラー発生中</div>}
       </Form>
-      <button onClick={handleGoogleSignIn}>Google</button>
+      <GoogleLoginButton />
     </>
   );
 }

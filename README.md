@@ -25,7 +25,7 @@ graph TB
     end
 
     subgraph Server["server"]
-        JWTMiddleware["JWT検証ミドルウェア<br/>(Cookieベース認証)"]
+        JWTMiddleware["JWT検証<br/>(JWKS公開鍵によるBearer認証)"]
         WSText["/ws/text<br/>Session → LangGraph"]
         WSAudio["/ws/audio<br/>Whisper STT → LangGraph → TTS"]
         REST["REST API<br/>(ノート / 復習スケジュール)"]
@@ -68,7 +68,7 @@ graph TB
 | LLM                     | OpenAI `gpt-4.1-nano`    | 対話・ノート生成・フィードバック    |
 | STT                     | OpenAI `whisper-1`       | 音声→テキスト変換                   |
 | TTS                     | OpenAI `gpt-4o-mini-tts` | テキスト→音声変換                   |
-| 認証検証                | PyJWT                    | BetterAuthセッションCookieのJWT検証 |
+| 認証検証                | PyJWT + JWKS             | BetterAuth発行JWTの公開鍵検証       |
 | パッケージ管理          | uv                       | 依存関係管理                        |
 
 ### データベース

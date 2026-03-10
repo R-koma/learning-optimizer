@@ -1,5 +1,6 @@
 "use client";
 
+import TestNotes from "@/components/TestNotes";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
@@ -22,6 +23,7 @@ export default function DashBoard() {
   return (
     <div>
       <h1>DashBoard</h1>
+      <TestNotes />
       <p>{session.user.name}</p>
       <button onClick={handleSignOut}>ログアウト</button>
     </div>

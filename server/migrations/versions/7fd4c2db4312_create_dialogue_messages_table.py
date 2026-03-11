@@ -20,7 +20,7 @@ def upgrade() -> None:
     op.execute("""--sql
         CREATE TABLE dialogue_messages (
             id                      TEXT PRIMARY KEY,
-            dialogue_session_id     TEXT NOT NULL REFERENCES         dialogue_session(id) ON DELETE CASCADE,
+            dialogue_session_id     TEXT NOT NULL REFERENCES         dialogue_sessions(id) ON DELETE CASCADE,
             role                    TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
             content                 TEXT NOT NULL,
             message_order           INTEGER NOT NULL,

@@ -19,13 +19,13 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.execute("""--sql
         CREATE TABLE dialogue_sessions(
-               id TEXT PRIMARY KEY,
-               user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
-               note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE SET NULL,
-               session_type TEXT NOT NULL CHECK(session_type IN ('learning', 'review')),
-               langgraph_thread_id TEXT,
-               started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-               ended_at TIMESTAMPTZ
+               id                   TEXT PRIMARY KEY,
+               user_id              TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
+               note_id              TEXT NOT NULL REFERENCES notes(id) ON DELETE SET NULL,
+               session_type         TEXT NOT NULL CHECK(session_type IN ('learning', 'review')),
+               langgraph_thread_id  TEXT,
+               started_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+               ended_at             TIMESTAMPTZ
 
         )
     """)

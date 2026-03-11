@@ -26,7 +26,7 @@ def upgrade() -> None:
             summary     TEXT,
             status      TEXT NOT NULL DEFAULT 'active' CHECK(status IN('active', 'archived')),
             created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOT()
+            updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     """)
     op.execute("CREATE INDEX idx_notes_user_id ON notes(user_id)")

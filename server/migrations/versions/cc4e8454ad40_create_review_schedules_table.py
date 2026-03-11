@@ -36,5 +36,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS idx_review_schedules_status")
-    op.excute("DROP INDEX IF EXISTS idx_review_schedules_note_id")
+    op.execute("DROP INDEX IF EXISTS idx_review_schedules_note_id")
     op.execute("DROP TABLE IF EXISTS review_schedules")

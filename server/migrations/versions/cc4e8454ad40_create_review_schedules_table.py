@@ -24,7 +24,7 @@ def upgrade() -> None:
             review_count        INTEGER NOT NULL DEFAULT 0,
             next_review_at      TIMESTAMPTZ NOT NULL,
             last_reviewed_at    TIMESTAMPTZ,
-            status              TEXT NOT NULL DEFAULT 'pending' CHECK(status IN('pending', 'completed', 'overdue')),
+            status              TEXT NOT NULL DEFAULT 'pending' CHECK (status IN('pending', 'completed', 'overdue')),
             created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )

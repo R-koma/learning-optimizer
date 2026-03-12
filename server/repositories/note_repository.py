@@ -17,7 +17,7 @@ async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> a
     query = """--sql
     SELECT id, user_id, topic, content, summary, status, created_at, updated_at
     FROM notes
-    WHERE id = $1 AND user_id = $1
+    WHERE id = $1 AND user_id = $2
   """
 
     return await conn.fetchrow(query, note_id, user_id)

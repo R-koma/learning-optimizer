@@ -1,4 +1,7 @@
-from fastapi import HTTPException, Security
+from typing import Annotated
+
+import asyncpg
+from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.auth import verify_jwt
@@ -28,3 +31,7 @@ async def get_current_user(
 async def get_db():
     """DBコネクションプールを返す"""
     return await get_pool()
+
+
+CurrentUser = Annotated[str, Depends(get_current_user)]
+DB = Annotated[asyncpg.Pool, Depends(get_db)]

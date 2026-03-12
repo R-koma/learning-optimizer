@@ -8,11 +8,10 @@ from core.auth import verify_jwt
 from core.database import get_pool
 
 security = HTTPBearer()
+BearerCredentials = Annotated[HTTPAuthorizationCredentials, Security(security)]
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Security(security),  # noqa: B008
-) -> str:
+async def get_current_user(credentials: BearerCredentials) -> str:
     """Authorizationヘッダー (Bearerトークン) からJWTを取得し、検証する"""
     token = credentials.credentials
     if not token:

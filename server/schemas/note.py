@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
-class NoteContent(BaseModel):
+class NoteResponse(BaseModel):
     id: UUID
     user_id: str
     topic: str
@@ -25,4 +25,4 @@ class NoteUpdate(BaseModel):
 
 
 class NoteListResponse(BaseModel):
-    notes: list[NoteContent]
+    notes: list[NoteResponse]

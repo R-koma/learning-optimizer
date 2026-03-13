@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes.note import router as note_router
+from api.routes import feedback, note
 from core.database import close_pool, get_pool
 
 
@@ -24,7 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(note_router)
+app.include_router(note.router)
+app.include_router(feedback.router)
 
 
 @app.get("/api/health")

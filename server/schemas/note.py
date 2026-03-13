@@ -9,7 +9,7 @@ class NoteResponse(BaseModel):
     user_id: str
     topic: str
     content: str
-    summary: str
+    summary: str | None
     status: str
     created_at: datetime
     updated_at: datetime

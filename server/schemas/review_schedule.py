@@ -23,5 +23,9 @@ class ReviewScheduleWithNoteResponse(ReviewScheduleResponse):
     note_summary: str
 
 
+class ReviewScheduleListResponse(BaseModel):
+    review_schedules: list[ReviewScheduleWithNoteResponse]
+
+
 class ReviewScheduleUpdate(BaseModel):
     understanding_level: Literal["high", "medium", "low"]

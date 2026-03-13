@@ -9,7 +9,7 @@ class FeedbackResponse(BaseModel):
     note_id: UUID
     dialogue_session_id: UUID
     understanding_level: str
-    strengths: str
+    strength: str
     improvements: str
     created_at: datetime
 

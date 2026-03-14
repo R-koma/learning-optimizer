@@ -5,7 +5,7 @@ import asyncpg
 
 
 async def find_pending_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict]:
-    query = """
+    query = """--sql
       SELECT rs.id, rs.note_id, rs.review_count,
       rs.next_review_at, rs.last_reviewed_at, rs.status, rs.created_at, rs.updated_at, n.topic AS note_topic,
       n.summary AS note_summary

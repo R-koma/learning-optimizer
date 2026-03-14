@@ -14,9 +14,7 @@ from services.review_scheduler import calculate_next_review
 router = APIRouter(prefix="/api/review-schedules", tags=["Review Schedules"])
 
 
-router.get("", response_model=ReviewScheduleListResponse)
-
-
+@router.get("", response_model=ReviewScheduleListResponse)
 async def list_pending_reviews(current_user_id: CurrentUser, db: DB):
     records = await review_schedule_repository.find_pending_by_user_id(db, current_user_id)
     return ReviewScheduleListResponse(review_schedules=records)

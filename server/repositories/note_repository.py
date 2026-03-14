@@ -21,7 +21,7 @@ async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> d
     WHERE id = $1 AND user_id = $2
   """
 
-    record = await conn.fetchrow(query, str(note_id), user_id)
+    record = await conn.fetchrow(query, note_id, user_id)
     return dict(record) if record else None
 
 
@@ -45,7 +45,7 @@ async def update(
     RETURNING id, user_id, topic, content, summary, status, created_at, updated_at
   """
 
-    record = await conn.fetchrow(query, str(note_id), user_id, topic, content, summary, status)
+    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, status)
     return dict(record) if record else None
 
 
@@ -54,7 +54,7 @@ async def delete(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> bool:
     DELETE FROM notes WHERE id = $1 AND user_id = $2
   """
 
-    result = await conn.execute(query, str(note_id), user_id)
+    result = await conn.execute(query, note_id, user_id)
 
     deleted_count = int(result.split(" ")[1])
     return deleted_count > 0

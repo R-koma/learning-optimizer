@@ -12,5 +12,5 @@ async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID, user_id: str)
     ORDER BY f.created_at ASC
   """
 
-    records = await conn.fetch(query, str(note_id), user_id)
+    records = await conn.fetch(query, note_id, user_id)
     return [dict(r) for r in records]

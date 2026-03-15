@@ -39,3 +39,50 @@ async def mark_completed(
     record = await conn.fetchrow(query, schedule_id, user_id, next_review_at)
 
     return dict(record) if record else None
+
+
+async def insert(
+    conn: asyncpg.Connection,
+    note_id: UUID,
+    next_review_at: datetime,
+) -> dict:
+    query = """--sql
+    INSERT INTO review_schedules (id, note_id, next_review_at, status)
+    VALUES (gen_random_uuid(), $1, $2, 'pending')
+    RETURNING *
+    """
+    record = await conn.fetchrow(query, note_id, next_review_at)
+    return dict(record)
+
+
+async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID) -> dict | None:
+    """ノートIDから復習スケジュールを取得する。"""
+    query = """--sql
+    SELECT id, note_id, review_count, next_review_at,
+           last_reviewed_at, status, created_at, updated_at
+    FROM review_schedules
+    WHERE note_id = $1
+    """
+    record = await conn.fetchrow(query, note_id)
+    return dict(record) if record else None
+
+
+async def update_schedule(
+    conn: asyncpg.Connection,
+    note_id: UUID,
+    review_count: int,
+    next_review_at: datetime,
+) -> dict | None:
+    """復習完了後にスケジュールを更新する。"""
+    query = """--sql
+    UPDATE review_schedules
+    SET review_count = $2,
+        next_review_at = $3,
+        last_reviewed_at = NOW(),
+        status = 'pending',
+        updated_at = NOW()
+    WHERE note_id = $1
+    RETURNING *
+    """
+    record = await conn.fetchrow(query, note_id, review_count, next_review_at)
+    return dict(record) if record else None

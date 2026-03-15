@@ -25,6 +25,23 @@ async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> d
     return dict(record) if record else None
 
 
+async def insert(
+    conn: asyncpg.Connection,
+    note_id: UUID,
+    user_id: str,
+    topic: str,
+    content: str,
+    summary: str,
+) -> dict:
+    query = """--sql
+        INSERT INTO notes (id, user_id, topic, content, summary, status)
+        VALUES ($1, $2, $3, $4, $5, 'active')
+        RETURNING id, user_id, topic, content, summary, status, created_at, updated_at
+    """
+    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary)
+    return dict(record)
+
+
 async def update(
     conn: asyncpg.Connection,
     note_id: UUID,

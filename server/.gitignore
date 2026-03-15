@@ -43,3 +43,5 @@ htmlcov/
 .DS_Store
 
 .ruff_cache/
+
+graph/prompts.py

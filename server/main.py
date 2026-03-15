@@ -5,12 +5,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import feedback, note, review_schedule
 from core.database import close_pool, get_pool
+from graph.builder import build_learning_graph
+from graph.checkpointer import get_checkpointer
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await get_pool()
-    yield
+
+    async with get_checkpointer() as checkpointer:
+        await checkpointer.setup()
+        app.state.graph = build_learning_graph(checkpointer)
+        yield
+
     await close_pool()
 
 

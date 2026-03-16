@@ -21,4 +21,5 @@ ehthumbs.db
 .env
 
 .ruff_cache/
+postgres_data/
 learn/

@@ -17,54 +17,55 @@ Table user {
 // ==========================================
 
 Table note {
-  id text [primary key, note: 'UUIDv4文字列']
+  id uuid [primary key, note: 'UUIDv4文字列']
   user_id text [not null]
   topic text [not null]
   content text [not null]
   summary text
   status text [not null, default: 'active', note: 'active / archived']
-  created_at timestamp [not null, default: `now()`]
-  updated_at timestamp [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Table feedback {
-  id text [primary key, note: 'UUIDv4文字列']
+  id uuid [primary key, note: 'UUIDv4文字列']
   note_id text [not null]
   dialogue_session_id text
   understanding_level text [not null, note: 'high / medium / low']
-  strengths text
+  strength text
   improvements text
-  created_at timestamp [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
 }
 
 Table review_schedule {
-  id text [primary key, note: 'UUIDv4文字列']
+  id uuid [primary key, note: 'UUIDv4文字列']
   note_id text [unique, not null, note: 'ノートと1:1']
   review_count integer [not null, default: 0]
   next_review_at timestamp [not null]
   last_reviewed_at timestamp
   status text [not null, default: 'pending', note: 'pending / completed / overdue']
-  created_at timestamp [not null, default: `now()`]
-  updated_at timestamp [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
 }
 
 Table dialogue_session {
-  id text [primary key, note: 'UUIDv4文字列']
+  id uuid [primary key, note: 'UUIDv4文字列']
   user_id text [not null]
   note_id text [note: 'NULL可: 初回学習時はノート未生成']
   session_type text [not null, note: 'learning / review']
+  status text [not null, default: 'in_progress', note: 'in_progress / generate_note / completed / failed']
   langgraph_thread_id text
-  started_at timestamp [not null, default: `now()`]
-  ended_at timestamp [note: 'NULL: 対話中']
+  started_at timestamptz [not null, default: `now()`]
+  ended_at timestamptz [note: 'NULL: 対話中']
 }
 
 Table dialogue_message {
-  id text [primary key, note: 'UUIDv4文字列']
+  id uuid [primary key, note: 'UUIDv4文字列']
   dialogue_session_id text [not null]
   role text [not null, note: 'user / assistant']
   content text [not null]
   message_order integer [not null]
-  created_at timestamp [not null, default: `now()`]
+  created_at timestamptz [not null, default: `now()`]
 }
 
 // ==========================================

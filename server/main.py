@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import feedback, note, review_schedule
+from api.websocket import chat
 from core.database import close_pool, get_pool
 from graph.builder import build_learning_graph
 from graph.checkpointer import get_checkpointer
@@ -34,6 +35,8 @@ app.add_middleware(
 app.include_router(note.router)
 app.include_router(feedback.router)
 app.include_router(review_schedule.router)
+
+app.include_router(chat.router)
 
 
 @app.get("/api/health")

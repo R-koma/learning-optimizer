@@ -53,10 +53,13 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     const { token } = await res.json();
     if (!token) {
       setError("認証トークンの取得に失敗しました");
+      return;
     }
-    const ws = new WebSocket(`ws://localhost:8000/ws/chat?token=${token}`);
+
+    const ws = new WebSocket("ws://localhost:8000/ws/chat");
 
     ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "authenticate", token }));
       setIsConnected(true);
       setError(null);
     };

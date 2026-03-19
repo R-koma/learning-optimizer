@@ -23,8 +23,11 @@ router = APIRouter()
 
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
-    user_id = await authenticate_websocket(websocket)
     await websocket.accept()
+    try:
+        user_id = await authenticate_websocket(websocket)
+    except ValueError:
+        return
 
     graph = websocket.app.state.graph
     pool = await get_pool()

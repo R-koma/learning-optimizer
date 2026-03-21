@@ -89,7 +89,7 @@ async def websocket_chat(websocket: WebSocket):
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
                 if result.get("should_generate_note"):
-                    await dialogue_session_repository.update_status(pool, session_id, "generating_note")
+                    await dialogue_session_repository.update_status(pool, session_id, "generate_note")
 
                     note_id = result.get("note_id")
                     if note_id:

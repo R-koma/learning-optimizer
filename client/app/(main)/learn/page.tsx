@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import Link from "next/link";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ export default function LearnPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -147,7 +148,9 @@ export default function LearnPage() {
               </p>
               <p className="mt-1 text-sm">{generatedNote.summary}</p>
               <Button asChild variant="link" className="mt-2">
-                <a href={`/notes/${generatedNote.note_id}`}>ノートを見る</a>
+                <Link href={`/notes/${generatedNote.note_id}`}>
+                  ノートを見る
+                </Link>
               </Button>
             </div>
           )}
@@ -158,7 +161,7 @@ export default function LearnPage() {
                 セッションが終了しました
               </p>
               <Button asChild variant="link" className="mt-2">
-                <a href="/dashboard">ダッシュボードに戻る</a>
+                <Link href="/dashboard">ダッシュボードに戻る</Link>
               </Button>
             </div>
           )}
@@ -169,7 +172,7 @@ export default function LearnPage() {
 
       {!isSessionEnded && (
         <div className="border-t px-6 py-4">
-          <div className="mx-auto flex max-w-3xl items-end gap-3">
+          <div className="mx-auto flex max-w-3xl items-center gap-3">
             <Textarea
               placeholder="回答を入力..."
               value={input}
@@ -178,7 +181,11 @@ export default function LearnPage() {
               className="min-h-10 flex-1 resize-none"
               rows={1}
             />
-            <Button onClick={endSession} variant="outline" className="shrink-0">
+            <Button
+              onClick={endSession}
+              variant="outline"
+              className="shrink-0 hover:bg-black hover:text-white"
+            >
               終了
             </Button>
           </div>

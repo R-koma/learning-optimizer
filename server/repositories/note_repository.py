@@ -5,8 +5,11 @@ import asyncpg
 
 async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict]:
     query = """--sql
-    SELECT id, user_id, topic, content, summary, status, created_at, updated_at From notes
-    WHERE user_id = $1 AND status = 'active'
+    SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status, n.created_at, n.updated_at,
+    COALESCE(rs.review_count, 0) AS review_count
+    From notes n
+    LEFT JOIN review_schedules rs ON rs.note_id = n.id
+    WHERE n.user_id = $1 AND n.status IN ('active', 'archived')
     ORDER BY created_at DESC
   """
 
@@ -66,12 +69,21 @@ async def update(
     return dict(record) if record else None
 
 
-async def delete(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> bool:
-    query = """--sql
-    DELETE FROM notes WHERE id = $1 AND user_id = $2
-  """
-
-    result = await conn.execute(query, note_id, user_id)
-
+async def delete(pool: asyncpg.Pool, note_id: UUID, user_id: str) -> bool:
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute(
+                "DELETE FROM feedbacks WHERE note_id = $1",
+                note_id,
+            )
+            await conn.execute(
+                "DELETE FROM review_schedules WHERE note_id = $1",
+                note_id,
+            )
+            result = await conn.execute(
+                "DELETE FROM notes WHERE id = $1 AND user_id = $2",
+                note_id,
+                user_id,
+            )
     deleted_count = int(result.split(" ")[1])
     return deleted_count > 0

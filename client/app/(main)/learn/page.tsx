@@ -59,35 +59,46 @@ export default function LearnPage() {
   if (messages.length === 0 && !isConnected) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>新規学習</CardTitle>
+        <Card className="w-full max-w-lg shadow-lg">
+          <CardHeader className="space-y-2 px-8 pt-10 pb-4">
+            <CardTitle className="text-center text-2xl font-bold">
+              新規学習
+            </CardTitle>
+            <p className="text-center text-sm text-muted-foreground">
+              学習したいトピックを入力して開始しましょう
+            </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-8 pb-4">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleStartLearning();
               }}
             >
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="topic">トピック</Label>
+                  <Label htmlFor="topic" className="text-sm font-medium">
+                    トピック
+                  </Label>
                   <Input
                     id="topic"
                     type="text"
-                    placeholder="学習したいトピックを入力"
+                    placeholder="例: TCP/IP、二分探索木、デザインパターン"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
+                    className="h-12 text-base"
                     required
                   />
                 </div>
               </div>
             </form>
           </CardContent>
-          <CardFooter className="flex-col gap-2">
-            <Button onClick={handleStartLearning} className="w-full">
-              開始
+          <CardFooter className="px-8 pb-10">
+            <Button
+              onClick={handleStartLearning}
+              className="h-12 w-full text-base"
+            >
+              学習を開始する
             </Button>
           </CardFooter>
         </Card>

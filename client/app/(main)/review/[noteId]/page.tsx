@@ -1,0 +1,248 @@
+"use client";
+
+import { useRef, useEffect, useState, use } from "react";
+import Link from "next/link";
+import { useChatWebSocket } from "@/hooks/use-chat-websocket";
+import { fetchAPI } from "@/lib/api";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeftIcon,
+  RotateCcwIcon,
+  BookOpenIcon,
+  SparklesIcon,
+} from "lucide-react";
+
+interface Note {
+  id: string;
+  topic: string;
+  content: string;
+  summary: string;
+}
+
+export default function ReviewPage({
+  params,
+}: {
+  params: Promise<{ noteId: string }>;
+}) {
+  const { noteId } = use(params);
+  const [note, setNote] = useState<Note | null>(null);
+  const [input, setInput] = useState("");
+  const [isReviewStarted, setIsReviewStarted] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const {
+    messages,
+    isLoading,
+    isSessionEnded,
+    generatedNote,
+    error,
+    startLearning,
+    sendMessage,
+    endSession,
+  } = useChatWebSocket();
+
+  useEffect(() => {
+    fetchAPI<Note>(`/api/notes/${noteId}`)
+      .then(setNote)
+      .catch((e) => setLoadError(e.message));
+  }, [noteId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  const handleStartReview = () => {
+    if (!note) return;
+    setIsReviewStarted(true);
+    startLearning(note.topic);
+  };
+
+  const handleSendMessage = () => {
+    if (!input.trim()) return;
+    sendMessage(input.trim());
+    setInput("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-sm text-destructive">{loadError}</p>
+      </div>
+    );
+  }
+
+  if (!note) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground">読み込み中...</p>
+      </div>
+    );
+  }
+
+  // 復習開始前: ノート内容のプレビュー
+  if (!isReviewStarted) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <Link
+          href={`/notes/${noteId}`}
+          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          ノートに戻る
+        </Link>
+
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <RotateCcwIcon className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">復習</h1>
+            <p className="text-sm text-muted-foreground">{note.topic}</p>
+          </div>
+        </div>
+
+        {/* ノート要約のプレビュー */}
+        <div className="mb-8 rounded-xl border bg-card p-6">
+          <div className="mb-3 flex items-center gap-2">
+            <SparklesIcon className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-primary">
+              前回の要約
+            </h2>
+          </div>
+          <ul className="space-y-2 pl-1">
+            {note.summary.split("\n").map((line, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-sm leading-relaxed"
+              >
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <Button onClick={handleStartReview} size="lg" className="w-full gap-2">
+          <RotateCcwIcon className="h-5 w-5" />
+          復習を開始する
+        </Button>
+      </div>
+    );
+  }
+
+  // 復習チャット中
+  return (
+    <div className="flex h-screen flex-col">
+      <div className="border-b px-6 py-3">
+        <div className="flex items-center gap-3">
+          <RotateCcwIcon className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-semibold">{note.topic}</h1>
+          <Badge variant="secondary">復習</Badge>
+        </div>
+      </div>
+
+      {error && (
+        <div className="px-6 py-2 text-sm text-destructive">{error}</div>
+      )}
+
+      <ScrollArea className="flex-1 px-6">
+        <div className="mx-auto max-w-3xl space-y-4 py-6">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+            >
+              <Avatar className="mt-1 shrink-0">
+                <AvatarFallback>
+                  {msg.role === "user" ? "You" : "AI"}
+                </AvatarFallback>
+              </Avatar>
+              <div
+                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex items-start gap-3">
+              <Avatar className="mt-1 shrink-0">
+                <AvatarFallback>AI</AvatarFallback>
+              </Avatar>
+              <div className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
+                考え中...
+              </div>
+            </div>
+          )}
+
+          {generatedNote && (
+            <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">
+              <BookOpenIcon className="mx-auto mb-3 h-8 w-8 text-primary" />
+              <h2 className="mb-1 font-semibold">ノートが更新されました</h2>
+              <p className="text-sm text-muted-foreground">
+                {generatedNote.topic}
+              </p>
+              <Button asChild variant="link" className="mt-2">
+                <Link href={`/notes/${generatedNote.note_id}`}>
+                  ノートを確認する
+                </Link>
+              </Button>
+            </div>
+          )}
+
+          {isSessionEnded && !generatedNote && (
+            <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                復習セッションが終了しました
+              </p>
+              <Button asChild variant="link" className="mt-2">
+                <Link href={`/notes/${noteId}`}>ノートに戻る</Link>
+              </Button>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+      </ScrollArea>
+
+      {!isSessionEnded && (
+        <div className="border-t px-6 py-4">
+          <div className="mx-auto flex max-w-3xl items-center gap-3">
+            <Textarea
+              placeholder="回答を入力..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="min-h-10 flex-1 resize-none"
+              rows={1}
+            />
+            <Button
+              onClick={endSession}
+              variant="outline"
+              className="shrink-0 hover:bg-black hover:text-white"
+            >
+              終了
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

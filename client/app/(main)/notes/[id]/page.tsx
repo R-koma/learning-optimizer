@@ -1,7 +1,20 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { fetchAPI, getToken } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ArrowLeftIcon,
+  BookOpenIcon,
+  SparklesIcon,
+  FileTextIcon,
+  TrendingUpIcon,
+  CheckCircleIcon,
+  AlertCircleIcon,
+  MessageSquareIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 
 interface Note {
   id: string;
@@ -36,80 +49,120 @@ export default async function NotePage({
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">学習ノート</h1>
+        {/* ヘッダー */}
+        <div className="mb-8">
+          <Link
+            href="/notes"
+            className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            学習履歴に戻る
+          </Link>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <BookOpenIcon className="h-5 w-5 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold">{note.topic}</h1>
+            </div>
+            <Button asChild className="gap-2">
+              <Link href={`/review/${note.id}`}>
+                <RotateCcwIcon className="h-4 w-4" />
+                復習する
+              </Link>
+            </Button>
+          </div>
+        </div>
 
+        {/* タブ */}
         <Tabs defaultValue="note">
-          <TabsList className="mb-6">
-            <TabsTrigger value="note">ノート</TabsTrigger>
-            <TabsTrigger value="feedback">フィードバック</TabsTrigger>
+          <TabsList className="mb-8">
+            <TabsTrigger value="note" className="gap-1.5">
+              <FileTextIcon className="h-4 w-4" />
+              ノート
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="gap-1.5">
+              <MessageSquareIcon className="h-4 w-4" />
+              フィードバック
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="note">
-            <Card>
-              <CardContent className="space-y-6 p-6">
-                <section>
-                  <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-                    トピック
-                  </h2>
-                  <p className="text-lg font-semibold">{note.topic}</p>
-                </section>
+          {/* ノートタブ */}
+          <TabsContent value="note" className="space-y-6">
+            <div className="rounded-xl border bg-card p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <SparklesIcon className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-primary">
+                  要約
+                </h2>
+              </div>
+              <ul className="space-y-2 pl-1">
+                {note.summary.split("\n").map((line, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-sm leading-relaxed"
+                  >
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                <section>
-                  <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-                    要約
-                  </h2>
-                  <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed">
-                    {note.summary.split("\n").map((line, i) => (
-                      <li key={i}>{line}</li>
-                    ))}
-                  </ul>
-                </section>
-
-                <section>
-                  <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-                    内容
-                  </h2>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {note.content}
-                  </div>
-                </section>
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border bg-card p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <FileTextIcon className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  内容
+                </h2>
+              </div>
+              <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+                {note.content}
+              </div>
+            </div>
           </TabsContent>
 
+          {/* フィードバックタブ */}
           <TabsContent value="feedback">
             {feedbacks.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 text-center">
+                <MessageSquareIcon className="mb-4 h-10 w-10 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">
                   フィードバックはまだありません
-                </CardContent>
-              </Card>
+                </p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {feedbacks.map((fb) => (
-                  <Card key={fb.id}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">
+                  <div key={fb.id} className="rounded-xl border bg-card p-6">
+                    <div className="mb-4 flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        className="gap-1 px-3 py-1 text-sm"
+                      >
+                        <TrendingUpIcon className="h-3.5 w-3.5" />
                         理解度: {fb.understanding_level}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-6 pb-6">
-                      <section>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      </Badge>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-lg bg-emerald-500/5 p-4">
+                        <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                          <CheckCircleIcon className="h-4 w-4" />
                           強み
-                        </h3>
+                        </div>
                         <p className="text-sm leading-relaxed">{fb.strength}</p>
-                      </section>
-                      <section>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      </div>
+                      <div className="rounded-lg bg-amber-500/5 p-4">
+                        <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+                          <AlertCircleIcon className="h-4 w-4" />
                           改善点
-                        </h3>
+                        </div>
                         <p className="text-sm leading-relaxed">
                           {fb.improvements}
                         </p>
-                      </section>
-                    </CardContent>
-                  </Card>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

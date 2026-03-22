@@ -13,6 +13,7 @@ class NoteResponse(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    review_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 

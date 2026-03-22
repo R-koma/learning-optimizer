@@ -11,10 +11,10 @@ export async function getToken(cookieHeader?: string): Promise<string> {
   return token;
 }
 
-export async function fetchAPI(
+export async function fetchAPI<T>(
   path: string,
   options?: RequestInit & { token?: string },
-) {
+): Promise<T> {
   const authToken = options?.token ?? (await getToken());
 
   const { token: _, ...restOptions } = options ?? {};
@@ -27,5 +27,6 @@ export async function fetchAPI(
     },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }

@@ -17,10 +17,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   BookOpenIcon,
   RotateCcwIcon,
   CalendarIcon,
-  Trash2Icon,
+  EllipsisIcon,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
 
@@ -134,16 +140,25 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
               </Link>
 
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
-                    disabled={deletingId === note.id}
-                  >
-                    <Trash2Icon className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-3 bottom-3"
+                      disabled={deletingId === note.id}
+                    >
+                      <EllipsisIcon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        削除する
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>ノートを削除しますか？</AlertDialogTitle>

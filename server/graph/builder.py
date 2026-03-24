@@ -8,10 +8,12 @@ from graph.state import LearningState
 
 
 def route_after_dialogue(state: LearningState) -> str:
-    """learning_dialogue 後に対話継続かノート生成かを判定"""
-    if state["should_generate_note"]:
-        return "generate_note"
-    return "learning_dialogue"
+    """learning_dialogue 後に対話継続かノート生成/フィードバック生成かを判定"""
+    if not state["should_generate_note"]:
+        return "learning_dialogue"
+    if state.get("session_type") == "review":
+        return "generate_feedback"
+    return "generate_note"
 
 
 def build_learning_graph(checkpointer):
@@ -32,6 +34,7 @@ def build_learning_graph(checkpointer):
         route_after_dialogue,
         {
             "generate_note": "generate_note",
+            "generate_feedback": "generate_feedback",
             "learning_dialogue": "learning_dialogue",
         },
     )

@@ -14,3 +14,6 @@ class LearningState(TypedDict):
     topic: str
     turn_count: int
     should_generate_note: bool
+    session_type: str
+    note_content: str
+    note_summary: str

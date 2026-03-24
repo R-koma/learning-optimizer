@@ -9,6 +9,11 @@ class StartLearningMessage(BaseModel):
     topic: str
 
 
+class StartReviewMessage(BaseModel):
+    type: Literal["start_review"]
+    note_id: str
+
+
 class UserMessage(BaseModel):
     type: Literal["user_message"]
     content: str

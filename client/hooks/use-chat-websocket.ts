@@ -21,6 +21,15 @@ interface ServerMessage {
   note_id?: string;
   topic?: string;
   summary?: string;
+  understanding_level?: string;
+  strength?: string;
+  improvements?: string;
+}
+
+interface Feedback {
+  understanding_level: string;
+  strength: string;
+  improvements: string;
 }
 
 interface UseChatWebSocketReturn {
@@ -29,8 +38,10 @@ interface UseChatWebSocketReturn {
   isLoading: boolean;
   isSessionEnded: boolean;
   generatedNote: { note_id: string; topic: string; summary: string } | null;
+  feedback: Feedback | null;
   error: string | null;
   startLearning: (topic: string) => void;
+  startReview: (noteId: string) => void;
   sendMessage: (content: string) => void;
   endSession: () => void;
 }
@@ -45,6 +56,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     topic: string;
     summary: string;
   } | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -84,6 +96,14 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           });
           break;
 
+        case "feedback_generated":
+          setFeedback({
+            understanding_level: data.understanding_level ?? "",
+            strength: data.strength ?? "",
+            improvements: data.improvements ?? "",
+          });
+          break;
+
         case "session_ended":
           setIsSessionEnded(true);
           setIsLoading(false);
@@ -119,6 +139,30 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           setIsLoading(true);
           setIsSessionEnded(false);
           setGeneratedNote(null);
+          setFeedback(null);
+        } else {
+          setTimeout(checkAndSend, 50);
+        }
+      };
+      checkAndSend();
+    },
+    [connect],
+  );
+
+  const startReview = useCallback(
+    (noteId: string) => {
+      connect();
+
+      const checkAndSend = () => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({ type: "start_review", note_id: noteId }),
+          );
+          setMessages([]);
+          setIsLoading(true);
+          setIsSessionEnded(false);
+          setGeneratedNote(null);
+          setFeedback(null);
         } else {
           setTimeout(checkAndSend, 50);
         }
@@ -148,8 +192,10 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     isLoading,
     isSessionEnded,
     generatedNote,
+    feedback,
     error,
     startLearning,
+    startReview,
     sendMessage,
     endSession,
   };

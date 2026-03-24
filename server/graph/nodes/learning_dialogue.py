@@ -1,7 +1,7 @@
 from langchain_core.messages import SystemMessage
 
 from graph.llm import llm
-from graph.prompts import DEEP_DIVE_SYSTEM_PROMPT
+from graph.prompts import DEEP_DIVE_SYSTEM_PROMPT, REVIEW_SYSTEM_PROMPT
 from graph.state import LearningState
 
 MAX_TURNS = 3
@@ -10,7 +10,17 @@ LEARNING_END_SIGNAL = "LEARNING_END"
 
 async def learning_dialogue(state: LearningState) -> dict:
     """深掘りLLMとの対話継続"""
-    system_message = SystemMessage(content=DEEP_DIVE_SYSTEM_PROMPT)
+    session_type = state.get("session_type", "learning")
+
+    if session_type == "review":
+        prompt = REVIEW_SYSTEM_PROMPT.format(
+            topic=state["topic"],
+            summary=state.get("note_summary", ""),
+        )
+    else:
+        prompt = DEEP_DIVE_SYSTEM_PROMPT
+
+    system_message = SystemMessage(content=prompt)
     all_messages = [system_message] + state["messages"]
 
     response = await llm.ainvoke(all_messages)

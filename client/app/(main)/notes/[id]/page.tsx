@@ -49,7 +49,6 @@ export default async function NotePage({
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        {/* ヘッダー */}
         <div className="mb-8">
           <Link
             href="/notes"
@@ -74,7 +73,6 @@ export default async function NotePage({
           </div>
         </div>
 
-        {/* タブ */}
         <Tabs defaultValue="note">
           <TabsList className="mb-8">
             <TabsTrigger value="note" className="gap-1.5">
@@ -87,7 +85,6 @@ export default async function NotePage({
             </TabsTrigger>
           </TabsList>
 
-          {/* ノートタブ */}
           <TabsContent value="note" className="space-y-6">
             <div className="rounded-xl border bg-card p-6">
               <div className="mb-4 flex items-center gap-2">
@@ -122,7 +119,6 @@ export default async function NotePage({
             </div>
           </TabsContent>
 
-          {/* フィードバックタブ */}
           <TabsContent value="feedback">
             {feedbacks.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 text-center">

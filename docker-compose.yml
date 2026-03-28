@@ -1,20 +1,57 @@
 services:
-  postgres:
+  db:
     image: postgres:17
     container_name: learning-optimizer-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-learning_optimizer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
+      POSTGRES_DB: ${POSTGRES_DB:-learning_optimizer}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-learning_optimizer} -d ${POSTGRES_DB:-learning_optimizer}"]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-learning_optimizer}:${POSTGRES_PASSWORD:-localdev}@db:5432/${POSTGRES_DB:-learning_optimizer}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - JWKS_URL=${JWKS_URL:-http://client:3000/api/auth/jwks}
+    volumes:
+      - ./server:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - API_URL_INTERNAL=http://server:8000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-learning_optimizer}:${POSTGRES_PASSWORD:-localdev}@db:5432/${POSTGRES_DB:-learning_optimizer}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - server
 
 volumes:
   postgres_data:

@@ -15,8 +15,9 @@ COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY --from=builder /app /app
+RUN useradd --create-home appuser
+COPY --from=builder --chown=appuser:appuser /app /app
 
 EXPOSE 8000
-USER nobody
-CMD ["uv", "run", "fastapi", "run", "main.py", "--host", "0.0.0.0", "--port", "8000"]
+USER appuser
+CMD ["sh", "-c", "uv run fastapi run main.py --host 0.0.0.0 --port ${PORT:-8000}"]

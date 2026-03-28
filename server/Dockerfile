@@ -20,4 +20,5 @@ COPY --from=builder --chown=appuser:appuser /app /app
 
 EXPOSE 8000
 USER appuser
+ENV UV_CACHE_DIR=/tmp/uv-cache
 CMD ["sh", "-c", "uv run fastapi run main.py --host 0.0.0.0 --port ${PORT:-8000}"]

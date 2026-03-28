@@ -68,7 +68,8 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
       return;
     }
 
-    const ws = new WebSocket("ws://localhost:8000/ws/chat");
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+    const ws = new WebSocket(`${wsUrl}/ws/chat`);
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "authenticate", token }));

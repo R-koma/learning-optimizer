@@ -14,7 +14,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
@@ -58,6 +57,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const filteredNotes =
     filter === "all" ? notes : notes.filter((note) => note.status === filter);
@@ -79,7 +79,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-150 cursor-pointer ${
               filter === f.value
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -115,7 +115,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
                         variant={
                           note.status === "active" ? "default" : "secondary"
                         }
-                        className="shrink-0"
+                        className="shrink-0 "
                       >
                         {note.status === "active" ? "進行中" : "完了"}
                       </Badge>
@@ -139,48 +139,54 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
                 </div>
               </Link>
 
-              <AlertDialog>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-3 bottom-3"
-                      disabled={deletingId === note.id}
-                    >
-                      <EllipsisIcon className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive">
-                        削除する
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>ノートを削除しますか？</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      「{note.topic}」を削除します。
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(note.id)}
-                      className="bg-red-600 text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      削除
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-3 bottom-3 cursor-pointer"
+                    disabled={deletingId === note.id}
+                  >
+                    <EllipsisIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleteTargetId(note.id)}
+                  >
+                    削除する
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ノートを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{notes.find((n) => n.id === deleteTargetId)?.topic}
+              」を削除します。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTargetId && handleDelete(deleteTargetId)}
+              className="bg-red-600 text-destructive-foreground hover:bg-destructive/90"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

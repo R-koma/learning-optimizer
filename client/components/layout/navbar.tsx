@@ -90,7 +90,7 @@ export function Navbar({ user }: NavbarProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-full"
+          className="h-9 w-9 rounded-full cursor-pointer hover:!bg-transparent active:!bg-transparent"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
           <SunIcon className="h-4 w-4 rotate-0 scale-100 transition-transform dark:rotate-90 dark:scale-0" />
@@ -102,7 +102,7 @@ export function Navbar({ user }: NavbarProps) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex items-center gap-2 rounded-full px-2"
+              className="flex items-center gap-2 rounded-full px-2 cursor-pointer outline-none hover:!bg-transparent active:!bg-transparent aria-expanded:!bg-transparent"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user.image ?? undefined} />

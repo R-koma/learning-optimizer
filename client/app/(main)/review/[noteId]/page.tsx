@@ -124,7 +124,6 @@ export default function ReviewPage({
           </div>
         </div>
 
-        {/* ノート要約のプレビュー */}
         <div className="mb-8 rounded-xl border bg-card p-6">
           <div className="mb-3 flex items-center gap-2">
             <SparklesIcon className="h-4 w-4 text-primary" />

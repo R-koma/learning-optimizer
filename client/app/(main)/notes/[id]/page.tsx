@@ -75,11 +75,11 @@ export default async function NotePage({
 
         <Tabs defaultValue="note">
           <TabsList className="mb-8">
-            <TabsTrigger value="note" className="gap-1.5">
+            <TabsTrigger value="note" className="gap-1.5 cursor-pointer">
               <FileTextIcon className="h-4 w-4" />
               ノート
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="gap-1.5">
+            <TabsTrigger value="feedback" className="gap-1.5 cursor-pointer">
               <MessageSquareIcon className="h-4 w-4" />
               フィードバック
             </TabsTrigger>

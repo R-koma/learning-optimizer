@@ -96,7 +96,7 @@ export default function LearnPage() {
           <CardFooter className="px-8 pb-10">
             <Button
               onClick={handleStartLearning}
-              className="h-12 w-full text-base"
+              className="h-12 w-full text-base cursor-pointer"
             >
               学習を開始する
             </Button>
@@ -195,7 +195,7 @@ export default function LearnPage() {
             <Button
               onClick={endSession}
               variant="outline"
-              className="shrink-0 hover:bg-black hover:text-white"
+              className="shrink-0 hover:bg-black hover:text-white cursor-pointer"
             >
               終了
             </Button>

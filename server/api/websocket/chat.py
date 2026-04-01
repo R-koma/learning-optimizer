@@ -169,8 +169,42 @@ async def websocket_chat(websocket: WebSocket):
                     await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
 
             elif data["type"] == "end_session":
-                if session_id:
+                if config:
+                    await graph.aupdate_state(config, {"should_generate_note": True}, as_node="learning_dialogue")
+                    result = await graph.ainvoke(None, config=config)
+
+                    if session_id:
+                        await dialogue_session_repository.update_status(pool, session_id, "completed")
+
+                    if session_type == "learning":
+                        note_id = result.get("note_id")
+                        if note_id:
+                            if session_id:
+                                await dialogue_session_repository.update_note_id(pool, session_id, note_id)
+                            note = await note_repository.find_by_id(pool, note_id, user_id)
+                            await websocket.send_text(
+                                NoteGeneratedMessage(
+                                    note_id=str(note_id),
+                                    topic=note["topic"],
+                                    summary=note["summary"],
+                                ).model_dump_json()
+                            )
+                    else:
+                        review_note_id = result.get("note_id")
+                        if review_note_id:
+                            feedbacks = await feedback_repository.find_by_note_id(pool, review_note_id, user_id)
+                            if feedbacks:
+                                latest = feedbacks[-1]
+                                await websocket.send_text(
+                                    FeedbackGeneratedMessage(
+                                        understanding_level=latest["understanding_level"],
+                                        strength=latest["strength"],
+                                        improvements=latest["improvements"],
+                                    ).model_dump_json()
+                                )
+                elif session_id:
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
+
                 await websocket.send_text(SessionEndedMessage().model_dump_json())
                 break
 

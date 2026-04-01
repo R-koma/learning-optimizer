@@ -4,7 +4,6 @@ from graph.llm import llm
 from graph.prompts import DEEP_DIVE_SYSTEM_PROMPT, REVIEW_SYSTEM_PROMPT
 from graph.state import LearningState
 
-MAX_TURNS = 3
 LEARNING_END_SIGNAL = "LEARNING_END"
 
 
@@ -26,7 +25,7 @@ async def learning_dialogue(state: LearningState) -> dict:
     response = await llm.ainvoke(all_messages)
 
     turn_count = state["turn_count"] + 1
-    should_generate_note = turn_count >= MAX_TURNS or response.content.strip() == LEARNING_END_SIGNAL
+    should_generate_note = response.content.strip() == LEARNING_END_SIGNAL
 
     return {
         "messages": [response],

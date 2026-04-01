@@ -185,6 +185,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
     wsRef.current.send(JSON.stringify({ type: "end_session" }));
+    setIsLoading(true);
   }, []);
 
   return {

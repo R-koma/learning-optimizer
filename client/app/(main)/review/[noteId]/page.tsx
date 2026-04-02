@@ -2,15 +2,18 @@
 
 import { useRef, useEffect, useState, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { fetchAPI } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChatInput } from "@/components/chat/chat-input";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeftIcon,
+  LogOutIcon,
+  NotebookPenIcon,
   RotateCcwIcon,
   SparklesIcon,
   CheckCircleIcon,
@@ -40,6 +43,7 @@ export default function ReviewPage({
 }: {
   params: Promise<{ noteId: string }>;
 }) {
+  const router = useRouter();
   const { noteId } = use(params);
   const [note, setNote] = useState<Note | null>(null);
   const [input, setInput] = useState("");
@@ -74,17 +78,10 @@ export default function ReviewPage({
     startReview(noteId);
   };
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
-    sendMessage(input.trim());
+  const handleSendMessage = (content: string) => {
+    if (!content.trim()) return;
+    sendMessage(content);
     setInput("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      handleSendMessage();
-    }
   };
 
   if (loadError) {
@@ -155,10 +152,40 @@ export default function ReviewPage({
   return (
     <div className="flex h-screen flex-col">
       <div className="border-b px-6 py-3">
-        <div className="flex items-center gap-3">
-          <RotateCcwIcon className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">{note.topic}</h1>
-          <Badge variant="secondary">復習</Badge>
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <RotateCcwIcon className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold">{note.topic}</h1>
+            <Badge variant="secondary">復習</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={endSession}
+                className="h-9 w-9 rounded-full cursor-pointer"
+              >
+                <NotebookPenIcon className="h-4 w-4" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                ノート作成
+              </span>
+            </div>
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/dashboard")}
+                className="h-9 w-9 rounded-full cursor-pointer"
+              >
+                <LogOutIcon className="h-4 w-4" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                会話を終了
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -277,23 +304,14 @@ export default function ReviewPage({
       </ScrollArea>
 
       {!isSessionEnded && (
-        <div className="border-t px-6 py-4">
-          <div className="mx-auto flex max-w-3xl items-center gap-3">
-            <Textarea
-              placeholder="回答を入力..."
+        <div className="px-6 py-4">
+          <div className="mx-auto max-w-3xl">
+            <ChatInput
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-10 flex-1 resize-none"
-              rows={1}
+              onChange={setInput}
+              onSend={handleSendMessage}
+              isLoading={isLoading}
             />
-            <Button
-              onClick={endSession}
-              variant="outline"
-              className="shrink-0 hover:bg-black hover:text-white"
-            >
-              終了
-            </Button>
           </div>
         </div>
       )}

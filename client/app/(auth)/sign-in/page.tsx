@@ -96,7 +96,7 @@ export default function SignInPage() {
                       aria-invalid={fieldState.invalid}
                       placeholder="Email address"
                       autoComplete="off"
-                      className="p-6"
+                      className="p-6 text-base tracking-wide"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -116,7 +116,7 @@ export default function SignInPage() {
                       aria-invalid={fieldState.invalid}
                       placeholder="Password"
                       autoComplete="off"
-                      className="p-6"
+                      className="p-6 text-base tracking-wide"
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -135,12 +135,12 @@ export default function SignInPage() {
             type="submit"
             form="sign-in-form"
             disabled={isLoading}
-            className="w-full p-6 bg-green-600 hover:bg-green-700 text-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full p-6 bg-green-600 hover:bg-green-700 text-lg text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Loading..." : "Continue"}
+            {isLoading ? "Loading..." : "続ける"}
           </Button>
         </CardFooter>
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground pb-6">
           Don&apos;t have an account?{" "}
           <Link
             href="/sign-up"

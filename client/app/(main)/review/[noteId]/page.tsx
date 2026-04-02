@@ -135,7 +135,7 @@ export default function ReviewPage({
             {note.summary.split("\n").map((line, i) => (
               <li
                 key={i}
-                className="flex items-start gap-2 text-sm leading-relaxed"
+                className="flex items-start gap-2 text-base leading-relaxed"
               >
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
                 {line}
@@ -179,7 +179,7 @@ export default function ReviewPage({
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
@@ -237,7 +237,7 @@ export default function ReviewPage({
                     <TrendingUpIcon className="h-3.5 w-3.5" />
                     良かった点
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-base leading-relaxed text-muted-foreground">
                     {feedback.strength}
                   </p>
                 </div>
@@ -249,7 +249,7 @@ export default function ReviewPage({
                     <AlertCircleIcon className="h-3.5 w-3.5" />
                     改善点
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-base leading-relaxed text-muted-foreground">
                     {feedback.improvements}
                   </p>
                 </div>

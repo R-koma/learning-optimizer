@@ -129,7 +129,7 @@ export default function LearnPage() {
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"

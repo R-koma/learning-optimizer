@@ -97,7 +97,7 @@ export default async function NotePage({
                 {note.summary.split("\n").map((line, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-sm leading-relaxed"
+                    className="flex items-start gap-2 text-base leading-relaxed"
                   >
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
                     {line}
@@ -113,7 +113,7 @@ export default async function NotePage({
                   内容
                 </h2>
               </div>
-              <div className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+              <div className="whitespace-pre-wrap text-base leading-7 text-foreground/90">
                 {note.content}
               </div>
             </div>
@@ -146,14 +146,16 @@ export default async function NotePage({
                           <CheckCircleIcon className="h-4 w-4" />
                           強み
                         </div>
-                        <p className="text-sm leading-relaxed">{fb.strength}</p>
+                        <p className="text-base leading-relaxed">
+                          {fb.strength}
+                        </p>
                       </div>
                       <div className="rounded-lg bg-amber-500/5 p-4">
                         <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
                           <AlertCircleIcon className="h-4 w-4" />
                           改善点
                         </div>
-                        <p className="text-sm leading-relaxed">
+                        <p className="text-base leading-relaxed">
                           {fb.improvements}
                         </p>
                       </div>

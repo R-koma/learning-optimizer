@@ -22,7 +22,7 @@ export function MainLayoutClient({ user, children }: MainLayoutClientProps) {
         <Sidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Navbar user={user} />
-          <main className="flex-1 overflow-hidden">{children}</main>
+          <main className="flex-1 overflow-auto">{children}</main>
         </div>
       </div>
     </NavbarSlotProvider>

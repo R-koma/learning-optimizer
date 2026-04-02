@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout/navbar";
+import { MainLayoutClient } from "@/components/layout/main-layout-client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -16,10 +16,5 @@ export default async function MainLayout({
     redirect("/sign-in");
   }
 
-  return (
-    <div>
-      <Navbar user={session.user} />
-      <main>{children}</main>
-    </div>
-  );
+  return <MainLayoutClient user={session.user}>{children}</MainLayoutClient>;
 }

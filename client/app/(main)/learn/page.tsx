@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
+import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ export default function LearnPage() {
   const [topic, setTopic] = useState("");
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { setNavbarCenter } = useNavbarSlot();
 
   const {
     messages,
@@ -41,6 +43,48 @@ export default function LearnPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (isConnected && topic) {
+      setNavbarCenter(
+        <div className="flex items-center gap-3">
+          <h1 className="text-sm font-semibold">{topic}</h1>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1">
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={endSession}
+                className="h-8 w-8 rounded-full cursor-pointer"
+              >
+                <NotebookPenIcon className="h-[18px] w-[18px]" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                ノート作成
+              </span>
+            </div>
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/dashboard")}
+                className="h-8 w-8 rounded-full cursor-pointer"
+              >
+                <LogOutIcon className="h-[18px] w-[18px]" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                会話を終了
+              </span>
+            </div>
+          </div>
+        </div>,
+      );
+    } else {
+      setNavbarCenter(null);
+    }
+    return () => setNavbarCenter(null);
+  }, [isConnected, topic, endSession, router, setNavbarCenter]);
+
   const handleStartLearning = () => {
     if (!topic.trim()) return;
     startLearning(topic.trim());
@@ -54,7 +98,7 @@ export default function LearnPage() {
 
   if (messages.length === 0 && !isConnected) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex h-full items-center justify-center p-4">
         <Card className="w-full max-w-lg shadow-lg">
           <CardHeader className="space-y-2 px-8 pt-10 pb-4">
             <CardTitle className="text-center text-2xl font-bold">
@@ -103,43 +147,11 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <div className="border-b px-6 py-3">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <h1 className="text-lg font-semibold">{topic}</h1>
-          <div className="flex items-center gap-2">
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={endSession}
-                className="h-9 w-9 rounded-full cursor-pointer"
-              >
-                <NotebookPenIcon className="h-4 w-4" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                ノート作成
-              </span>
-            </div>
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/dashboard")}
-                className="h-9 w-9 rounded-full cursor-pointer"
-              >
-                <LogOutIcon className="h-4 w-4" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                会話を終了
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="flex h-full flex-col">
       {error && (
-        <div className="px-6 py-2 text-sm text-destructive">{error}</div>
+        <div className="px-6 py-2 text-sm text-destructive shrink-0">
+          {error}
+        </div>
       )}
 
       <ScrollArea className="flex-1 px-6">
@@ -208,7 +220,7 @@ export default function LearnPage() {
       </ScrollArea>
 
       {!isSessionEnded && (
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 shrink-0">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               value={input}

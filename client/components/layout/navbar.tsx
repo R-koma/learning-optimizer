@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,15 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  LogOutIcon,
-  LayoutDashboardIcon,
-  PlusCircleIcon,
-  BookOpenIcon,
-  SunIcon,
-  MoonIcon,
-} from "lucide-react";
+import { LogOutIcon, SunIcon, MoonIcon } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useNavbarSlot } from "@/context/navbar-slot-context";
 
 interface NavbarProps {
   user: {
@@ -30,16 +23,10 @@ interface NavbarProps {
   };
 }
 
-const NAV_LINKS = [
-  { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboardIcon },
-  { href: "/learn", label: "新規学習", icon: PlusCircleIcon },
-  { href: "/notes", label: "学習履歴", icon: BookOpenIcon },
-];
-
 export function Navbar({ user }: NavbarProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { navbarCenter } = useNavbarSlot();
 
   const handleSignOut = async () => {
     await authClient.signOut({
@@ -52,41 +39,14 @@ export function Navbar({ user }: NavbarProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg px-6 py-3 flex items-center justify-between">
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-2 font-bold text-lg tracking-tight"
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <span className="text-sm font-bold text-primary-foreground">LO</span>
-        </div>
-        <span className="hidden sm:inline">Learning Optimizer</span>
-      </Link>
+    <nav className="relative bg-background/80 backdrop-blur-lg px-6 py-3 flex items-center shrink-0">
+      {/* Center slot: absolutely positioned for true centering */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto">{navbarCenter}</div>
+      </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-lg bg-muted/50 p-1">
-          {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-            const isActive =
-              pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 rounded-md mx-3 px-3 py-1.5 text-sm transition-all duration-150 ${
-                  isActive
-                    ? "bg-background font-medium text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden md:inline">{label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="mx-2 h-6 w-px bg-border" />
-
+      {/* Right actions */}
+      <div className="ml-auto flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"

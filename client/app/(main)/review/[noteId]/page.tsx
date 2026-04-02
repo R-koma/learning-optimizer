@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
+import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { fetchAPI } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default function ReviewPage({
   const [isReviewStarted, setIsReviewStarted] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { setNavbarCenter } = useNavbarSlot();
 
   const {
     messages,
@@ -72,6 +74,54 @@ export default function ReviewPage({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (isReviewStarted && note) {
+      setNavbarCenter(
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <RotateCcwIcon className="h-4 w-4 text-primary shrink-0" />
+            <h1 className="text-sm font-semibold">{note.topic}</h1>
+            <Badge variant="secondary" className="text-xs">
+              復習
+            </Badge>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1">
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={endSession}
+                className="h-8 w-8 rounded-full cursor-pointer"
+              >
+                <NotebookPenIcon className="h-[18px] w-[18px]" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                ノート作成
+              </span>
+            </div>
+            <div className="group relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/dashboard")}
+                className="h-8 w-8 rounded-full cursor-pointer"
+              >
+                <LogOutIcon className="h-[18px] w-[18px]" />
+              </Button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                会話を終了
+              </span>
+            </div>
+          </div>
+        </div>,
+      );
+    } else {
+      setNavbarCenter(null);
+    }
+    return () => setNavbarCenter(null);
+  }, [isReviewStarted, note, endSession, router, setNavbarCenter]);
+
   const handleStartReview = () => {
     if (!note) return;
     setIsReviewStarted(true);
@@ -86,7 +136,7 @@ export default function ReviewPage({
 
   if (loadError) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <p className="text-sm text-destructive">{loadError}</p>
       </div>
     );
@@ -94,7 +144,7 @@ export default function ReviewPage({
 
   if (!note) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <p className="text-sm text-muted-foreground">読み込み中...</p>
       </div>
     );
@@ -150,47 +200,11 @@ export default function ReviewPage({
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <div className="border-b px-6 py-3">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <RotateCcwIcon className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">{note.topic}</h1>
-            <Badge variant="secondary">復習</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={endSession}
-                className="h-9 w-9 rounded-full cursor-pointer"
-              >
-                <NotebookPenIcon className="h-4 w-4" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                ノート作成
-              </span>
-            </div>
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/dashboard")}
-                className="h-9 w-9 rounded-full cursor-pointer"
-              >
-                <LogOutIcon className="h-4 w-4" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                会話を終了
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="flex h-full flex-col">
       {error && (
-        <div className="px-6 py-2 text-sm text-destructive">{error}</div>
+        <div className="px-6 py-2 text-sm text-destructive shrink-0">
+          {error}
+        </div>
       )}
 
       <ScrollArea className="flex-1 px-6">
@@ -304,7 +318,7 @@ export default function ReviewPage({
       </ScrollArea>
 
       {!isSessionEnded && (
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 shrink-0">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               value={input}

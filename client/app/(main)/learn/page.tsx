@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -147,14 +146,12 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div>
       {error && (
-        <div className="px-6 py-2 text-sm text-destructive shrink-0">
-          {error}
-        </div>
+        <div className="px-6 py-2 text-sm text-destructive">{error}</div>
       )}
 
-      <ScrollArea className="flex-1 px-6">
+      <div className="px-6">
         <div className="mx-auto max-w-3xl space-y-4 py-6">
           {messages.map((msg, i) => (
             <div
@@ -217,10 +214,10 @@ export default function LearnPage() {
 
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {!isSessionEnded && (
-        <div className="px-6 py-4 shrink-0">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm px-6 py-4">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               value={input}

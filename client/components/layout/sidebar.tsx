@@ -28,7 +28,6 @@ export function Sidebar() {
         expanded ? "w-64" : "w-14"
       }`}
     >
-      {/* Header: collapsed = LO icon (hover → sidebar icon), expanded = logo + close button */}
       <div className="border-b">
         {expanded ? (
           <div className="flex items-center justify-between px-3 py-3">
@@ -56,11 +55,9 @@ export function Sidebar() {
             onClick={() => setExpanded(true)}
             aria-label="サイドバーを開く"
           >
-            {/* LO icon: shown by default, hidden on hover */}
             <div className="flex h-4 w-4 items-center justify-center group-hover:hidden">
               <span className="text-[10px] font-bold leading-none">LO</span>
             </div>
-            {/* Sidebar open icon: hidden by default, shown on hover */}
             <PanelLeftIcon className="hidden h-4 w-4 group-hover:block text-muted-foreground" />
           </button>
         )}

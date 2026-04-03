@@ -40,12 +40,10 @@ export function Navbar({ user }: NavbarProps) {
 
   return (
     <nav className="relative bg-background/80 backdrop-blur-lg px-6 py-3 flex items-center shrink-0">
-      {/* Center slot: absolutely positioned for true centering */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="pointer-events-auto">{navbarCenter}</div>
       </div>
 
-      {/* Right actions */}
       <div className="ml-auto flex items-center gap-2">
         <Button
           variant="ghost"

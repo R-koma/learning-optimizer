@@ -90,7 +90,6 @@ export function ChatInput({
 
   return (
     <div className="rounded-2xl border bg-muted/50 p-3">
-      {/* 添付ファイルのプレビュー */}
       {attachedFiles.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {attachedFiles.map(({ file, preview }, i) =>
@@ -139,7 +138,6 @@ export function ChatInput({
       />
 
       <div className="flex items-center justify-between pt-1">
-        {/* + ボタン */}
         <div className="relative">
           <Button
             type="button"
@@ -180,7 +178,6 @@ export function ChatInput({
           />
         </div>
 
-        {/* 右側: Mic / Send */}
         <div className="flex items-center">
           {hasContent ? (
             <Button

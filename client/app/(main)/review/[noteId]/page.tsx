@@ -93,7 +93,7 @@ export default function ReviewPage({
                 onClick={endSession}
                 className="h-8 w-8 rounded-full cursor-pointer"
               >
-                <NotebookPenIcon className="h-[18px] w-[18px]" />
+                <NotebookPenIcon className="h-4.5 w-4.5" />
               </Button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                 ノート作成
@@ -106,7 +106,7 @@ export default function ReviewPage({
                 onClick={() => router.push("/dashboard")}
                 className="h-8 w-8 rounded-full cursor-pointer"
               >
-                <LogOutIcon className="h-[18px] w-[18px]" />
+                <LogOutIcon className="h-4.5 w-4.5" />
               </Button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                 会話を終了
@@ -199,12 +199,12 @@ export default function ReviewPage({
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       {error && (
         <div className="px-6 py-2 text-sm text-destructive">{error}</div>
       )}
 
-      <div className="px-6">
+      <div className="flex-1 overflow-y-auto px-6">
         <div className="mx-auto max-w-3xl space-y-4 py-6">
           {messages.map((msg, i) => (
             <div
@@ -315,7 +315,7 @@ export default function ReviewPage({
       </div>
 
       {!isSessionEnded && (
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm px-6 py-4">
+        <div className="shrink-0 bg-background/95 backdrop-blur-sm px-6 py-4">
           <div className="mx-auto max-w-3xl">
             <ChatInput
               value={input}

@@ -36,10 +36,8 @@ export function Sidebar() {
               href="/dashboard"
               className="flex items-center gap-2 font-bold text-lg tracking-tight min-w-0"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0">
-                <span className="text-sm font-bold text-primary-foreground">
-                  LO
-                </span>
+              <div className="flex h-4 w-4 items-center justify-center shrink-0">
+                <span className="text-[10px] font-bold leading-none">LO</span>
               </div>
               <span>Learning Optimizer</span>
             </Link>
@@ -59,10 +57,8 @@ export function Sidebar() {
             aria-label="サイドバーを開く"
           >
             {/* LO icon: shown by default, hidden on hover */}
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary group-hover:hidden">
-              <span className="text-sm font-bold text-primary-foreground">
-                LO
-              </span>
+            <div className="flex h-4 w-4 items-center justify-center group-hover:hidden">
+              <span className="text-[10px] font-bold leading-none">LO</span>
             </div>
             {/* Sidebar open icon: hidden by default, shown on hover */}
             <PanelLeftIcon className="hidden h-4 w-4 group-hover:block text-muted-foreground" />

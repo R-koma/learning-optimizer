@@ -14,6 +14,7 @@ async def learning_dialogue(state: LearningState) -> dict:
     if session_type == "review":
         prompt = REVIEW_SYSTEM_PROMPT.format(
             topic=state["topic"],
+            content=state.get("note_content", ""),
             summary=state.get("note_summary", ""),
         )
     else:

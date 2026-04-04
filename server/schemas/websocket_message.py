@@ -46,6 +46,16 @@ class SessionEndedMessage(BaseModel):
     type: Literal["session_ended"] = "session_ended"
 
 
+class CancelLastMessageSuccess(BaseModel):
+    type: Literal["cancel_last_message_success"] = "cancel_last_message_success"
+    cancelled_content: str
+
+
+class CancelLastMessageError(BaseModel):
+    type: Literal["cancel_last_message_error"] = "cancel_last_message_error"
+    detail: str
+
+
 class ErrorMessage(BaseModel):
     type: Literal["error"] = "error"
     detail: str

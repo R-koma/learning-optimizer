@@ -13,3 +13,17 @@ async def insert(
     """
     record = await conn.fetchrow(query, str(dialogue_session_id), role, content, message_order)
     return dict(record)
+
+
+async def delete_last_n(conn: asyncpg.Connection, dialogue_session_id: UUID, n: int) -> int:
+    query = """--sql
+    DELETE FROM dialogue_messages
+    WHERE id IN (
+        SELECT id FROM dialogue_messages
+        WHERE dialogue_session_id = $1
+        ORDER BY message_order DESC
+        LIMIT $2
+    )
+    """
+    result = await conn.execute(query, str(dialogue_session_id), n)
+    return int(result.split()[-1])

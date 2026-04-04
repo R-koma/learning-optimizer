@@ -3,7 +3,7 @@ import uuid
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, RemoveMessage
 
 from api.websocket.auth import authenticate_websocket
 from core.database import get_pool
@@ -15,6 +15,8 @@ from repositories import (
 )
 from schemas.websocket_message import (
     AssistantMessage,
+    CancelLastMessageError,
+    CancelLastMessageSuccess,
     ErrorMessage,
     FeedbackGeneratedMessage,
     NoteGeneratedMessage,
@@ -39,6 +41,7 @@ async def websocket_chat(websocket: WebSocket):
     config = None
     message_order = 0
     session_type = "learning"
+    is_session_ended = False
 
     try:
         while True:
@@ -136,6 +139,7 @@ async def websocket_chat(websocket: WebSocket):
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
                 if result.get("should_generate_note"):
+                    is_session_ended = True
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
 
                     if session_type == "learning":
@@ -167,6 +171,46 @@ async def websocket_chat(websocket: WebSocket):
                     await websocket.send_text(SessionEndedMessage().model_dump_json())
                 else:
                     await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
+
+            elif data["type"] == "cancel_last_message":
+                if not config or not session_id:
+                    await websocket.send_text(CancelLastMessageError(detail="Session not started").model_dump_json())
+                    continue
+
+                if is_session_ended:
+                    await websocket.send_text(CancelLastMessageError(detail="Session already ended").model_dump_json())
+                    continue
+
+                if message_order < 4:
+                    await websocket.send_text(
+                        CancelLastMessageError(detail="No cancellable message").model_dump_json()
+                    )
+                    continue
+
+                state = await graph.aget_state(config)
+                messages_in_state = state.values["messages"]
+
+                last_ai = messages_in_state[-1]
+                last_human = messages_in_state[-2]
+                cancelled_content = last_human.content
+
+                await graph.aupdate_state(
+                    config,
+                    {
+                        "messages": [
+                            RemoveMessage(id=last_ai.id),
+                            RemoveMessage(id=last_human.id),
+                        ],
+                        "turn_count": state.values["turn_count"] - 1,
+                    },
+                )
+
+                await dialogue_message_repository.delete_last_n(pool, session_id, 2)
+                message_order -= 2
+
+                await websocket.send_text(
+                    CancelLastMessageSuccess(cancelled_content=cancelled_content).model_dump_json()
+                )
 
             elif data["type"] == "end_session":
                 if config:

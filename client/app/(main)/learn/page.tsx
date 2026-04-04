@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatInput } from "@/components/chat/chat-input";
-import { LogOutIcon, NotebookPenIcon } from "lucide-react";
+import { LogOutIcon, NotebookPenIcon, PencilIcon } from "lucide-react";
 
 export default function LearnPage() {
   const router = useRouter();
@@ -33,14 +33,22 @@ export default function LearnPage() {
     isSessionEnded,
     generatedNote,
     error,
+    editingMessage,
     startLearning,
     sendMessage,
     endSession,
+    cancelLastMessage,
+    clearEditingMessage,
   } = useChatWebSocket();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  if (editingMessage !== null) {
+    setInput(editingMessage);
+    clearEditingMessage();
+  }
 
   useEffect(() => {
     if (isConnected && topic) {
@@ -153,27 +161,47 @@ export default function LearnPage() {
 
       <div className="flex-1 overflow-y-auto px-6">
         <div className="mx-auto max-w-3xl space-y-4 py-6">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-            >
-              <Avatar className="mt-1 shrink-0">
-                <AvatarFallback>
-                  {msg.role === "user" ? "You" : "AI"}
-                </AvatarFallback>
-              </Avatar>
+          {messages.map((msg, i) => {
+            const isLastUserMessage =
+              msg.role === "user" &&
+              i === messages.length - 2 &&
+              messages.length >= 4 &&
+              messages[messages.length - 1].role === "assistant" &&
+              !isLoading &&
+              !isSessionEnded;
+
+            return (
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
+                key={i}
+                className={`group flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                {msg.content}
+                <Avatar className="mt-1 shrink-0">
+                  <AvatarFallback>
+                    {msg.role === "user" ? "You" : "AI"}
+                  </AvatarFallback>
+                </Avatar>
+                <div
+                  className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
+                >
+                  {msg.content}
+                </div>
+                {isLastUserMessage && (
+                  <button
+                    type="button"
+                    onClick={cancelLastMessage}
+                    className="mt-2 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
+                    title="編集して再送信"
+                  >
+                    <PencilIcon className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  </button>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {isLoading && (
             <div className="flex items-start gap-3">

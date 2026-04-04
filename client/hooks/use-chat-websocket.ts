@@ -15,6 +15,8 @@ interface ServerMessage {
     | "note_generated"
     | "feedback_generated"
     | "session_ended"
+    | "cancel_last_message_success"
+    | "cancel_last_message_error"
     | "error";
   content?: string;
   detail?: string;
@@ -24,6 +26,7 @@ interface ServerMessage {
   understanding_level?: string;
   strength?: string;
   improvements?: string;
+  cancelled_content?: string;
 }
 
 interface Feedback {
@@ -40,10 +43,13 @@ interface UseChatWebSocketReturn {
   generatedNote: { note_id: string; topic: string; summary: string } | null;
   feedback: Feedback | null;
   error: string | null;
+  editingMessage: string | null;
   startLearning: (topic: string) => void;
   startReview: (noteId: string) => void;
   sendMessage: (content: string) => void;
   endSession: () => void;
+  cancelLastMessage: () => void;
+  clearEditingMessage: () => void;
 }
 
 export function useChatWebSocket(): UseChatWebSocketReturn {
@@ -58,6 +64,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
   } | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(async () => {
@@ -108,6 +115,15 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
         case "session_ended":
           setIsSessionEnded(true);
           setIsLoading(false);
+          break;
+
+        case "cancel_last_message_success":
+          setMessages((prev) => prev.slice(0, -2));
+          setEditingMessage(data.cancelled_content ?? "");
+          break;
+
+        case "cancel_last_message_error":
+          setError(data.detail ?? "Cancel failed");
           break;
 
         case "error":
@@ -188,6 +204,16 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     setIsLoading(true);
   }, []);
 
+  const cancelLastMessage = useCallback(() => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    wsRef.current.send(JSON.stringify({ type: "cancel_last_message" }));
+  }, []);
+
+  const clearEditingMessage = useCallback(() => {
+    setEditingMessage(null);
+  }, []);
+
   return {
     messages,
     isConnected,
@@ -196,9 +222,12 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     generatedNote,
     feedback,
     error,
+    editingMessage,
     startLearning,
     startReview,
     sendMessage,
     endSession,
+    cancelLastMessage,
+    clearEditingMessage,
   };
 }

@@ -1,11 +1,6 @@
-import os
-
 import asyncpg
-from dotenv import load_dotenv
+from config import DATABASE_URL
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
 _pool: asyncpg.Pool | None = None
 
 

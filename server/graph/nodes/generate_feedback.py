@@ -3,26 +3,37 @@ from langchain_core.messages import SystemMessage
 from core.database import get_pool
 from graph.llm import llm_structured
 from graph.model import FeedbackOutput
-from graph.prompts import GENERATE_FEEDBACK_PROMPT
+from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT
 from graph.state import LearningState
 from repositories import feedback_repository, note_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
 
 async def generate_feedback(state: LearningState) -> dict:
-    """ノート内容から理解度評価を生成しDBに保存"""
+    """会話履歴を分析し、理解度評価を生成してDBに保存"""
 
     pool = await get_pool()
+    topic = state["topic"]
+
+    conversation_history = "\n".join(
+        f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"]
+    )
+    analyze_prompt = ANALYZE_RESPONSE_PROMPT.format(
+        topic=topic,
+        conversation_history=conversation_history,
+    )
+    analysis_result = await llm_structured.ainvoke([SystemMessage(content=analyze_prompt)])
+    analysis = analysis_result.content
+
     note_id = state["note_id"]
-
     note = await note_repository.find_by_id(pool, note_id, state["user_id"])
-
     note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
+    feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
     structured_llm = llm_structured.with_structured_output(FeedbackOutput)
     feedback_data = await structured_llm.ainvoke(
         [
-            SystemMessage(content=GENERATE_FEEDBACK_PROMPT),
+            SystemMessage(content=feedback_prompt),
             {"role": "user", "content": note_text},
         ]
     )

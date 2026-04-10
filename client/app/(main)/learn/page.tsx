@@ -17,7 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatInput } from "@/components/chat/chat-input";
-import { LogOutIcon, NotebookPenIcon, PencilIcon } from "lucide-react";
+import {
+  Loader2Icon,
+  LogOutIcon,
+  NotebookPenIcon,
+  PencilIcon,
+} from "lucide-react";
 
 export default function LearnPage() {
   const router = useRouter();
@@ -31,6 +36,7 @@ export default function LearnPage() {
     isConnected,
     isLoading,
     isSessionEnded,
+    isGeneratingNote,
     generatedNote,
     error,
     editingMessage,
@@ -203,7 +209,7 @@ export default function LearnPage() {
             );
           })}
 
-          {isLoading && (
+          {isLoading && !isGeneratingNote && (
             <div className="flex items-start gap-3">
               <Avatar className="mt-1 shrink-0">
                 <AvatarFallback>AI</AvatarFallback>
@@ -253,6 +259,15 @@ export default function LearnPage() {
               onSend={handleSendMessage}
               isLoading={isLoading}
             />
+          </div>
+        </div>
+      )}
+
+      {isGeneratingNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+          <div className="flex flex-col items-center gap-4 rounded-xl border bg-background px-8 py-6 shadow-lg">
+            <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-base font-medium">ノート作成中...</p>
           </div>
         </div>
       )}

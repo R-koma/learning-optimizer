@@ -40,6 +40,7 @@ interface UseChatWebSocketReturn {
   isConnected: boolean;
   isLoading: boolean;
   isSessionEnded: boolean;
+  isGeneratingNote: boolean;
   generatedNote: { note_id: string; topic: string; summary: string } | null;
   feedback: Feedback | null;
   error: string | null;
@@ -57,6 +58,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSessionEnded, setIsSessionEnded] = useState(false);
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [generatedNote, setGeneratedNote] = useState<{
     note_id: string;
     topic: string;
@@ -102,6 +104,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
             topic: data.topic ?? "",
             summary: data.summary ?? "",
           });
+          setIsGeneratingNote(false);
           break;
 
         case "feedback_generated":
@@ -115,6 +118,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
         case "session_ended":
           setIsSessionEnded(true);
           setIsLoading(false);
+          setIsGeneratingNote(false);
           break;
 
         case "cancel_last_message_success":
@@ -129,6 +133,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
         case "error":
           setError(data.detail ?? "Unknown error");
           setIsLoading(false);
+          setIsGeneratingNote(false);
           break;
       }
     };
@@ -202,6 +207,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
 
     wsRef.current.send(JSON.stringify({ type: "end_session" }));
     setIsLoading(true);
+    setIsGeneratingNote(true);
   }, []);
 
   const cancelLastMessage = useCallback(() => {
@@ -219,6 +225,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     isConnected,
     isLoading,
     isSessionEnded,
+    isGeneratingNote,
     generatedNote,
     feedback,
     error,

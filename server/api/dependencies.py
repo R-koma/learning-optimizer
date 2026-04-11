@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 import asyncpg
@@ -27,10 +28,12 @@ async def get_current_user(credentials: BearerCredentials) -> str:
         raise HTTPException(status_code=401, detail=str(e)) from e
 
 
-async def get_db():
-    """DBコネクションプールを返す"""
-    return await get_pool()
+async def get_db() -> AsyncGenerator[asyncpg.Connection]:
+    """プールからコネクションを取得してリクエスト単位で管理する"""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        yield conn
 
 
 CurrentUser = Annotated[str, Depends(get_current_user)]
-DB = Annotated[asyncpg.Pool, Depends(get_db)]
+DB = Annotated[asyncpg.Connection, Depends(get_db)]

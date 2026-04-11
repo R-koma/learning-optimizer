@@ -69,21 +69,20 @@ async def update(
     return dict(record) if record else None
 
 
-async def delete(pool: asyncpg.Pool, note_id: UUID, user_id: str) -> bool:
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            await conn.execute(
-                "DELETE FROM feedbacks WHERE note_id = $1",
-                note_id,
-            )
-            await conn.execute(
-                "DELETE FROM review_schedules WHERE note_id = $1",
-                note_id,
-            )
-            result = await conn.execute(
-                "DELETE FROM notes WHERE id = $1 AND user_id = $2",
-                note_id,
-                user_id,
-            )
+async def delete(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> bool:
+    async with conn.transaction():
+        await conn.execute(
+            "DELETE FROM feedbacks WHERE note_id = $1",
+            note_id,
+        )
+        await conn.execute(
+            "DELETE FROM review_schedules WHERE note_id = $1",
+            note_id,
+        )
+        result = await conn.execute(
+            "DELETE FROM notes WHERE id = $1 AND user_id = $2",
+            note_id,
+            user_id,
+        )
     deleted_count = int(result.split(" ")[1])
     return deleted_count > 0

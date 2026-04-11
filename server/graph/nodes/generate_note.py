@@ -29,14 +29,15 @@ async def generate_note(state: LearningState) -> dict:
     note_id = uuid.uuid4()
     pool = await get_pool()
 
-    await note_repository.insert(
-        conn=pool,
-        note_id=note_id,
-        user_id=state["user_id"],
-        topic=note_data.topic,
-        content=note_data.content,
-        summary=note_data.summary,
-    )
+    async with pool.acquire() as conn:
+        await note_repository.insert(
+            conn=conn,
+            note_id=note_id,
+            user_id=state["user_id"],
+            topic=note_data.topic,
+            content=note_data.content,
+            summary=note_data.summary,
+        )
 
     return {
         "note_id": note_id,

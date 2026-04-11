@@ -26,43 +26,46 @@ async def generate_feedback(state: LearningState) -> dict:
     analysis = analysis_result.content
 
     note_id = state["note_id"]
-    note = await note_repository.find_by_id(pool, note_id, state["user_id"])
-    note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
     feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
     structured_llm = llm_structured.with_structured_output(FeedbackOutput)
-    feedback_data = await structured_llm.ainvoke(
-        [
-            SystemMessage(content=feedback_prompt),
-            {"role": "user", "content": note_text},
-        ]
-    )
 
-    await feedback_repository.insert(
-        conn=pool,
-        note_id=note_id,
-        dialogue_session_id=state["dialogue_session_id"],
-        understanding_level=feedback_data.understanding_level,
-        strength="\n".join(feedback_data.strength),
-        improvements="\n".join(feedback_data.improvement_points),
-    )
+    async with pool.acquire() as conn:
+        note = await note_repository.find_by_id(conn, note_id, state["user_id"])
+        note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
-    existing_schedule = await review_schedule_repository.find_by_note_id(conn=pool, note_id=note_id)
-    current_review_count = existing_schedule["review_count"] if existing_schedule else 0
-
-    next_review_at = calculate_next_review(
-        current_review_count=current_review_count,
-        understanding_level=feedback_data.understanding_level,
-    )
-
-    if existing_schedule:
-        await review_schedule_repository.update_schedule(
-            conn=pool,
-            note_id=note_id,
-            review_count=current_review_count + 1,
-            next_review_at=next_review_at,
+        feedback_data = await structured_llm.ainvoke(
+            [
+                SystemMessage(content=feedback_prompt),
+                {"role": "user", "content": note_text},
+            ]
         )
-    else:
-        await review_schedule_repository.insert(conn=pool, note_id=note_id, next_review_at=next_review_at)
+
+        await feedback_repository.insert(
+            conn=conn,
+            note_id=note_id,
+            dialogue_session_id=state["dialogue_session_id"],
+            understanding_level=feedback_data.understanding_level,
+            strength="\n".join(feedback_data.strength),
+            improvements="\n".join(feedback_data.improvement_points),
+        )
+
+        existing_schedule = await review_schedule_repository.find_by_note_id(conn=conn, note_id=note_id)
+        current_review_count = existing_schedule["review_count"] if existing_schedule else 0
+
+        next_review_at = calculate_next_review(
+            current_review_count=current_review_count,
+            understanding_level=feedback_data.understanding_level,
+        )
+
+        if existing_schedule:
+            await review_schedule_repository.update_schedule(
+                conn=conn,
+                note_id=note_id,
+                review_count=current_review_count + 1,
+                next_review_at=next_review_at,
+            )
+        else:
+            await review_schedule_repository.insert(conn=conn, note_id=note_id, next_review_at=next_review_at)
 
     return {}

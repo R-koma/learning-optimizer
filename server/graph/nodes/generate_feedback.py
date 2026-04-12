@@ -53,10 +53,7 @@ async def generate_feedback(state: LearningState) -> dict:
         existing_schedule = await review_schedule_repository.find_by_note_id(conn=conn, note_id=note_id)
         current_review_count = existing_schedule["review_count"] if existing_schedule else 0
 
-        next_review_at = calculate_next_review(
-            current_review_count=current_review_count,
-            understanding_level=feedback_data.understanding_level,
-        )
+        next_review_at = calculate_next_review(current_review_count=current_review_count)
 
         if existing_schedule:
             await review_schedule_repository.update_schedule(

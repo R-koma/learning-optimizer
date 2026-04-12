@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -28,4 +27,4 @@ class ReviewScheduleListResponse(BaseModel):
 
 
 class ReviewScheduleUpdate(BaseModel):
-    understanding_level: Literal["high", "medium", "low"]
+    pass

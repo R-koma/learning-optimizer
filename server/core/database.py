@@ -12,7 +12,7 @@ async def get_pool() -> asyncpg.Pool:
     return _pool
 
 
-async def close_pool():
+async def close_pool() -> None:
     global _pool
     if _pool:
         await _pool.close()

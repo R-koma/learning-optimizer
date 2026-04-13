@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.messages import SystemMessage
 
 from graph.llm import llm
@@ -7,7 +9,7 @@ from graph.state import LearningState
 LEARNING_END_SIGNAL = "LEARNING_END"
 
 
-async def learning_dialogue(state: LearningState) -> dict:
+async def learning_dialogue(state: LearningState) -> dict[str, Any]:
     """対話継続: ファシリテーターとして説明を促す（評価はしない）"""
     session_type = state.get("session_type", "learning")
     topic = state["topic"]
@@ -19,11 +21,12 @@ async def learning_dialogue(state: LearningState) -> dict:
             summary=state.get("note_summary", ""),
         )
         system_message = SystemMessage(content=prompt)
-        all_messages = [system_message] + state["messages"]
+        all_messages = [system_message, *state["messages"]]
         response = await llm.ainvoke(all_messages)
 
         turn_count = state["turn_count"] + 1
-        should_generate_note = response.content.strip() == LEARNING_END_SIGNAL
+        content = response.content
+        should_generate_note = isinstance(content, str) and content.strip() == LEARNING_END_SIGNAL
 
         return {
             "messages": [response],

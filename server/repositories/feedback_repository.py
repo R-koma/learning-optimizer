@@ -1,9 +1,10 @@
+from typing import Any
 from uuid import UUID
 
 import asyncpg
 
 
-async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> list[dict]:
+async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT f.id, f.note_id, f.dialogue_session_id, f.understanding_level, f.strength, f.improvements, f.created_at
     FROM feedbacks f
@@ -23,7 +24,7 @@ async def insert(
     understanding_level: str,
     strength: str,
     improvements: str,
-) -> dict:
+) -> dict[str, Any]:
     query = """--sql
     INSERT INTO feedbacks (id, note_id, dialogue_session_id, understanding_level, strength, improvements)
     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)

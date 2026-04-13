@@ -21,7 +21,7 @@ async def authenticate_websocket(websocket: WebSocket) -> str:
 
     try:
         payload = verify_jwt(data["token"])
-        user_id = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if not user_id:
             await websocket.close(code=4003, reason="Invalid token")
             raise ValueError("Invalid token")

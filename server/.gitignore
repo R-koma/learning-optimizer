@@ -43,3 +43,4 @@ htmlcov/
 .DS_Store
 
 .ruff_cache/
+MYPY_EVALUATION.md

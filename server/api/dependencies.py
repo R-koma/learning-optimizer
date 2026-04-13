@@ -20,7 +20,7 @@ async def get_current_user(credentials: BearerCredentials) -> str:
 
     try:
         payload = verify_jwt(token)
-        user_id = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
         return user_id

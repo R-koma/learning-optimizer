@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.messages import SystemMessage
 
 from core.database import get_pool
@@ -9,7 +11,7 @@ from repositories import feedback_repository, note_repository, review_schedule_r
 from services.review_scheduler import calculate_next_review
 
 
-async def generate_feedback(state: LearningState) -> dict:
+async def generate_feedback(state: LearningState) -> dict[str, Any]:
     """会話履歴を分析し、理解度評価を生成してDBに保存"""
 
     pool = await get_pool()
@@ -32,6 +34,8 @@ async def generate_feedback(state: LearningState) -> dict:
 
     async with pool.acquire() as conn:
         note = await note_repository.find_by_id(conn, note_id, state["user_id"])
+        if not note:
+            raise RuntimeError(f"Note {note_id} not found")
         note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
         feedback_data = await structured_llm.ainvoke(
@@ -40,6 +44,9 @@ async def generate_feedback(state: LearningState) -> dict:
                 {"role": "user", "content": note_text},
             ]
         )
+
+        if not isinstance(feedback_data, FeedbackOutput):
+            raise RuntimeError("LLM did not return structured FeedbackOutput")
 
         await feedback_repository.insert(
             conn=conn,
@@ -51,7 +58,7 @@ async def generate_feedback(state: LearningState) -> dict:
         )
 
         existing_schedule = await review_schedule_repository.find_by_note_id(conn=conn, note_id=note_id)
-        current_review_count = existing_schedule["review_count"] if existing_schedule else 0
+        current_review_count: int = existing_schedule["review_count"] if existing_schedule else 0
 
         next_review_at = calculate_next_review(current_review_count=current_review_count)
 

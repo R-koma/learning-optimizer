@@ -19,6 +19,17 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
 
+  server-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --dev
+      - run: uv run mypy .
+
   server-test:
     runs-on: ubuntu-latest
     defaults:

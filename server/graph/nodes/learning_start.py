@@ -1,4 +1,5 @@
-# 旧: from graph.prompts import DEEP_DIVE_SYSTEM_PROMPT, REVIEW_SYSTEM_PROMPT
+from typing import Any
+
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from graph.llm import llm
@@ -6,7 +7,7 @@ from graph.prompts import LEARNING_START_PROMPT, REVIEW_SYSTEM_PROMPT
 from graph.state import LearningState
 
 
-async def learning_start(state: LearningState) -> dict:
+async def learning_start(state: LearningState) -> dict[str, Any]:
     """学習フローの開始：トピック抽出 + 深掘りLLMの初期応答"""
     topic = state["topic"]
     session_type = state.get("session_type", "learning")

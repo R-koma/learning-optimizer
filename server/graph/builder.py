@@ -1,3 +1,5 @@
+from typing import Any
+
 from langgraph.graph import END, StateGraph
 
 from graph.nodes.generate_feedback import generate_feedback
@@ -16,7 +18,7 @@ def route_after_dialogue(state: LearningState) -> str:
     return "generate_note"
 
 
-def build_learning_graph(checkpointer):
+def build_learning_graph(checkpointer: Any) -> Any:
     """LangGraphのStateGraphを構築してコンパイルする"""
     graph = StateGraph(LearningState)
 

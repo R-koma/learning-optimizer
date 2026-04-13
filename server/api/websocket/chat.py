@@ -1,5 +1,6 @@
 import json
 import uuid
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -27,7 +28,7 @@ router = APIRouter()
 
 
 @router.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket):
+async def websocket_chat(websocket: WebSocket) -> None:
     await websocket.accept()
     try:
         user_id = await authenticate_websocket(websocket)
@@ -37,11 +38,11 @@ async def websocket_chat(websocket: WebSocket):
     graph = websocket.app.state.graph
     pool = await get_pool()
 
-    session_id = None
-    config = None
-    message_order = 0
-    session_type = "learning"
-    is_session_ended = False
+    session_id: UUID | None = None
+    config: dict[str, Any] | None = None
+    message_order: int = 0
+    session_type: str = "learning"
+    is_session_ended: bool = False
 
     try:
         while True:
@@ -68,12 +69,12 @@ async def websocket_chat(websocket: WebSocket):
                     "should_generate_note": False,
                     "session_type": "learning",
                 }
-                result = await graph.ainvoke(initial_state, config=config)
+                result: dict[str, Any] = await graph.ainvoke(initial_state, config=config)
 
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "user", data["topic"], message_order)
 
-                ai_msg = result["messages"][-1].content
+                ai_msg: str = str(result["messages"][-1].content)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
@@ -114,14 +115,14 @@ async def websocket_chat(websocket: WebSocket):
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "user", note["topic"], message_order)
 
-                ai_msg = result["messages"][-1].content
+                ai_msg = str(result["messages"][-1].content)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
                 await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
 
             elif data["type"] == "user_message":
-                if not config:
+                if not config or not session_id:
                     await websocket.send_text(ErrorMessage(detail="Session not started").model_dump_json())
                     continue
 
@@ -134,7 +135,7 @@ async def websocket_chat(websocket: WebSocket):
                 )
                 result = await graph.ainvoke(None, config=config)
 
-                ai_msg = result["messages"][-1].content
+                ai_msg = str(result["messages"][-1].content)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
@@ -143,20 +144,21 @@ async def websocket_chat(websocket: WebSocket):
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
 
                     if session_type == "learning":
-                        note_id = result.get("note_id")
-                        if note_id:
-                            await dialogue_session_repository.update_note_id(pool, session_id, note_id)
-                            note = await note_repository.find_by_id(pool, note_id, user_id)
-                            await websocket.send_text(
-                                NoteGeneratedMessage(
-                                    note_id=str(note_id),
-                                    topic=note["topic"],
-                                    summary=note["summary"],
-                                ).model_dump_json()
-                            )
+                        generated_note_id: UUID | None = result.get("note_id")
+                        if generated_note_id is not None:
+                            await dialogue_session_repository.update_note_id(pool, session_id, generated_note_id)
+                            note = await note_repository.find_by_id(pool, generated_note_id, user_id)
+                            if note:
+                                await websocket.send_text(
+                                    NoteGeneratedMessage(
+                                        note_id=generated_note_id,
+                                        topic=note["topic"],
+                                        summary=note["summary"] or "",
+                                    ).model_dump_json()
+                                )
                     else:
-                        review_note_id = result.get("note_id")
-                        if review_note_id:
+                        review_note_id: UUID | None = result.get("note_id")
+                        if review_note_id is not None:
                             feedbacks = await feedback_repository.find_by_note_id(pool, review_note_id, user_id)
                             if feedbacks:
                                 latest = feedbacks[-1]
@@ -192,7 +194,7 @@ async def websocket_chat(websocket: WebSocket):
 
                 last_ai = messages_in_state[-1]
                 last_human = messages_in_state[-2]
-                cancelled_content = last_human.content
+                cancelled_content: str = str(last_human.content)
 
                 await graph.aupdate_state(
                     config,
@@ -221,22 +223,23 @@ async def websocket_chat(websocket: WebSocket):
                         await dialogue_session_repository.update_status(pool, session_id, "completed")
 
                     if session_type == "learning":
-                        note_id = result.get("note_id")
-                        if note_id:
+                        end_note_id: UUID | None = result.get("note_id")
+                        if end_note_id is not None:
                             if session_id:
-                                await dialogue_session_repository.update_note_id(pool, session_id, note_id)
-                            note = await note_repository.find_by_id(pool, note_id, user_id)
-                            await websocket.send_text(
-                                NoteGeneratedMessage(
-                                    note_id=str(note_id),
-                                    topic=note["topic"],
-                                    summary=note["summary"],
-                                ).model_dump_json()
-                            )
+                                await dialogue_session_repository.update_note_id(pool, session_id, end_note_id)
+                            note = await note_repository.find_by_id(pool, end_note_id, user_id)
+                            if note:
+                                await websocket.send_text(
+                                    NoteGeneratedMessage(
+                                        note_id=end_note_id,
+                                        topic=note["topic"],
+                                        summary=note["summary"] or "",
+                                    ).model_dump_json()
+                                )
                     else:
-                        review_note_id = result.get("note_id")
-                        if review_note_id:
-                            feedbacks = await feedback_repository.find_by_note_id(pool, review_note_id, user_id)
+                        end_review_note_id: UUID | None = result.get("note_id")
+                        if end_review_note_id is not None:
+                            feedbacks = await feedback_repository.find_by_note_id(pool, end_review_note_id, user_id)
                             if feedbacks:
                                 latest = feedbacks[-1]
                                 await websocket.send_text(

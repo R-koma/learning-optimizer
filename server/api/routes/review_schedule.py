@@ -8,6 +8,7 @@ from schemas.review_schedule import (
     ReviewScheduleListResponse,
     ReviewScheduleResponse,
     ReviewScheduleUpdate,
+    ReviewScheduleWithNoteResponse,
 )
 from services.review_scheduler import calculate_next_review
 
@@ -15,13 +16,15 @@ router = APIRouter(prefix="/api/review-schedules", tags=["Review Schedules"])
 
 
 @router.get("", response_model=ReviewScheduleListResponse)
-async def list_pending_reviews(current_user_id: CurrentUser, db: DB):
+async def list_pending_reviews(current_user_id: CurrentUser, db: DB) -> ReviewScheduleListResponse:
     records = await review_schedule_repository.find_pending_by_user_id(db, current_user_id)
-    return ReviewScheduleListResponse(review_schedules=records)
+    return ReviewScheduleListResponse(review_schedules=[ReviewScheduleWithNoteResponse(**r) for r in records])
 
 
 @router.patch("/{schedule_id}", response_model=ReviewScheduleResponse)
-async def complete_review(schedule_id: UUID, update_data: ReviewScheduleUpdate, current_user_id: CurrentUser, db: DB):
+async def complete_review(
+    schedule_id: UUID, update_data: ReviewScheduleUpdate, current_user_id: CurrentUser, db: DB
+) -> ReviewScheduleResponse:
     pending_schedules = await review_schedule_repository.find_pending_by_user_id(db, current_user_id)
     target_schedule = next((s for s in pending_schedules if s["id"] == schedule_id), None)
 
@@ -34,4 +37,7 @@ async def complete_review(schedule_id: UUID, update_data: ReviewScheduleUpdate, 
         db, schedule_id=schedule_id, user_id=current_user_id, next_review_at=next_review_at
     )
 
-    return updated_record
+    if not updated_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review schedule not found")
+
+    return ReviewScheduleResponse(**updated_record)

@@ -1,5 +1,7 @@
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +14,7 @@ from graph.checkpointer import get_checkpointer
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await get_pool()
 
     async with get_checkpointer() as checkpointer:
@@ -41,7 +43,9 @@ app.include_router(chat.router)
 
 
 @app.get("/api/health")
-async def health_check():
+async def health_check() -> dict[str, Any]:
     pool = await get_pool()
     row = await pool.fetchrow("SELECT 1 as check")
+    if row is None:
+        return {"status": "error", "db": False}
     return {"status": "ok", "db": row["check"] == 1}

@@ -19,12 +19,12 @@ class TestCalculateNextReview:
         [(i, d) for i, d in enumerate(INTERVALS)],
         ids=[f"interval-{d}d" for d in INTERVALS],
     )
-    def test_fixed_intervals(self, review_count, days):
+    def test_fixed_intervals(self, review_count: int, days: int) -> None:
         """review_count に対応する固定インターバルを検証"""
         result = calculate_next_review(current_review_count=review_count)
         assert result == BASE_DT + timedelta(days=days)
 
-    def test_clamp_at_max(self):
+    def test_clamp_at_max(self) -> None:
         """review_count が最大インデックスを超えた場合、60日後にクランプされる"""
         result = calculate_next_review(current_review_count=99)
         assert result == BASE_DT + timedelta(days=60)

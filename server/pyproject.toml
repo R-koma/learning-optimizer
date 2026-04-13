@@ -24,6 +24,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "freezegun>=1.5.0",
+    "mypy>=1.20.1",
     "pytest>=8.3.0",
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.0.0",
@@ -50,3 +51,44 @@ select = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+
+warn_unreachable = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",    
+]
+
+local_partial_types = true
+
+plugins = ["pydantic.mypy"]
+exclude = ["migrations/"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "asyncpg",
+    "asyncpg.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "langgraph.*",
+    "langchain.*",
+    "langchain_openai.*",
+    "langchain_core.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["freezegun.*"]
+ignore_missing_imports = true

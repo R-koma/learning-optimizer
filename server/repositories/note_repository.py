@@ -1,9 +1,10 @@
+from typing import Any
 from uuid import UUID
 
 import asyncpg
 
 
-async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict]:
+async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status, n.created_at, n.updated_at,
     COALESCE(rs.review_count, 0) AS review_count
@@ -17,7 +18,7 @@ async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict]:
     return [dict(r) for r in records]
 
 
-async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> dict | None:
+async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
     query = """--sql
     SELECT id, user_id, topic, content, summary, status, created_at, updated_at
     FROM notes
@@ -35,7 +36,7 @@ async def insert(
     topic: str,
     content: str,
     summary: str,
-) -> dict:
+) -> dict[str, Any]:
     query = """--sql
         INSERT INTO notes (id, user_id, topic, content, summary, status)
         VALUES ($1, $2, $3, $4, $5, 'active')
@@ -53,7 +54,7 @@ async def update(
     content: str | None = None,
     summary: str | None = None,
     status: str | None = None,
-) -> dict | None:
+) -> dict[str, Any] | None:
     query = """--sql
     UPDATE notes
     SET topic = COALESCE($3, topic),

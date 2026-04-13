@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from langchain_core.messages import SystemMessage
 
@@ -10,7 +11,7 @@ from graph.state import LearningState
 from repositories import note_repository
 
 
-async def generate_note(state: LearningState) -> dict:
+async def generate_note(state: LearningState) -> dict[str, Any]:
     """会話内容からノートを自動生成してDBに保存"""
 
     conversation_text = ""
@@ -25,6 +26,9 @@ async def generate_note(state: LearningState) -> dict:
             {"role": "user", "content": conversation_text},
         ]
     )
+
+    if not isinstance(note_data, NoteContent):
+        raise RuntimeError("LLM did not return structured NoteContent output")
 
     note_id = uuid.uuid4()
     pool = await get_pool()

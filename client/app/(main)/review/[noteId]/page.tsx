@@ -199,7 +199,11 @@ export default function ReviewPage({
           </ul>
         </div>
 
-        <Button onClick={handleStartReview} size="lg" className="w-full gap-2">
+        <Button
+          onClick={handleStartReview}
+          size="lg"
+          className="w-full gap-2 cursor-pointer"
+        >
           <RotateCcwIcon className="h-5 w-5" />
           復習を開始する
         </Button>
@@ -229,11 +233,6 @@ export default function ReviewPage({
                 key={i}
                 className={`group flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                <Avatar className="mt-1 shrink-0">
-                  <AvatarFallback>
-                    {msg.role === "user" ? "You" : "AI"}
-                  </AvatarFallback>
-                </Avatar>
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
                     msg.role === "user"
@@ -256,17 +255,6 @@ export default function ReviewPage({
               </div>
             );
           })}
-
-          {isLoading && (
-            <div className="flex items-start gap-3">
-              <Avatar className="mt-1 shrink-0">
-                <AvatarFallback>AI</AvatarFallback>
-              </Avatar>
-              <div className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-                考え中...
-              </div>
-            </div>
-          )}
 
           {feedback && (
             <div className="mx-auto max-w-md space-y-4 rounded-xl border bg-card p-6">

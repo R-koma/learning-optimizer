@@ -104,10 +104,7 @@ export default async function NotePage({
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="rounded-xl border bg-card p-6">
-              <div className="mb-4 flex items-center gap-2">
+              <div className="my-4 flex items-center gap-2">
                 <FileTextIcon className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   内容

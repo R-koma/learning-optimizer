@@ -22,3 +22,8 @@ ehthumbs.db
 
 .ruff_cache/
 postgres_data/
+
+# =========================
+# ローカル管理ドキュメント
+# =========================
+TEST_CHECKLIST.md

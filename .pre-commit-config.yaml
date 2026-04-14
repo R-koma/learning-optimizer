@@ -10,6 +10,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: mypy
+        name: mypy
+        entry: bash -c 'cd server && uv run mypy .'
+        language: system
+        files: ^server/.*\.py$
+        pass_filenames: false
+
       - id: prettier
         name: prettier
         entry: bash -c 'cd client && npx prettier --write "${@/client\//}"' --

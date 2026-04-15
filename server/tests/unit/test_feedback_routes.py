@@ -1,0 +1,46 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+from api.routes.feedback import list_feedbacks
+
+_USER_ID = "user-123"
+
+
+def _make_feedback_record() -> dict[str, object]:
+    return {
+        "id": uuid4(),
+        "note_id": uuid4(),
+        "dialogue_session_id": uuid4(),
+        "understanding_level": "high",
+        "strength": "基本概念を正確に説明できた",
+        "improvements": "応用例をもっと挙げられるとよい",
+        "created_at": datetime(2026, 1, 1, tzinfo=UTC),
+    }
+
+
+class TestListFeedbacks:
+    async def test_returns_feedback_list(self) -> None:
+        note_id = uuid4()
+        records = [_make_feedback_record(), _make_feedback_record()]
+        mock_db = MagicMock()
+
+        with patch(
+            "api.routes.feedback.feedback_repository.find_by_note_id",
+            new=AsyncMock(return_value=records),
+        ):
+            result = await list_feedbacks(note_id=note_id, current_user_id=_USER_ID, db=mock_db)
+
+        assert len(result.feedbacks) == 2
+
+    async def test_returns_empty_list_when_no_feedbacks(self) -> None:
+        note_id = uuid4()
+        mock_db = MagicMock()
+
+        with patch(
+            "api.routes.feedback.feedback_repository.find_by_note_id",
+            new=AsyncMock(return_value=[]),
+        ):
+            result = await list_feedbacks(note_id=note_id, current_user_id=_USER_ID, db=mock_db)
+
+        assert result.feedbacks == []

@@ -93,3 +93,13 @@ jobs:
           cache-dependency-path: client/package-lock.json
       - run: npm ci
       - run: npx vitest run
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

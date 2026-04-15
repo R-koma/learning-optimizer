@@ -1,0 +1,12 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+[extend]
+# Use the default gitleaks ruleset as a base
+useDefault = true
+
+[[allowlists]]
+description = "CI test fixtures — dummy secrets used only for testing"
+paths = [
+  '''.github/workflows/ci\.yml''',
+]

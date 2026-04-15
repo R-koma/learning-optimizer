@@ -1,92 +1,153 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## プロジェクト概要
 
 Learning Optimizer は「プロテジェ効果」（教えることで学ぶ）を活用した AI 学習アプリケーション。ユーザーが LLM エージェントとの対話を通じて学習し、自動でノート・フィードバック・復習スケジュールが生成される。
 
-## 開発コマンド
+## ローカル開発環境のセットアップ
 
-### フロントエンド（client/）
 ```bash
-cd client
-npm install
-npm run dev
-npm run build
-npm run lint 
+# DB のみ起動（推奨）
+make dev-db          # docker compose up -d
+
+# サーバーとクライアントを別ターミナルで起動
+make dev-server      # cd server && uv run fastapi dev main.py
+make dev-client      # cd client && npm run dev
+
+# フルスタックを Docker で起動
+docker compose up
 ```
+
+初回セットアップ:
+```bash
+cd server && uv sync
+uv run alembic upgrade head   # BetterAuth テーブルを先に適用してから実行すること（後述）
+cd ../client && npm install
+```
+
+## 開発コマンド
 
 ### バックエンド（server/）
 ```bash
-cd server
-uv sync
-uv run fastapi dev main.py
-uv run alembic upgrade head
-uv run alembic revision --autogenerate -m "description" 
-uv run ruff check . 
-uv run ruff format .
+uv run fastapi dev main.py           # 開発サーバー起動
+uv run alembic upgrade head          # マイグレーション適用
+uv run alembic revision --autogenerate -m "description"  # マイグレーション生成
+uv run ruff check . --fix            # Lint（自動修正あり）
+uv run ruff format .                 # フォーマット
+uv run mypy .                        # 型チェック
 ```
 
-### データベース
-PostgreSQL が必要。デフォルト接続: `postgresql://dev:dev@localhost:5432/learning_optimizer`
+### フロントエンド（client/）
+```bash
+npm run dev          # 開発サーバー起動
+npm run build        # ビルド
+npm run lint         # ESLint
+npx tsc --noEmit     # 型チェック
+npx prettier --write # フォーマット（pre-commit で自動実行）
+```
+
+### ADR（アーキテクチャ決定記録）
+```bash
+make adr name=your-decision-title    # docs/adr/ に連番ファイルを生成
+```
+
+## テスト
+
+### バックエンド（pytest + pytest-asyncio）
+```bash
+cd server
+uv run pytest                                  # 全テスト実行
+uv run pytest --cov=. --cov-report=term        # カバレッジ付き
+uv run pytest tests/unit/test_note_routes.py   # 特定ファイルのみ
+```
+
+- テストは `server/tests/unit/` に配置
+- **カバレッジ目標: 60%**
+- DB を使うテストは実 PostgreSQL に接続（モック禁止）
+- `asyncio_mode = "auto"` のため `@pytest.mark.asyncio` 不要
+
+### フロントエンド（Vitest）
+```bash
+cd client
+npm run test          # 一回実行
+npm run test:watch    # ウォッチモード
+```
+
+- テストは `client/__tests__/` に配置
+
+## CI パイプライン（GitHub Actions）
+
+PR マージ前に以下がすべて通る必要がある:
+- `server-lint`: ruff check / format
+- `server-typecheck`: mypy（strict モード）
+- `server-test`: pytest（実 DB 使用）
+- `client-lint`: eslint + tsc --noEmit
+- `client-test`: vitest
+- `secret-scan`: Gitleaks によるシークレットスキャン
 
 ## アーキテクチャ
 
 ### 全体構成
 - **client/**: Next.js 16（App Router）+ React 19 + TypeScript
 - **server/**: Python 3.13 + FastAPI + LangGraph
-- **DB**: PostgreSQL（asyncpg で非同期アクセス）
-- **認証**: BetterAuth（クライアント側）→ JWT + JWKS（サーバー側で検証）
+- **DB**: PostgreSQL 17（asyncpg で非同期アクセス）
+- **認証**: BetterAuth（クライアント側）→ JWT + JWKS（サーバー側で EdDSA 検証）
 - **リアルタイム通信**: WebSocket（`ws://localhost:8000/ws/chat`）
 
-### 認証フロー
-BetterAuth が Next.js の API ルート（`/api/auth/[...all]`）で OAuth/セッション管理を担当。サーバーへの API 呼び出しには BetterAuth の `/api/auth/token` エンドポイントから取得した JWT を Authorization ヘッダーに付与。サーバー側は JWKS エンドポイントから公開鍵を取得して EdDSA 署名を検証する。
-
 ### LangGraph ワークフロー（server/graph/）
-学習セッションのコア処理を LangGraph で実装:
-
 ```
-learning_start → learning_dialogue（3ターン繰り返し）→ generate_note → generate_feedback → END
+learning_start → learning_dialogue（最大3ターン or LEARNING_END）→ generate_note → generate_feedback → END
 ```
-
-- **learning_start**: トピックを受け取り最初の質問を生成
-- **learning_dialogue**: 対話ループ（3ターンまたは LEARNING_END で終了）
-- **generate_note**: 会話からノートを自動生成（`with_structured_output` で Pydantic モデルへ）
-- **generate_feedback**: 理解度評価（high/medium/low）を生成し復習スケジュールを作成
-
-レビューセッションは同じグラフを使うが、既存ノートの内容を含むプロンプトで開始し、generate_note をスキップする。
+レビューセッションは同じグラフを使い、既存ノート内容をプロンプトに含め `generate_note` をスキップする。
 
 ### データアクセスパターン
-- **リポジトリパターン**: `server/repositories/` に SQL-first で実装（ORM 不使用、asyncpg で直接 SQL 実行）
-- **依存性注入**: FastAPI の `Depends()` で認証（`CurrentUser`）と DB プール（`DB`）を注入
+- **リポジトリパターン**: `server/repositories/` に SQL-first で実装（ORM 不使用、asyncpg で直接 SQL）
+- **依存性注入**: FastAPI の `Depends()` で `CurrentUser`（JWT 検証済み）と `DB`（コネクションプール）を注入
 
 ### フロントエンドのパターン
-- **WebSocket Hook**: `client/hooks/use-chat-websocket.ts` が接続ライフサイクル・メッセージ型振り分け・セッション状態を管理
-- **UIコンポーネント**: shadcn/ui ベース（`client/components/ui/`）
-- **API呼び出し**: `client/lib/api.ts` の `fetchAPI()` ユーティリティが JWT を自動付与
-
-### 復習スケジュール（エビングハウス忘却曲線）
-`server/services/review_scheduler.py` で実装。間隔: `[1, 3, 7, 14, 30, 60]` 日。理解度が high なら次の間隔へ、low なら前の間隔へ戻る。
-
-## DB テーブル構成
-主要テーブル: `notes`, `dialogue_sessions`, `dialogue_messages`, `feedbacks`, `review_schedules`。BetterAuth 管理テーブル（`user`, `account`, `session` 等）も同一 DB に存在。外部キー制約によるカスケード削除あり。
+- **WebSocket Hook**: `client/hooks/use-chat-websocket.ts` が接続ライフサイクル・メッセージ型振り分けを管理
+- **API 呼び出し**: `client/lib/api.ts` の `fetchAPI()` が JWT を自動付与
 
 ## コード規約
 
-### Python（Ruff）
-- 行長: 119文字
+### Python（Ruff + mypy strict）
+- 行長: 119 文字
 - ターゲット: Python 3.13
-- ルール: E, W, F, I, B, UP（pyflakes, isort, bugbear, pyupgrade）
+- ルール: E, W, F, I, B, UP
+- mypy strict モード（`pydantic.mypy` プラグイン使用）
 
 ### TypeScript
-- ESLint + Prettier
+- ESLint + Prettier（`.ts`/`.tsx` は commit 時に自動フォーマット）
 - strict モード
+
+### pre-commit フック
+commit 時に自動実行（`uv run pre-commit install` で有効化）:
+- ruff check + format（server/）
+- mypy（server/）
+- prettier（client/ の .ts/.tsx）
 
 ## 環境変数
 
-### client/.env.local
-`NEXT_PUBLIC_API_URL`, `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-
 ### server/.env
-`DATABASE_URL`, `OPENAI_API_KEY`, `BETTER_AUTH_URL`, `JWKS_URL`
+```
+DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
+OPENAI_API_KEY=...
+BETTER_AUTH_URL=http://localhost:3000
+JWKS_URL=http://localhost:3000/api/auth/jwks
+```
+
+### client/.env.local
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
+BETTER_AUTH_SECRET=...
+BETTER_AUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+## 注意事項
+
+- **マイグレーション順序**: `alembic upgrade head` の前に `client/better-auth_migrations/*.sql` を適用すること（BetterAuth テーブルへの外部キー制約があるため）
+- **DB テーブル**: `notes`, `dialogue_sessions`, `dialogue_messages`, `feedbacks`, `review_schedules` が主要テーブル。BetterAuth 管理テーブル（`user`, `account`, `session` 等）も同一 DB に存在し、外部キー制約によるカスケード削除あり
+- **LangGraph の永続化**: `langgraph-checkpoint-postgres` を使用。セッション状態は DB に保存される

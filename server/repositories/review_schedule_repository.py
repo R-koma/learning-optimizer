@@ -29,7 +29,7 @@ async def mark_completed(
       UPDATE review_schedules
       SET status = 'completed',
           review_count = review_count + 1,
-          last_review_at = NOW(),
+          last_reviewed_at = NOW(),
           next_review_at = $3,
           updated_at = NOW()
       WHERE id = $1

@@ -7,7 +7,10 @@ import asyncpg
 import pytest
 import pytest_asyncio
 
-TEST_DATABASE_URL = "postgresql://learning_optimizer:localdev@localhost:5433/learning_optimizer_test"
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql://learning_optimizer:localdev@localhost:5433/learning_optimizer_test",
+)
 
 SETUP_USER_TABLE_SQL = """--sql
 CREATE TABLE IF NOT EXISTS "user" (

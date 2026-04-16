@@ -10,7 +10,10 @@ adr:
 	echo "Created $$filename"
 
 dev-db:
-	docker compose up -d
+	docker compose up -d db
+
+test-db:
+	docker compose up -d db_test
 
 dev-server:
 	cd server && uv run fastapi dev main.py

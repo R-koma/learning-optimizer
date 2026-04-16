@@ -56,7 +56,6 @@ def mock_pool() -> tuple[MagicMock, AsyncMock]:
     return pool, conn
 
 
-@pytest.mark.asyncio
 class TestGenerateFeedback:
     async def test_insert_schedule_when_no_existing(self, mock_pool: tuple[MagicMock, AsyncMock]) -> None:
         """既存スケジュールがない場合、review_schedule_repository.insert が呼ばれる"""

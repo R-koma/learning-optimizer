@@ -65,7 +65,7 @@ async def test_find_pending_includes_past_schedule(db_conn: asyncpg.Connection, 
 async def test_find_pending_excludes_future_schedule(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
     """next_review_at が未来のスケジュールは一覧に含まれない"""
     note = await _create_test_note(db_conn, test_user["id"])
-    future_review = datetime(2026, 4, 17, 10, 0, 0, tzinfo=UTC)  # 現在時刻より未来
+    future_review = datetime(2099, 12, 31, 0, 0, 0, tzinfo=UTC)  # DBのNOW()に依存するため遠い未来を使用
 
     await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=future_review)
 

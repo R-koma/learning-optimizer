@@ -181,11 +181,6 @@ export default function LearnPage() {
                 key={i}
                 className={`group flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                <Avatar className="mt-1 shrink-0">
-                  <AvatarFallback>
-                    {msg.role === "user" ? "You" : "AI"}
-                  </AvatarFallback>
-                </Avatar>
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
                     msg.role === "user"
@@ -208,17 +203,6 @@ export default function LearnPage() {
               </div>
             );
           })}
-
-          {isLoading && !isGeneratingNote && (
-            <div className="flex items-start gap-3">
-              <Avatar className="mt-1 shrink-0">
-                <AvatarFallback>AI</AvatarFallback>
-              </Avatar>
-              <div className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-                考え中...
-              </div>
-            </div>
-          )}
 
           {generatedNote && (
             <div className="mx-auto max-w-md rounded-lg border p-4 text-center">

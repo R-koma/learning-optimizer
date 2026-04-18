@@ -140,15 +140,11 @@ async def websocket_chat(websocket: WebSocket) -> None:
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
 
                 if result.get("should_generate_note"):
-                    if result.get("should_generate_note"):
-                        turn_count = result.get("turn_count", 0)
-                        if turn_count < 3:
-                            await websocket.send_text(
-                                AssistantMessage(
-                                    content="まだ対話が十分ではないようです。もう少し話しませんか？"
-                                ).model_dump_json()
-                            )
-                            continue
+                    turn_count = result.get("turn_count", 0)
+                    if turn_count < 3:
+                        await graph.aupdate_state(config, {"should_generate_note": False})
+                        await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
+                        continue
                     is_session_ended = True
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
 

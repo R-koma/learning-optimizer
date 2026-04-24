@@ -24,8 +24,8 @@ async def get_current_user(credentials: BearerCredentials) -> str:
         if not user_id:
             raise HTTPException(status_code=401, detail="Not authenticated")
         return user_id
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Not authenticated") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from None
 
 
 async def get_db() -> AsyncGenerator[asyncpg.Connection]:

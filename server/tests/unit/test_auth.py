@@ -7,7 +7,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 from core.auth import verify_jwt
-from core.config import BETTER_AUTH_URL
+from core.config import API_AUDIENCE, BETTER_AUTH_URL
 
 
 def _make_ed25519_keypair() -> tuple[Ed25519PrivateKey, Ed25519PublicKey]:
@@ -27,7 +27,7 @@ def _make_valid_payload(sub: str = "test-user-123", **overrides: Any) -> dict[st
         "sub": sub,
         "iat": now,
         "exp": now + 3600,
-        "aud": BETTER_AUTH_URL,
+        "aud": API_AUDIENCE,
         "iss": BETTER_AUTH_URL,
     }
     payload.update(overrides)

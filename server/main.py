@@ -30,15 +30,15 @@ app = FastAPI(title="Learning Optimizer API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=600,
 )
 
 app.include_router(note.router)
 app.include_router(feedback.router)
 app.include_router(review_schedule.router)
-
 app.include_router(chat.router)
 
 

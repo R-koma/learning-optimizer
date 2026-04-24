@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatInput } from "@/components/chat/chat-input";
 import {
   Loader2Icon,
@@ -136,7 +135,7 @@ export default function LearnPage() {
                   <Input
                     id="topic"
                     type="text"
-                    placeholder="例: TCP/IP、二分探索木、デザインパターン"
+                    placeholder="入力..."
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     className="h-12 text-base"

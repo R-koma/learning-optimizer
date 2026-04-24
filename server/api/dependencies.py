@@ -22,10 +22,10 @@ async def get_current_user(credentials: BearerCredentials) -> str:
         payload = verify_jwt(token)
         user_id: str | None = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token payload")
+            raise HTTPException(status_code=401, detail="Not authenticated")
         return user_id
-    except ValueError as e:
-        raise HTTPException(status_code=401, detail=str(e)) from e
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Not authenticated") from None
 
 
 async def get_db() -> AsyncGenerator[asyncpg.Connection]:

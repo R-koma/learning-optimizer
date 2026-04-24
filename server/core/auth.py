@@ -1,10 +1,12 @@
+import logging
 from typing import Any
 
 import jwt
 from jwt import PyJWKClient
 
-from core.config import BETTER_AUTH_URL, JWKS_URL
+from core.config import API_AUDIENCE, JWKS_URL, JWT_ISSUER
 
+logger = logging.getLogger(__name__)
 jwks_client = PyJWKClient(JWKS_URL, cache_jwk_set=True, lifespan=3600)
 
 
@@ -16,12 +18,15 @@ def verify_jwt(token: str) -> dict[str, Any]:
             token,
             signing_key.key,
             algorithms=["EdDSA"],
-            audience=BETTER_AUTH_URL,
-            issuer=BETTER_AUTH_URL,
+            audience=API_AUDIENCE,
+            issuer=JWT_ISSUER,
+            options={"require": ["exp", "iat", "sub", "aud", "iss"]},
         )
-    except jwt.ExpiredSignatureError as exc:
-        raise ValueError("Token has expired") from exc
+    except jwt.ExpiredSignatureError:
+        logger.info("JWT rejected: expired")
+        raise ValueError("Token expired") from None
     except jwt.InvalidTokenError as exc:
-        raise ValueError(f"Invalid token: {exc}") from exc
+        logger.warning("JWT rejected: %s", exc)
+        raise ValueError("Invalid token") from None
 
     return payload

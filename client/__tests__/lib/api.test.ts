@@ -19,7 +19,7 @@ describe("getToken", () => {
     expect(token).toBe("test-jwt");
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:3000/api/auth/token",
-      { headers: undefined },
+      { cache: "no-store", headers: undefined },
     );
   });
 
@@ -32,7 +32,7 @@ describe("getToken", () => {
     await getToken("session=abc");
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:3000/api/auth/token",
-      { headers: { Cookie: "session=abc" } },
+      { cache: "no-store", headers: { Cookie: "session=abc" } },
     );
   });
 

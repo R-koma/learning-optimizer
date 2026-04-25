@@ -6,16 +6,18 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import feedback, note, review_schedule
+from api.routes import dialogue_session, feedback, note, review_schedule
 from api.websocket import chat
 from core.database import close_pool, get_pool
 from graph.builder import build_learning_graph
 from graph.checkpointer import get_checkpointer
+from repositories import dialogue_session_repository
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    await get_pool()
+    pool = await get_pool()
+    await dialogue_session_repository.reset_stuck_generations(pool)
 
     async with get_checkpointer() as checkpointer:
         await checkpointer.setup()
@@ -38,6 +40,7 @@ app.add_middleware(
 app.include_router(note.router)
 app.include_router(feedback.router)
 app.include_router(review_schedule.router)
+app.include_router(dialogue_session.router)
 
 app.include_router(chat.router)
 

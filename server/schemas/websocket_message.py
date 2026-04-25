@@ -53,6 +53,7 @@ class FeedbackGeneratedMessage(BaseModel):
 
 class SessionEndedMessage(BaseModel):
     type: Literal["session_ended"] = "session_ended"
+    session_id: UUID | None = None
 
 
 class CancelLastMessageSuccess(BaseModel):

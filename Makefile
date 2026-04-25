@@ -1,4 +1,24 @@
-.PHONY: adr
+.PHONY: adr setup setup-server setup-client
+
+setup: setup-server setup-client
+	@echo "Setup complete. Run 'make dev-db && make dev-server' and 'make dev-client' to start."
+
+setup-server:
+	@echo "==> Setting up server..."
+	cd server && uv sync
+	make dev-db
+	@echo "Waiting for DB to be ready..."
+	@sleep 2
+	@for f in client/better-auth_migrations/*.sql; do \
+		echo "Applying $$f..."; \
+		docker compose exec -T db psql -U learning_optimizer -d learning_optimizer -f - < "$$f"; \
+	done
+	cd server && uv run alembic upgrade head
+	cd server && uv run pre-commit install
+
+setup-client:
+	@echo "==> Setting up client..."
+	cd client && npm install
 
 adr:
 	@if [ -z "$(name)" ]; then echo "Error: name is required. Usage: make adr name=xxx"; exit 1; fi

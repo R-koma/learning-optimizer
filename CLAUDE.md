@@ -2,141 +2,210 @@
 
 ## プロジェクト概要
 
-Learning Optimizer は「プロテジェ効果」（教えることで学ぶ）を活用した AI 学習アプリケーション。ユーザーが LLM エージェントとの対話を通じて学習し、自動でノート・フィードバック・復習スケジュールが生成される。
+「プロテジェ効果」（教えることで学ぶ）を活用した AI 学習アプリ。ユーザーが LLM と対話しながら学習し、ノート・フィードバック・復習スケジュールが自動生成される。
 
-## ローカル開発環境のセットアップ
+- **client/**: Next.js 16 (App Router) + React 19 + TypeScript
+- **server/**: Python 3.13 + FastAPI + LangGraph
+- **DB**: PostgreSQL 17（asyncpg で非同期アクセス、ORM 不使用）
+- **認証**: BetterAuth（client）→ JWT + JWKS（server で EdDSA 検証）
+- **リアルタイム**: WebSocket `ws://localhost:8000/ws/chat`
+
+---
+
+## クイックスタート
 
 ```bash
-# DB のみ起動（推奨）
-make dev-db          # docker compose up -d
+# 1. DB 起動
+make dev-db              # docker compose up -d db
 
-# サーバーとクライアントを別ターミナルで起動
-make dev-server      # cd server && uv run fastapi dev main.py
-make dev-client      # cd client && npm run dev
+# 2. サーバー（別ターミナル）
+make dev-server          # cd server && uv run fastapi dev main.py
 
-# フルスタックを Docker で起動
-docker compose up
+# 3. クライアント（別ターミナル）
+make dev-client          # cd client && npm run dev
 ```
 
-初回セットアップ:
+**初回のみ:**
 ```bash
-cd server && uv sync
-uv run alembic upgrade head   # BetterAuth テーブルを先に適用してから実行すること（後述）
-cd ../client && npm install
+# BetterAuth マイグレーションを先に適用してから alembic を実行すること
+psql ... < client/better-auth_migrations/*.sql
+cd server && uv sync && uv run alembic upgrade head
+cd client && npm install
+uv run pre-commit install  # コミット時フックを有効化
 ```
+
+---
 
 ## 開発コマンド
 
-### バックエンド（server/）
+### バックエンド（`server/`）
 ```bash
-uv run fastapi dev main.py           # 開発サーバー起動
-uv run alembic upgrade head          # マイグレーション適用
-uv run alembic revision --autogenerate -m "description"  # マイグレーション生成
-uv run ruff check . --fix            # Lint（自動修正あり）
-uv run ruff format .                 # フォーマット
-uv run mypy .                        # 型チェック
+uv run fastapi dev main.py                                    # 開発サーバー
+uv run alembic upgrade head                                   # マイグレーション適用
+uv run alembic revision --autogenerate -m "description"       # マイグレーション生成
+uv run ruff check . --fix && uv run ruff format .             # Lint + フォーマット
+uv run mypy .                                                 # 型チェック（strict）
+uv run pytest                                                 # テスト全実行
+uv run pytest --cov=. --cov-report=term                      # カバレッジ付き
 ```
 
-### フロントエンド（client/）
+### フロントエンド（`client/`）
 ```bash
-npm run dev          # 開発サーバー起動
-npm run build        # ビルド
-npm run lint         # ESLint
-npx tsc --noEmit     # 型チェック
-npx prettier --write # フォーマット（pre-commit で自動実行）
+npm run dev              # 開発サーバー
+npm run build            # ビルド
+npm run lint             # ESLint
+npx tsc --noEmit         # 型チェック
+npm run test             # Vitest（一回実行）
+npm run test:watch       # ウォッチモード
 ```
 
-### ADR（アーキテクチャ決定記録）
+### その他
 ```bash
-make adr name=your-decision-title    # docs/adr/ に連番ファイルを生成
+make adr name=your-title  # docs/adr/ にアーキテクチャ決定記録を生成
+make test-db              # テスト用 DB 起動
 ```
+
+---
+
+## ディレクトリ構成
+
+```
+server/
+├── main.py                    # FastAPI エントリーポイント・lifespan
+├── api/
+│   ├── routes/                # REST エンドポイント（note, feedback, review_schedule, dialogue_session）
+│   ├── websocket/chat.py      # WebSocket ハンドラ
+│   └── dependencies.py        # CurrentUser, DB (Depends 注入)
+├── core/
+│   ├── auth.py                # JWT / JWKS 検証
+│   ├── config.py              # 環境変数
+│   └── database.py            # asyncpg コネクションプール
+├── graph/                     # LangGraph ワークフロー
+│   ├── builder.py             # グラフ定義
+│   ├── state.py               # LearningState TypedDict
+│   ├── nodes/                 # learning_start, learning_dialogue, generate_note, generate_feedback
+│   └── prompts.py
+├── repositories/              # SQL-first データアクセス（asyncpg 直接）
+├── schemas/                   # Pydantic モデル（リクエスト/レスポンス）
+├── services/review_scheduler.py
+└── tests/
+    ├── unit/                  # pytest + 実 DB（モック禁止）
+    └── integration/
+
+client/
+├── app/
+│   ├── (auth)/                # sign-in, sign-up
+│   └── (main)/                # dashboard, learn, notes, review/[noteId]
+├── components/
+│   ├── chat/                  # chat-input など
+│   ├── layout/                # sidebar, navbar, main-layout-client
+│   ├── notes/
+│   └── ui/                   # shadcn/ui コンポーネント
+├── hooks/use-chat-websocket.ts # WebSocket ライフサイクル管理
+├── lib/
+│   ├── api.ts                 # fetchAPI()（JWT 自動付与）
+│   ├── auth.ts / auth-client.ts
+│   └── utils.ts
+└── __tests__/                 # Vitest テスト
+```
+
+---
+
+## アーキテクチャ詳細
+
+### LangGraph ワークフロー
+
+```
+learning_start → learning_dialogue（最大 3 ターン or LEARNING_END）
+  → generate_note → generate_feedback → END
+```
+
+- レビューセッション: 同じグラフを使用、既存ノートをプロンプトに注入し `generate_note` をスキップ
+- グラフ状態は `langgraph-checkpoint-postgres` で DB に永続化
+- `LearningState` は `session_type`（`"learning"` / `"review"`）で分岐
+
+### API エンドポイント
+
+| Method | Path | 用途 |
+|--------|------|------|
+| GET | `/api/health` | ヘルスチェック |
+| GET/PATCH | `/api/notes` | ノート取得・更新 |
+| GET | `/api/feedbacks` | フィードバック取得 |
+| GET | `/api/review-schedules` | 復習スケジュール |
+| GET | `/api/dialogue-sessions` | セッション一覧 |
+| WS | `/ws/chat` | チャット WebSocket |
+
+### データアクセスパターン
+
+- リポジトリパターン（`repositories/`）: SQL を直接記述、asyncpg で実行
+- 依存性注入: `CurrentUser`（JWT 検証済みユーザー ID）と `DB`（コネクション）を `Depends()` で注入
+- ORM 不使用、`asyncpg.Record` を直接扱う
+
+### フロントエンドのパターン
+
+- `use-chat-websocket.ts`: 接続ライフサイクル・メッセージ型振り分けを一元管理
+- `fetchAPI()`: 全 REST 呼び出しはここを経由（JWT ヘッダー付与、エラーハンドリング）
+- `NavbarSlotContext`: レイアウト内でナビバーに動的コンテンツを挿入するポータルパターン
+
+---
 
 ## テスト
 
-### バックエンド（pytest + pytest-asyncio）
-```bash
-cd server
-uv run pytest                                  # 全テスト実行
-uv run pytest --cov=. --cov-report=term        # カバレッジ付き
-uv run pytest tests/unit/test_note_routes.py   # 特定ファイルのみ
-```
+| 種別 | 場所 | フレームワーク | カバレッジ目標 |
+|------|------|--------------|--------------|
+| バックエンド unit | `server/tests/unit/` | pytest | 60% |
+| バックエンド integration | `server/tests/integration/` | pytest | - |
+| フロントエンド | `client/__tests__/` | Vitest | - |
 
-- テストは `server/tests/unit/` に配置
-- **カバレッジ目標: 60%**
-- DB を使うテストは実 PostgreSQL に接続（モック禁止）
 - `asyncio_mode = "auto"` のため `@pytest.mark.asyncio` 不要
+- DB を使うテストは実 PostgreSQL に接続（モック禁止）
+- テスト用 DB: `make test-db`
 
-### フロントエンド（Vitest）
-```bash
-cd client
-npm run test          # 一回実行
-npm run test:watch    # ウォッチモード
-```
+---
 
-- テストは `client/__tests__/` に配置
+## CI（GitHub Actions）
 
-## CI パイプライン（GitHub Actions）
+PR マージ前に全通過が必須:
 
-PR マージ前に以下がすべて通る必要がある:
 - `server-lint`: ruff check / format
-- `server-typecheck`: mypy（strict モード）
-- `server-test`: pytest（実 DB 使用）
-- `client-lint`: eslint + tsc --noEmit
+- `server-typecheck`: mypy（strict）
+- `server-test`: pytest（実 DB）
+- `client-lint`: eslint + `tsc --noEmit`
 - `client-test`: vitest
-- `secret-scan`: Gitleaks によるシークレットスキャン
+- `secret-scan`: Gitleaks
 
-## アーキテクチャ
-
-### 全体構成
-- **client/**: Next.js 16（App Router）+ React 19 + TypeScript
-- **server/**: Python 3.13 + FastAPI + LangGraph
-- **DB**: PostgreSQL 17（asyncpg で非同期アクセス）
-- **認証**: BetterAuth（クライアント側）→ JWT + JWKS（サーバー側で EdDSA 検証）
-- **リアルタイム通信**: WebSocket（`ws://localhost:8000/ws/chat`）
-
-### LangGraph ワークフロー（server/graph/）
-```
-learning_start → learning_dialogue（最大3ターン or LEARNING_END）→ generate_note → generate_feedback → END
-```
-レビューセッションは同じグラフを使い、既存ノート内容をプロンプトに含め `generate_note` をスキップする。
-
-### データアクセスパターン
-- **リポジトリパターン**: `server/repositories/` に SQL-first で実装（ORM 不使用、asyncpg で直接 SQL）
-- **依存性注入**: FastAPI の `Depends()` で `CurrentUser`（JWT 検証済み）と `DB`（コネクションプール）を注入
-
-### フロントエンドのパターン
-- **WebSocket Hook**: `client/hooks/use-chat-websocket.ts` が接続ライフサイクル・メッセージ型振り分けを管理
-- **API 呼び出し**: `client/lib/api.ts` の `fetchAPI()` が JWT を自動付与
+---
 
 ## コード規約
 
 ### Python（Ruff + mypy strict）
-- 行長: 119 文字
-- ターゲット: Python 3.13
+- 行長: 119 文字、Python 3.13 ターゲット
 - ルール: E, W, F, I, B, UP
-- mypy strict モード（`pydantic.mypy` プラグイン使用）
+- `pydantic.mypy` プラグイン使用
 
 ### TypeScript
-- ESLint + Prettier（`.ts`/`.tsx` は commit 時に自動フォーマット）
+- ESLint + Prettier（`.ts`/`.tsx` はコミット時に自動フォーマット）
 - strict モード
 
-### pre-commit フック
-commit 時に自動実行（`uv run pre-commit install` で有効化）:
+### pre-commit フック（`uv run pre-commit install` で有効化）
 - ruff check + format（server/）
 - mypy（server/）
 - prettier（client/ の .ts/.tsx）
 
+---
+
 ## 環境変数
 
-### server/.env
+### `server/.env`
 ```
 DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
 OPENAI_API_KEY=...
 BETTER_AUTH_URL=http://localhost:3000
 JWKS_URL=http://localhost:3000/api/auth/jwks
+CORS_ORIGINS=http://localhost:3000
 ```
 
-### client/.env.local
+### `client/.env.local`
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8000
 DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
@@ -146,8 +215,12 @@ GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 ```
 
-## 注意事項
+---
 
-- **マイグレーション順序**: `alembic upgrade head` の前に `client/better-auth_migrations/*.sql` を適用すること（BetterAuth テーブルへの外部キー制約があるため）
-- **DB テーブル**: `notes`, `dialogue_sessions`, `dialogue_messages`, `feedbacks`, `review_schedules` が主要テーブル。BetterAuth 管理テーブル（`user`, `account`, `session` 等）も同一 DB に存在し、外部キー制約によるカスケード削除あり
-- **LangGraph の永続化**: `langgraph-checkpoint-postgres` を使用。セッション状態は DB に保存される
+## 注意事項（ハマりポイント）
+
+- **マイグレーション順序**: `alembic upgrade head` の前に `client/better-auth_migrations/*.sql` を適用すること（外部キー制約あり）
+- **スタック状セッション**: サーバー起動時に `reset_stuck_generations()` が自動実行される（`main.py` の `lifespan` 参照）
+- **LangGraph 永続化**: チェックポイントは DB に保存されるため、ローカル開発中にスキーマ変更するとチェックポイントとの不整合が起きる場合がある
+- **DB テーブル**: `notes`, `dialogue_sessions`, `dialogue_messages`, `feedbacks`, `review_schedules` が主要テーブル。BetterAuth テーブル（`user`, `account`, `session` 等）も同一 DB に存在し、外部キー制約によるカスケード削除あり
+- **CORS**: `CORS_ORIGINS` 環境変数でカンマ区切りで複数指定可能（デフォルト `http://localhost:3000`）

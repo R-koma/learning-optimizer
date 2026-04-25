@@ -70,15 +70,20 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-all duration-150 ${
+              className={`group relative flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-all duration-150 ${
                 isActive
                   ? "bg-muted font-medium text-foreground"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               } ${expanded ? "" : "justify-center"}`}
-              title={!expanded ? label : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {expanded && <span>{label}</span>}
+              {expanded ? (
+                <span>{label}</span>
+              ) : (
+                <span className="pointer-events-none absolute left-full z-50 ml-2 whitespace-nowrap rounded-md bg-muted px-2 py-1 text-xs text-foreground opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
+                  {label}
+                </span>
+              )}
             </Link>
           );
         })}

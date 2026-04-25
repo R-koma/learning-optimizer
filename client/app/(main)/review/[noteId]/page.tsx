@@ -234,10 +234,8 @@ export default function ReviewPage({
                 className={`group flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                  className={`max-w-full rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
+                    msg.role === "user" ? "bg-muted" : ""
                   }`}
                 >
                   {msg.content}

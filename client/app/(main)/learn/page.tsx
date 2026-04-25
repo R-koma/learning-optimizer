@@ -16,12 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChatInput } from "@/components/chat/chat-input";
-import {
-  Loader2Icon,
-  LogOutIcon,
-  NotebookPenIcon,
-  PencilIcon,
-} from "lucide-react";
+import { Loader2Icon, NotebookPenIcon, PencilIcon } from "lucide-react";
 
 export default function LearnPage() {
   const router = useRouter();
@@ -73,19 +68,6 @@ export default function LearnPage() {
               </Button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                 ノート作成
-              </span>
-            </div>
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/dashboard")}
-                className="h-8 w-8 rounded-full cursor-pointer"
-              >
-                <LogOutIcon className="h-4.5 w-4.5" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                会話を終了
               </span>
             </div>
           </div>

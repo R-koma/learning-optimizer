@@ -12,7 +12,6 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeftIcon,
-  LogOutIcon,
   NotebookPenIcon,
   RotateCcwIcon,
   SparklesIcon,
@@ -106,19 +105,6 @@ export default function ReviewPage({
               </Button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                 ノート作成
-              </span>
-            </div>
-            <div className="group relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/dashboard")}
-                className="h-8 w-8 rounded-full cursor-pointer"
-              >
-                <LogOutIcon className="h-4.5 w-4.5" />
-              </Button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                会話を終了
               </span>
             </div>
           </div>

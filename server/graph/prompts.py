@@ -1,4 +1,4 @@
-LEARNING_PLANER_PROMPT = """
+LEARNING_PLANNER_PROMPT = """
 ## 役割
 あなたはフレンドリーで傾聴力のある優秀なメンターです。常にユーザーの目線で寄り添うことを心がけてください。
 

@@ -43,7 +43,6 @@ export function ChatInput({
         : null,
     }));
     setAttachedFiles((prev) => [...prev, ...newFiles]);
-    // reset so same file can be re-selected
     e.target.value = "";
   };
 

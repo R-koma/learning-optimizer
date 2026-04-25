@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from langchain_core.messages import HumanMessage, RemoveMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage, RemoveMessage
 
 from api.websocket.auth import authenticate_websocket
 from core.database import get_pool
@@ -15,7 +15,8 @@ from repositories import (
     note_repository,
 )
 from schemas.websocket_message import (
-    AssistantMessage,
+    AssistantMessageChunk,
+    AssistantMessageEnd,
     CancelLastMessageError,
     CancelLastMessageSuccess,
     ErrorMessage,
@@ -23,6 +24,21 @@ from schemas.websocket_message import (
     NoteGeneratedMessage,
     SessionEndedMessage,
 )
+
+_STREAMING_NODES = {"learning_start", "learning_dialogue"}
+
+
+async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], websocket: WebSocket) -> str:
+    ai_content = ""
+    async for msg, metadata in graph.astream(input, config, stream_mode="messages"):
+        node = metadata.get("langgraph_node", "")
+        if isinstance(msg, AIMessageChunk) and node in _STREAMING_NODES and msg.content:
+            chunk = str(msg.content)
+            ai_content += chunk
+            await websocket.send_text(AssistantMessageChunk(content=chunk).model_dump_json())
+    await websocket.send_text(AssistantMessageEnd().model_dump_json())
+    return ai_content
+
 
 router = APIRouter()
 
@@ -69,16 +85,13 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     "should_generate_note": False,
                     "session_type": "learning",
                 }
-                result: dict[str, Any] = await graph.ainvoke(initial_state, config=config)
 
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "user", data["topic"], message_order)
 
-                ai_msg: str = str(result["messages"][-1].content)
+                ai_msg: str = await _stream_ai_response(graph, initial_state, config, websocket)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
-
-                await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
 
             elif data["type"] == "start_review":
                 note_id = UUID(data["note_id"])
@@ -110,16 +123,13 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     "should_generate_note": False,
                     "session_type": "review",
                 }
-                result = await graph.ainvoke(initial_state, config=config)
 
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "user", note["topic"], message_order)
 
-                ai_msg = str(result["messages"][-1].content)
+                ai_msg = await _stream_ai_response(graph, initial_state, config, websocket)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
-
-                await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
 
             elif data["type"] == "user_message":
                 if not config or not session_id:
@@ -133,17 +143,18 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     config,
                     {"messages": [HumanMessage(content=data["content"])]},
                 )
-                result = await graph.ainvoke(None, config=config)
 
-                ai_msg = str(result["messages"][-1].content)
+                ai_msg = await _stream_ai_response(graph, None, config, websocket)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
+
+                state = await graph.aget_state(config)
+                result = state.values
 
                 if result.get("should_generate_note"):
                     turn_count = result.get("turn_count", 0)
                     if turn_count < 3:
                         await graph.aupdate_state(config, {"should_generate_note": False})
-                        await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
                         continue
                     is_session_ended = True
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
@@ -176,8 +187,6 @@ async def websocket_chat(websocket: WebSocket) -> None:
                                 )
 
                     await websocket.send_text(SessionEndedMessage().model_dump_json())
-                else:
-                    await websocket.send_text(AssistantMessage(content=ai_msg).model_dump_json())
 
             elif data["type"] == "cancel_last_message":
                 if not config or not session_id:

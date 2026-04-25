@@ -28,6 +28,15 @@ class AssistantMessage(BaseModel):
     content: str
 
 
+class AssistantMessageChunk(BaseModel):
+    type: Literal["assistant_message_chunk"] = "assistant_message_chunk"
+    content: str
+
+
+class AssistantMessageEnd(BaseModel):
+    type: Literal["assistant_message_end"] = "assistant_message_end"
+
+
 class NoteGeneratedMessage(BaseModel):
     type: Literal["note_generated"] = "note_generated"
     note_id: UUID

@@ -12,6 +12,8 @@ interface ChatMessage {
 interface ServerMessage {
   type:
     | "assistant_message"
+    | "assistant_message_chunk"
+    | "assistant_message_end"
     | "note_generated"
     | "feedback_generated"
     | "session_ended"
@@ -95,6 +97,28 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
             ...prev,
             { role: "assistant", content: data.content ?? "" },
           ]);
+          setIsLoading(false);
+          break;
+
+        case "assistant_message_chunk": {
+          const chunk = data.content ?? "";
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return [
+                ...prev.slice(0, -1),
+                { ...last, content: last.content + chunk },
+              ];
+            }
+            return [
+              ...prev,
+              { role: "assistant" as MessageRole, content: chunk },
+            ];
+          });
+          break;
+        }
+
+        case "assistant_message_end":
           setIsLoading(false);
           break;
 

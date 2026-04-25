@@ -1,8 +1,11 @@
+import asyncio
 import json
+import logging
 import uuid
 from typing import Any
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from langchain_core.messages import AIMessageChunk, HumanMessage, RemoveMessage
 
@@ -25,7 +28,28 @@ from schemas.websocket_message import (
     SessionEndedMessage,
 )
 
+logger = logging.getLogger(__name__)
+
 _STREAMING_NODES = {"learning_start", "learning_dialogue"}
+
+
+async def _generate_note_background(
+    pool: asyncpg.Pool,
+    graph: Any,
+    config: dict[str, Any],
+    session_id: UUID,
+    session_type: str,
+) -> None:
+    try:
+        result = await graph.ainvoke(None, config=config)
+        generated_note_id: UUID | None = result.get("note_id") if session_type == "learning" else None
+        if generated_note_id is not None:
+            await dialogue_session_repository.update_note_id(pool, session_id, generated_note_id)
+        else:
+            await dialogue_session_repository.update_status(pool, session_id, "completed")
+    except Exception:
+        logger.exception("Background note generation failed for session %s", session_id)
+        await dialogue_session_repository.update_status(pool, session_id, "failed")
 
 
 async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], websocket: WebSocket) -> str:
@@ -229,44 +253,15 @@ async def websocket_chat(websocket: WebSocket) -> None:
                 )
 
             elif data["type"] == "end_session":
-                if config:
+                is_session_ended = True
+                if config and session_id:
                     await graph.aupdate_state(config, {"should_generate_note": True}, as_node="learning_dialogue")
-                    result = await graph.ainvoke(None, config=config)
-
-                    if session_id:
-                        await dialogue_session_repository.update_status(pool, session_id, "completed")
-
-                    if session_type == "learning":
-                        end_note_id: UUID | None = result.get("note_id")
-                        if end_note_id is not None:
-                            if session_id:
-                                await dialogue_session_repository.update_note_id(pool, session_id, end_note_id)
-                            note = await note_repository.find_by_id(pool, end_note_id, user_id)
-                            if note:
-                                await websocket.send_text(
-                                    NoteGeneratedMessage(
-                                        note_id=end_note_id,
-                                        topic=note["topic"],
-                                        summary=note["summary"] or "",
-                                    ).model_dump_json()
-                                )
-                    else:
-                        end_review_note_id: UUID | None = result.get("note_id")
-                        if end_review_note_id is not None:
-                            feedbacks = await feedback_repository.find_by_note_id(pool, end_review_note_id, user_id)
-                            if feedbacks:
-                                latest = feedbacks[-1]
-                                await websocket.send_text(
-                                    FeedbackGeneratedMessage(
-                                        understanding_level=latest["understanding_level"],
-                                        strength=latest["strength"],
-                                        improvements=latest["improvements"],
-                                    ).model_dump_json()
-                                )
+                    await dialogue_session_repository.update_status(pool, session_id, "generate_note")
+                    asyncio.create_task(_generate_note_background(pool, graph, config, session_id, session_type))
                 elif session_id:
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
 
-                await websocket.send_text(SessionEndedMessage().model_dump_json())
+                await websocket.send_text(SessionEndedMessage(session_id=session_id).model_dump_json())
                 break
 
     except WebSocketDisconnect:

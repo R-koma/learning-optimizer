@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { fetchAPI } from "@/lib/api";
 
 type MessageRole = "user" | "assistant";
+
+const TYPEWRITER_INTERVAL_MS = 25;
+const TYPEWRITER_BATCH_SIZE = 1;
+const NOTE_POLL_INTERVAL_MS = 2000;
+const NOTE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
 interface ChatMessage {
   role: MessageRole;
@@ -29,12 +35,22 @@ interface ServerMessage {
   strength?: string;
   improvements?: string;
   cancelled_content?: string;
+  session_id?: string;
 }
 
 interface Feedback {
   understanding_level: string;
   strength: string;
   improvements: string;
+}
+
+interface NoteStatusResponse {
+  status: string;
+  session_type: string;
+  note_id?: string | null;
+  topic?: string | null;
+  summary?: string | null;
+  feedback?: Feedback | null;
 }
 
 interface UseChatWebSocketReturn {
@@ -70,6 +86,115 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
   const [error, setError] = useState<string | null>(null);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const pendingTextRef = useRef<string>("");
+  const typewriterTimerRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+  const pollAbortRef = useRef<AbortController | null>(null);
+
+  const startTypewriter = useCallback(() => {
+    if (typewriterTimerRef.current !== null) return;
+
+    typewriterTimerRef.current = setInterval(() => {
+      if (pendingTextRef.current.length === 0) return;
+
+      const batch = pendingTextRef.current.slice(0, TYPEWRITER_BATCH_SIZE);
+      pendingTextRef.current = pendingTextRef.current.slice(
+        TYPEWRITER_BATCH_SIZE,
+      );
+
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return [
+            ...prev.slice(0, -1),
+            { ...last, content: last.content + batch },
+          ];
+        }
+        return [...prev, { role: "assistant" as MessageRole, content: batch }];
+      });
+    }, TYPEWRITER_INTERVAL_MS);
+  }, []);
+
+  const flushTypewriter = useCallback(() => {
+    if (typewriterTimerRef.current !== null) {
+      clearInterval(typewriterTimerRef.current);
+      typewriterTimerRef.current = null;
+    }
+    const remaining = pendingTextRef.current;
+    pendingTextRef.current = "";
+    if (remaining.length === 0) return;
+
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant") {
+        return [
+          ...prev.slice(0, -1),
+          { ...last, content: last.content + remaining },
+        ];
+      }
+      return [
+        ...prev,
+        { role: "assistant" as MessageRole, content: remaining },
+      ];
+    });
+  }, []);
+
+  const pollNoteStatus = useCallback(async (sessionId: string) => {
+    pollAbortRef.current?.abort();
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    const startedAt = Date.now();
+    while (!controller.signal.aborted) {
+      if (Date.now() - startedAt > NOTE_POLL_TIMEOUT_MS) {
+        setError("ノート生成がタイムアウトしました");
+        setIsGeneratingNote(false);
+        return;
+      }
+
+      try {
+        const data = await fetchAPI<NoteStatusResponse>(
+          `/api/dialogue-sessions/${sessionId}/note-status`,
+        );
+
+        if (data.status === "completed") {
+          if (data.session_type === "learning" && data.note_id && data.topic) {
+            setGeneratedNote({
+              note_id: data.note_id,
+              topic: data.topic,
+              summary: data.summary ?? "",
+            });
+          } else if (data.session_type === "review" && data.feedback) {
+            setFeedback(data.feedback);
+          }
+          setIsGeneratingNote(false);
+          return;
+        }
+
+        if (data.status === "failed") {
+          setError("ノート生成に失敗しました");
+          setIsGeneratingNote(false);
+          return;
+        }
+      } catch (e) {
+        if (controller.signal.aborted) return;
+        setError(
+          e instanceof Error ? e.message : "ステータス取得に失敗しました",
+        );
+        setIsGeneratingNote(false);
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        const t = setTimeout(resolve, NOTE_POLL_INTERVAL_MS);
+        controller.signal.addEventListener("abort", () => {
+          clearTimeout(t);
+          resolve();
+        });
+      });
+    }
+  }, []);
 
   const connect = useCallback(async () => {
     const res = await fetch("/api/auth/token");
@@ -101,24 +226,13 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           break;
 
         case "assistant_message_chunk": {
-          const chunk = data.content ?? "";
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant") {
-              return [
-                ...prev.slice(0, -1),
-                { ...last, content: last.content + chunk },
-              ];
-            }
-            return [
-              ...prev,
-              { role: "assistant" as MessageRole, content: chunk },
-            ];
-          });
+          pendingTextRef.current += data.content ?? "";
+          startTypewriter();
           break;
         }
 
         case "assistant_message_end":
+          flushTypewriter();
           setIsLoading(false);
           break;
 
@@ -140,12 +254,19 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           break;
 
         case "session_ended":
+          flushTypewriter();
           setIsSessionEnded(true);
           setIsLoading(false);
-          setIsGeneratingNote(false);
+          if (data.session_id) {
+            pollNoteStatus(data.session_id);
+          } else {
+            setIsGeneratingNote(false);
+          }
           break;
 
         case "cancel_last_message_success":
+          flushTypewriter();
+          pendingTextRef.current = "";
           setMessages((prev) => prev.slice(0, -2));
           setEditingMessage(data.cancelled_content ?? "");
           break;
@@ -172,7 +293,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     };
 
     wsRef.current = ws;
-  }, []);
+  }, [pollNoteStatus, startTypewriter, flushTypewriter]);
 
   const startLearning = useCallback(
     (topic: string) => {

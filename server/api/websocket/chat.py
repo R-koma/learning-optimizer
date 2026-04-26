@@ -38,11 +38,12 @@ async def _generate_note_background(
     graph: Any,
     config: dict[str, Any],
     session_id: UUID,
-    session_type: str,
 ) -> None:
     try:
         result = await graph.ainvoke(None, config=config)
-        generated_note_id: UUID | None = result.get("note_id") if session_type == "learning" else None
+        # learning は generate_note で新規 note_id が state に設定される
+        # review は start_review 時点で既存 note_id が state に注入されている
+        generated_note_id: UUID | None = result.get("note_id")
         if generated_note_id is not None:
             await dialogue_session_repository.update_note_id(pool, session_id, generated_note_id)
         else:
@@ -199,6 +200,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     else:
                         review_note_id: UUID | None = result.get("note_id")
                         if review_note_id is not None:
+                            await dialogue_session_repository.update_note_id(pool, session_id, review_note_id)
                             feedbacks = await feedback_repository.find_by_note_id(pool, review_note_id, user_id)
                             if feedbacks:
                                 latest = feedbacks[-1]
@@ -207,6 +209,15 @@ async def websocket_chat(websocket: WebSocket) -> None:
                                         understanding_level=latest["understanding_level"],
                                         strength=latest["strength"],
                                         improvements=latest["improvements"],
+                                    ).model_dump_json()
+                                )
+                            updated_note = await note_repository.find_by_id(pool, review_note_id, user_id)
+                            if updated_note:
+                                await websocket.send_text(
+                                    NoteGeneratedMessage(
+                                        note_id=review_note_id,
+                                        topic=updated_note["topic"],
+                                        summary=updated_note["summary"] or "",
                                     ).model_dump_json()
                                 )
 
@@ -257,7 +268,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
                 if config and session_id:
                     await graph.aupdate_state(config, {"should_generate_note": True}, as_node="learning_dialogue")
                     await dialogue_session_repository.update_status(pool, session_id, "generate_note")
-                    asyncio.create_task(_generate_note_background(pool, graph, config, session_id, session_type))
+                    asyncio.create_task(_generate_note_background(pool, graph, config, session_id))
                 elif session_id:
                     await dialogue_session_repository.update_status(pool, session_id, "completed")
 

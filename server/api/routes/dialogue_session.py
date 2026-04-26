@@ -38,10 +38,14 @@ async def get_note_status(
             response.topic = note["topic"]
             response.summary = note["summary"] or ""
     else:
+        note = await note_repository.find_by_id(db, session["note_id"], current_user_id)
+        if note:
+            response.note_id = note["id"]
+            response.topic = note["topic"]
+            response.summary = note["summary"] or ""
         feedbacks = await feedback_repository.find_by_note_id(db, session["note_id"], current_user_id)
         if feedbacks:
             latest = feedbacks[-1]
-            response.note_id = session["note_id"]
             response.feedback = FeedbackData(
                 understanding_level=latest["understanding_level"],
                 strength=latest["strength"],

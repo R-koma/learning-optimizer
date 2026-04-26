@@ -13,6 +13,6 @@ class TestRouteAfterDialogue:
         state = cast(LearningState, {"should_generate_note": True, "session_type": "learning"})
         assert route_after_dialogue(state) == "generate_note"
 
-    def test_returns_generate_feedback_when_review_session_ends(self) -> None:
+    def test_returns_update_note_and_feedback_when_review_session_ends(self) -> None:
         state = cast(LearningState, {"should_generate_note": True, "session_type": "review"})
-        assert route_after_dialogue(state) == "generate_feedback"
+        assert route_after_dialogue(state) == "update_note_and_feedback"

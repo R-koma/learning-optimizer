@@ -45,6 +45,11 @@ export default function LearnPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (!generatedNote) return;
+    router.push(`/notes/${generatedNote.note_id}`);
+  }, [generatedNote, router]);
+
   if (editingMessage !== null) {
     setInput(editingMessage);
     clearEditingMessage();
@@ -183,22 +188,7 @@ export default function LearnPage() {
             );
           })}
 
-          {generatedNote && (
-            <div className="mx-auto max-w-md rounded-lg border p-4 text-center">
-              <h2 className="mb-2 font-semibold">ノートが生成されました</h2>
-              <p className="text-sm text-muted-foreground">
-                {generatedNote.topic}
-              </p>
-              <p className="mt-1 text-sm">{generatedNote.summary}</p>
-              <Button asChild variant="link" className="mt-2">
-                <Link href={`/notes/${generatedNote.note_id}`}>
-                  ノートを見る
-                </Link>
-              </Button>
-            </div>
-          )}
-
-          {isSessionEnded && (
+          {isSessionEnded && !generatedNote && !isGeneratingNote && (
             <div className="mx-auto max-w-md rounded-lg border p-4 text-center">
               <p className="text-sm text-muted-foreground">
                 セッションが終了しました

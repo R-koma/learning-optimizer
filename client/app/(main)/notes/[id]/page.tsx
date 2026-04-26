@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 import { fetchAPI, getToken } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -75,52 +74,14 @@ export default async function NotePage({
           </div>
         </div>
 
-        <Tabs defaultValue="note">
-          <TabsList className="mb-8">
-            <TabsTrigger value="note" className="gap-1.5 cursor-pointer">
-              <FileTextIcon className="h-4 w-4" />
-              ノート
-            </TabsTrigger>
-            <TabsTrigger value="feedback" className="gap-1.5 cursor-pointer">
-              <MessageSquareIcon className="h-4 w-4" />
-              フィードバック
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="note" className="space-y-6">
-            <div className="rounded-xl border bg-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <SparklesIcon className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-primary">
-                  要約
-                </h2>
-              </div>
-              <ul className="space-y-2 pl-1">
-                {note.summary.split("\n").map((line, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-base leading-relaxed"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                    {line}
-                  </li>
-                ))}
-              </ul>
-              <div className="my-4 flex items-center gap-2">
-                <FileTextIcon className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  内容
-                </h2>
-              </div>
-              <div className="whitespace-pre-wrap text-base leading-7 text-foreground/90">
-                {note.content}
-              </div>
+        <div className="rounded-xl border bg-card p-6">
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <MessageSquareIcon className="h-5 w-5 text-foreground" />
+              <h2 className="text-lg font-semibold">フィードバック</h2>
             </div>
-          </TabsContent>
-
-          <TabsContent value="feedback">
             {feedbacks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 text-center">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <MessageSquareIcon className="mb-4 h-10 w-10 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">
                   フィードバックはまだありません
@@ -129,7 +90,7 @@ export default async function NotePage({
             ) : (
               <div className="space-y-4">
                 {feedbacks.map((fb) => (
-                  <div key={fb.id} className="rounded-xl border bg-card p-6">
+                  <div key={fb.id}>
                     <div className="mb-4 flex items-center gap-3">
                       <Badge
                         variant="outline"
@@ -163,8 +124,43 @@ export default async function NotePage({
                 ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </section>
+
+          <div className="my-6" />
+
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <FileTextIcon className="h-5 w-5 text-foreground" />
+              <h2 className="text-lg font-semibold">ノート</h2>
+            </div>
+            <div className="mb-4 flex items-center gap-2">
+              <SparklesIcon className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">
+                要約
+              </h3>
+            </div>
+            <ul className="space-y-2 pl-1">
+              {note.summary.split("\n").map((line, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-base leading-relaxed"
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <div className="my-4 flex items-center gap-2">
+              <FileTextIcon className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                内容
+              </h3>
+            </div>
+            <div className="whitespace-pre-wrap text-base leading-7 text-foreground/90">
+              {note.content}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

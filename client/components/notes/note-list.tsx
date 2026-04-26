@@ -182,7 +182,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
               onClick={() => deleteTargetId && handleDelete(deleteTargetId)}
               className="bg-red-600 text-destructive-foreground hover:bg-destructive/90"
             >
-              削除
+              <span className="text-white">削除</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

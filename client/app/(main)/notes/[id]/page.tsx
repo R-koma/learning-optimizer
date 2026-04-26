@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
+
+export const dynamic = "force-dynamic";
 import { fetchAPI, getToken } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -32,3 +32,26 @@ async def insert(
     """
     record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
     return dict(record)
+
+
+async def upsert_for_note(
+    conn: asyncpg.Connection,
+    note_id: UUID,
+    dialogue_session_id: UUID,
+    understanding_level: str,
+    strength: str,
+    improvements: str,
+) -> dict[str, Any]:
+    query = """--sql
+    INSERT INTO feedbacks (id, note_id, dialogue_session_id, understanding_level, strength, improvements)
+    VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+    ON CONFLICT (note_id) DO UPDATE
+    SET dialogue_session_id = EXCLUDED.dialogue_session_id,
+        understanding_level = EXCLUDED.understanding_level,
+        strength = EXCLUDED.strength,
+        improvements = EXCLUDED.improvements,
+        created_at = NOW()
+    RETURNING *
+    """
+    record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
+    return dict(record)

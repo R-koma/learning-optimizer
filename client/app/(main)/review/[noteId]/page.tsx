@@ -7,7 +7,6 @@ import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { fetchAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatInput } from "@/components/chat/chat-input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,10 +14,8 @@ import {
   NotebookPenIcon,
   RotateCcwIcon,
   SparklesIcon,
-  CheckCircleIcon,
-  TrendingUpIcon,
-  AlertCircleIcon,
   PencilIcon,
+  Loader2Icon,
 } from "lucide-react";
 
 interface Note {
@@ -27,16 +24,6 @@ interface Note {
   content: string;
   summary: string;
 }
-
-const LEVEL_CONFIG = {
-  high: {
-    label: "高い",
-    variant: "default" as const,
-    className: "bg-green-600",
-  },
-  medium: { label: "普通", variant: "secondary" as const, className: "" },
-  low: { label: "低い", variant: "destructive" as const, className: "" },
-};
 
 export default function ReviewPage({
   params,
@@ -56,6 +43,7 @@ export default function ReviewPage({
     messages,
     isLoading,
     isSessionEnded,
+    isGeneratingNote,
     feedback,
     error,
     editingMessage,
@@ -71,6 +59,11 @@ export default function ReviewPage({
       .then(setNote)
       .catch((e) => setLoadError(e.message));
   }, [noteId]);
+
+  useEffect(() => {
+    if (!feedback) return;
+    router.push(`/notes/${noteId}`);
+  }, [feedback, noteId, router]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,7 +97,7 @@ export default function ReviewPage({
                 <NotebookPenIcon className="h-4.5 w-4.5" />
               </Button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                ノート作成
+                ノート更新
               </span>
             </div>
           </div>
@@ -240,67 +233,7 @@ export default function ReviewPage({
             );
           })}
 
-          {feedback && (
-            <div className="mx-auto max-w-md space-y-4 rounded-xl border bg-card p-6">
-              <div className="text-center">
-                <CheckCircleIcon className="mx-auto mb-3 h-8 w-8 text-primary" />
-                <h2 className="mb-1 font-semibold">復習が完了しました</h2>
-                <p className="text-xs text-muted-foreground">
-                  復習スケジュールが更新されました
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-sm text-muted-foreground">理解度:</span>
-                <Badge
-                  className={
-                    LEVEL_CONFIG[
-                      feedback.understanding_level as keyof typeof LEVEL_CONFIG
-                    ]?.className
-                  }
-                  variant={
-                    LEVEL_CONFIG[
-                      feedback.understanding_level as keyof typeof LEVEL_CONFIG
-                    ]?.variant ?? "secondary"
-                  }
-                >
-                  {LEVEL_CONFIG[
-                    feedback.understanding_level as keyof typeof LEVEL_CONFIG
-                  ]?.label ?? feedback.understanding_level}
-                </Badge>
-              </div>
-
-              {feedback.strength && (
-                <div>
-                  <div className="mb-1 flex items-center gap-1 text-xs font-semibold text-green-600">
-                    <TrendingUpIcon className="h-3.5 w-3.5" />
-                    良かった点
-                  </div>
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    {feedback.strength}
-                  </p>
-                </div>
-              )}
-
-              {feedback.improvements && (
-                <div>
-                  <div className="mb-1 flex items-center gap-1 text-xs font-semibold text-amber-600">
-                    <AlertCircleIcon className="h-3.5 w-3.5" />
-                    改善点
-                  </div>
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    {feedback.improvements}
-                  </p>
-                </div>
-              )}
-
-              <Button asChild variant="link" className="w-full">
-                <Link href={`/notes/${noteId}`}>ノートに戻る</Link>
-              </Button>
-            </div>
-          )}
-
-          {isSessionEnded && !feedback && (
+          {isSessionEnded && !feedback && !isGeneratingNote && (
             <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">
               <p className="text-sm text-muted-foreground">
                 復習セッションが終了しました
@@ -324,6 +257,15 @@ export default function ReviewPage({
               onSend={handleSendMessage}
               isLoading={isLoading}
             />
+          </div>
+        </div>
+      )}
+
+      {isGeneratingNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+          <div className="flex flex-col items-center gap-4 rounded-xl border bg-background px-8 py-6 shadow-lg">
+            <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-base font-medium">ノート更新中...</p>
           </div>
         </div>
       )}

@@ -88,7 +88,11 @@ export default function DashBoard() {
         ) : (
           <div className="space-y-3">
             {reviews.map((review) => (
-              <Link key={review.id} href={`/notes/${review.note_id}`}>
+              <Link
+                key={review.id}
+                href={`/notes/${review.note_id}`}
+                className="block"
+              >
                 <div className="group rounded-xl border bg-card p-5 transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">

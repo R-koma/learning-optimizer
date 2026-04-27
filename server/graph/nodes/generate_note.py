@@ -8,6 +8,8 @@ from graph.llm import llm_structured
 from graph.model import NoteContent
 from graph.prompts import GENERATE_NOTE_PROMPT
 from graph.state import LearningState
+from observability.llm import measured_ainvoke
+from observability.tracing import build_trace_context
 from repositories import note_repository
 
 
@@ -20,11 +22,14 @@ async def generate_note(state: LearningState) -> dict[str, Any]:
         conversation_text += f"{role}: {msg.content}\n"
 
     structured_llm = llm_structured.with_structured_output(NoteContent)
-    note_data = await structured_llm.ainvoke(
-        [
+    note_data = await measured_ainvoke(
+        runnable=structured_llm,
+        messages=[
             SystemMessage(content=GENERATE_NOTE_PROMPT),
             {"role": "user", "content": conversation_text},
-        ]
+        ],
+        context=build_trace_context(state),
+        node_name="generate_note",
     )
 
     if not isinstance(note_data, NoteContent):

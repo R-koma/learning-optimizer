@@ -1,0 +1,15 @@
+rubric:
+  explanatory_depth:
+    description: ユーザーの理解がどれだけ深く記録されているか
+    scale: "1-5"
+  protege_alignment:
+    description: 実際の対話内容と一致しているか（ハルシネーション検出）
+    scale: "1-5"
+  personalization:
+    description: ユーザー固有の表現・誤解が反映されているか
+    scale: "1-5"
+  actionability:
+    description: 次回の学習につながる「曖昧な点」が具体的か
+    scale: "1-5"
+max_score: 20
+pass_threshold: 12

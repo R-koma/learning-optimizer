@@ -104,3 +104,47 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  evals-smoke:
+    if: contains(github.event.pull_request.labels.*.name, 'prompt-change')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: learning_optimizer_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/learning_optimizer_test
+      BETTER_AUTH_URL: http://localhost:3000
+      JWKS_URL: http://localhost:3000/.well-known/jwks.json
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --dev
+      - name: Create BetterAuth tables
+        run: psql $DATABASE_URL -f ../client/better-auth_migrations/*.sql
+      - run: uv run alembic upgrade head
+      - name: Run note_generation smoke
+        run: uv run python -m evals.runner --task note_generation --smoke
+      - name: Run response_analysis smoke
+        run: uv run python -m evals.runner --task response_analysis --smoke
+      - name: Upload eval reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-reports
+          path: server/evals/reports/*.json
+          if-no-files-found: ignore

@@ -27,3 +27,9 @@ postgres_data/
 # ローカル管理ドキュメント
 # =========================
 plan/*
+
+# =========================
+# Eval reports (フェーズ2)
+# =========================
+server/evals/reports/*
+!server/evals/reports/.gitkeep

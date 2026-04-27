@@ -19,6 +19,7 @@ dependencies = [
     "sqlalchemy>=2.0.48",
     "langgraph-checkpoint-postgres>=3.0.4",
     "psycopg-binary>=3.3.3",
+    "pyyaml>=6.0.2",
 ]
 
 [dependency-groups]
@@ -29,6 +30,7 @@ dev = [
     "pytest-asyncio>=1.0.0",
     "pytest-cov>=6.0.0",
     "ruff>=0.15.5",
+    "types-pyyaml>=6.0.12",
 ]
 
 [tool.pytest.ini_options]

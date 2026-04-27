@@ -7,6 +7,8 @@ from graph.llm import llm_structured
 from graph.model import FeedbackOutput, NoteContent
 from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT, UPDATE_NOTE_PROMPT
 from graph.state import LearningState
+from observability.llm import measured_ainvoke
+from observability.tracing import build_trace_context
 from repositories import feedback_repository, note_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
@@ -17,6 +19,7 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
     pool = await get_pool()
     note_id = state["note_id"]
     user_id = state["user_id"]
+    trace_ctx = build_trace_context(state)
 
     conversation_history = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"]
@@ -36,7 +39,12 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
             conversation_history=conversation_history,
         )
         note_structured_llm = llm_structured.with_structured_output(NoteContent)
-        revised_note = await note_structured_llm.ainvoke([SystemMessage(content=update_note_prompt)])
+        revised_note = await measured_ainvoke(
+            runnable=note_structured_llm,
+            messages=[SystemMessage(content=update_note_prompt)],
+            context=trace_ctx,
+            node_name="update_note_and_feedback",
+        )
         if not isinstance(revised_note, NoteContent):
             raise RuntimeError("LLM did not return structured NoteContent output")
 
@@ -52,17 +60,25 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
             topic=topic,
             conversation_history=conversation_history,
         )
-        analysis_result = await llm_structured.ainvoke([SystemMessage(content=analyze_prompt)])
+        analysis_result = await measured_ainvoke(
+            runnable=llm_structured,
+            messages=[SystemMessage(content=analyze_prompt)],
+            context=trace_ctx,
+            node_name="update_note_and_feedback",
+        )
         analysis = analysis_result.content
 
         note_text = f"トピック: {topic}\n\n{revised_note.content}"
         feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
         feedback_structured_llm = llm_structured.with_structured_output(FeedbackOutput)
-        feedback_data = await feedback_structured_llm.ainvoke(
-            [
+        feedback_data = await measured_ainvoke(
+            runnable=feedback_structured_llm,
+            messages=[
                 SystemMessage(content=feedback_prompt),
                 {"role": "user", "content": note_text},
-            ]
+            ],
+            context=trace_ctx,
+            node_name="update_note_and_feedback",
         )
         if not isinstance(feedback_data, FeedbackOutput):
             raise RuntimeError("LLM did not return structured FeedbackOutput")

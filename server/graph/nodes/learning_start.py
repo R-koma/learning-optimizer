@@ -5,6 +5,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from graph.llm import llm
 from graph.prompts import LEARNING_PLANNER_PROMPT, REVIEW_SYSTEM_PROMPT
 from graph.state import LearningState
+from observability.llm import measured_ainvoke
+from observability.tracing import build_trace_context
 
 
 async def learning_start(state: LearningState) -> dict[str, Any]:
@@ -22,7 +24,12 @@ async def learning_start(state: LearningState) -> dict[str, Any]:
         prompt = LEARNING_PLANNER_PROMPT.format(topic=topic)
 
     user_message = HumanMessage(content=topic)
-    response = await llm.ainvoke([SystemMessage(content=prompt), user_message])
+    response = await measured_ainvoke(
+        runnable=llm,
+        messages=[SystemMessage(content=prompt), user_message],
+        context=build_trace_context(state),
+        node_name="learning_start",
+    )
 
     return {
         "messages": [user_message, response],

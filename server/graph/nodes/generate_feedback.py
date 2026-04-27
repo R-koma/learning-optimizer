@@ -7,6 +7,8 @@ from graph.llm import llm_structured
 from graph.model import FeedbackOutput
 from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT
 from graph.state import LearningState
+from observability.llm import measured_ainvoke
+from observability.tracing import build_trace_context
 from repositories import feedback_repository, note_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
@@ -16,6 +18,7 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
 
     pool = await get_pool()
     topic = state["topic"]
+    trace_ctx = build_trace_context(state)
 
     conversation_history = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"]
@@ -24,7 +27,12 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
         topic=topic,
         conversation_history=conversation_history,
     )
-    analysis_result = await llm_structured.ainvoke([SystemMessage(content=analyze_prompt)])
+    analysis_result = await measured_ainvoke(
+        runnable=llm_structured,
+        messages=[SystemMessage(content=analyze_prompt)],
+        context=trace_ctx,
+        node_name="generate_feedback",
+    )
     analysis = analysis_result.content
 
     note_id = state["note_id"]
@@ -38,11 +46,14 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
             raise RuntimeError(f"Note {note_id} not found")
         note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
-        feedback_data = await structured_llm.ainvoke(
-            [
+        feedback_data = await measured_ainvoke(
+            runnable=structured_llm,
+            messages=[
                 SystemMessage(content=feedback_prompt),
                 {"role": "user", "content": note_text},
-            ]
+            ],
+            context=trace_ctx,
+            node_name="generate_feedback",
         )
 
         if not isinstance(feedback_data, FeedbackOutput):

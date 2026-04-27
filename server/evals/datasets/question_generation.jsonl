@@ -1,0 +1,15 @@
+{"id":"qg-001","topic":"Pythonのデコレータ","user_message":"デコレータは関数に機能を追加するものです","turn_count":1}
+{"id":"qg-002","topic":"クロージャ","user_message":"関数の中の関数で、外側の変数が使えます","turn_count":1}
+{"id":"qg-003","topic":"ジェネレータ","user_message":"yieldを使って作ります","turn_count":1}
+{"id":"qg-004","topic":"async/await","user_message":"非同期処理を書くときに使います","turn_count":1}
+{"id":"qg-005","topic":"SQLのINNER JOIN","user_message":"テーブルを結合します","turn_count":1}
+{"id":"qg-006","topic":"REST APIの設計","user_message":"HTTPメソッドでリソースを操作します","turn_count":1}
+{"id":"qg-007","topic":"HTTPSの仕組み","user_message":"通信を暗号化します","turn_count":1}
+{"id":"qg-008","topic":"バイナリサーチ","user_message":"配列を半分に分けて検索します","turn_count":1}
+{"id":"qg-009","topic":"再帰関数","user_message":"自分自身を呼び出す関数です","turn_count":1}
+{"id":"qg-010","topic":"オブジェクト指向の継承","user_message":"親クラスから機能を引き継ぎます","turn_count":1}
+{"id":"qg-011","topic":"Pythonのデコレータ","user_message":"わかりません","turn_count":1}
+{"id":"qg-012","topic":"クロージャ","user_message":"聞いたことはありますが、よく分かりません","turn_count":1}
+{"id":"qg-013","topic":"ジェネレータ","user_message":"ジェネレータは要素を遅延評価で1つずつ返すイテレータの一種で、yieldで値を返します。next()のたびにyield地点まで実行されて状態が保持されます","turn_count":2}
+{"id":"qg-014","topic":"REST APIの設計","user_message":"REST APIではリソースをURIで識別し、HTTPメソッドで操作を表します。GETは取得、POSTは作成、PUTは更新、DELETEは削除で、ステートレスかつ統一インターフェースを保つのが原則です","turn_count":2}
+{"id":"qg-015","topic":"バイナリサーチ","user_message":"ソート済み配列で中央要素と比較し、半分ずつ範囲を絞り込みます。計算量はO(log n)です","turn_count":2}

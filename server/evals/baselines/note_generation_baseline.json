@@ -1,0 +1,3353 @@
+{
+  "task": "note_generation",
+  "run_at": "2026-04-28T04:07:51.811677+00:00",
+  "git_sha": "f8ae7fe",
+  "n_cases": 30,
+  "n_trials": 3,
+  "smoke": false,
+  "judge_enabled": true,
+  "case_results": [
+    {
+      "case_id": "ng-001",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of decorators, mentioning the use of the @ symbol and its purpose. However, the depth of explanation is limited, as it doesn't delve into how decorators work or provide examples. The notes align well with the dialogue, capturing the user's familiarity with the @ symbol but lack of usage experience. Personalization is moderate, reflecting the user's experience but not expanding on their specific learning needs. The actionability is good, identifying the need to explore the concrete use and mechanism of decorators, which is a clear next step for learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-001",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of decorators, aligning well with the user's initial lack of knowledge and subsequent learning. However, the depth of explanation is moderate, as it doesn't delve into how decorators work or provide examples. The notes reflect the user's experience with the @ symbol, showing some personalization. The actionability is good, as it identifies a clear area for further learning: understanding the specific mechanism and usage of decorators.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-001",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of decorators, aligning well with the user's initial lack of knowledge and subsequent learning. However, the depth of explanation is limited, focusing mainly on the use of the @ symbol without delving into how decorators work or examples of their use. The notes reflect the user's personal experience with decorators, but could include more specific misunderstandings or questions the user might have. The actionability is good, as it identifies a clear area for further learning: the specific use and mechanism of decorators.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-002",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about decorators. The structure is clear, with sections for summary, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's specific mention of logging and authentication as use cases. The actionability is good, as the user identifies the need to understand the internal implementation and its relation to closures, which is a concrete next step for learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-002",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about decorators. The structure is clear, with sections for what was learned and what remains unclear. The notes are personalized, reflecting the user's specific mention of logging and authentication as use cases. The actionability is good, as it identifies the need to explore the relationship between decorators and closures further.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-002",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about decorators. The structure is clear, with sections for what was learned and what remains unclear. The notes are personalized, reflecting the user's specific mention of logging and authentication as use cases. The actionability is good, as it identifies the need to explore the relationship between decorators and closures further.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-003",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of decorators, including their syntax, use of closures, and examples. The explanatory depth is good, but could be improved with more detailed examples or explanations. Personalization is present as the notes reflect the user's specific understanding and examples discussed. However, the actionability could be improved by specifying what aspects of the implementation or mechanism are unclear, making it more actionable for future learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-003",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of decorators, including their syntax, use of closures, and examples. The explanatory depth is good, but could be improved with more detailed examples or explanations. Personalization is present as the notes reflect the user's specific understanding and examples discussed. However, the actionability is slightly lower because the \"まだ曖昧な点\" could be more specific about what aspects of implementation or mechanism are unclear.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-003",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of decorators, including the use of closures and functools.wraps. The structure is clear, with sections for summary, learned points, key points, and unclear areas. However, the \"まだ曖昧な点\" section could be more specific about what aspects of the internal workings or complex examples are unclear, which affects actionability.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-004",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.6,
+          "passed": true,
+          "reason": "The note provides a basic explanation of closures, capturing the essence of the concept. However, it lacks depth in explaining how closures work in practice, which is reflected in the 'still unclear points' section. The alignment with the dialogue is mostly accurate, but the note could benefit from more personalization, as it doesn't reflect the user's specific confusion or questions beyond the initial request for an explanation. The actionability is moderate, as it identifies a need for examples, but could be more specific about what kind of examples or scenarios would be helpful.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 12,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-004",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note provides a basic explanation of closures, aligning well with the user's initial lack of understanding. However, it lacks depth in explaining how closures work or providing examples, which is crucial for deeper understanding. The note reflects the user's initial confusion but could be more personalized by including specific misunderstandings or questions the user might have had. The actionability is decent as it identifies the need for examples and foundational learning, but could be more specific about what aspects of closures need further exploration.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-004",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.6,
+          "passed": true,
+          "reason": "The notes provide a basic explanation of closures, capturing the essence of the concept. However, the depth is limited as it doesn't delve into examples or more detailed mechanics of closures. The alignment with the dialogue is mostly accurate, but the notes could reflect more of the user's initial confusion. Personalization is low because the notes don't incorporate the user's specific misunderstandings or questions beyond the initial statement. The actionability is moderate; while it identifies a need for deeper understanding, it lacks specific questions or areas to explore further.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 12,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-005",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of closures and their utility. The structure is clear, with sections for what was learned and important points, though it could delve deeper into the concept. Personalization is evident as it reflects the user's admission of not having written examples. The actionability is good, identifying the need for concrete examples, which aligns with the user's expressed uncertainty.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-005",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of closures and their utility. The structure is clear, with sections for summary, learned points, key points, and unclear areas. The notes are personalized, reflecting the user's admission of not having written many examples. The actionability is good, as the user identifies a need for more concrete examples, though it could be slightly more specific about what kind of examples or use cases they are interested in.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-005",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The note accurately reflects the dialogue, capturing the user's understanding of closures and their utility. The structure is clear, with sections for summary, learned points, key points, and unclear areas. The note is personalized, reflecting the user's admission of not having written many examples. The actionability is good, as it identifies a specific area (examples of closures) for further learning, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-006",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the essence of closures and the specific Python-related nuances discussed. The explanatory depth is good, covering key aspects of closures and the use of `nonlocal` and `global`. Personalization is evident as the notes reflect the user's understanding and specific points discussed. However, the actionability could be improved by specifying more concrete steps or questions to explore the \"曖昧な点\" about the mechanism of variable capture in closures.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-006",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about closures and Python-specific considerations. The explanatory depth is good, covering the main concepts and distinctions between `nonlocal` and `global`. Personalization is present as it reflects the user's understanding and specific questions. However, the \"まだ曖昧な点\" section could be more actionable by specifying what kind of examples or details are needed, hence the score of 3 for actionability.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-006",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about closures and Python-specific nuances. The structure is clear, with sections for summary, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's understanding and specific questions about `nonlocal` and `global`. The actionability is good, as the user identifies a specific area of ambiguity regarding the use of `nonlocal` and `global`, which can guide further study.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-007",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 0.25,
+          "passed": false,
+          "reason": "missing sections: ['学んだこと', '重要なポイント', 'まだ曖昧な点']",
+          "metadata": {
+            "missing_sections": [
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.45,
+          "passed": false,
+          "reason": "The note provides a basic definition of a generator and mentions the use of `yield`, which aligns with the user's mention of `yield`. However, it lacks depth in explaining how generators work or specific use cases, which would help deepen understanding. The note does not reflect any personal insights or misunderstandings from the user, making it less personalized. The actionability is low because it doesn't specify what the user finds unclear about the use of `yield`, nor does it suggest next steps for learning.",
+          "metadata": {
+            "explanatory_depth": 2,
+            "protege_alignment": 3,
+            "personalization": 2,
+            "actionability": 2,
+            "total": 9,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-007",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.75,
+          "passed": true,
+          "reason": "The notes provide a clear explanation of what a generator is and how it works, which aligns well with the user's question about the use of `yield`. However, the notes could be more personalized by reflecting the user's specific confusion about when to use generators. The actionability is good as it identifies the need for more examples, which is a concrete next step for learning. The alignment is slightly off as the notes assume a broader understanding than the user's specific question indicated.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 15,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-007",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 0.25,
+          "passed": false,
+          "reason": "missing sections: ['学んだこと', '重要なポイント', 'まだ曖昧な点']",
+          "metadata": {
+            "missing_sections": [
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.4,
+          "passed": false,
+          "reason": "The note provides a basic explanation of what a generator is, but lacks depth in explaining how it works or its use cases, which would help deepen understanding. The alignment with the dialogue is moderate as it mentions 'yield', but doesn't address the user's confusion about when to use it. Personalization is low because it doesn't reflect the user's specific confusion or context. The note lacks actionable points or specific questions that could guide further learning, making actionability low.",
+          "metadata": {
+            "explanatory_depth": 2,
+            "protege_alignment": 3,
+            "personalization": 2,
+            "actionability": 1,
+            "total": 8,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-008",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about generators and iterators. The structure is clear, with sections for what was learned and what remains unclear. The notes are personalized, reflecting the user's specific experience with generators. The actionability is good, as the user has identified specific areas (internal workings and differences with iterators) to explore further.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-008",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about generators and iterators. The structure is clear, with sections for learned points and important concepts. Personalization is evident in the mention of the user's experience with large files. The \"still unclear\" section is specific, focusing on the differences and mechanisms of generators and iterators, which provides actionable guidance for future learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-008",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty. The structure is clear, with sections for summary, learned points, key points, and unclear areas. The notes are personalized, reflecting the user's experience with generators. The actionability is good, as the user identifies a specific area of ambiguity to explore further. However, the explanatory depth could be slightly improved by providing more detailed explanations or examples.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-009",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about generators, including the use of `yield`, `next()`, and `send()`. The mention of `async/await` aligns with the user's comment about its common usage. The structure is clear, with sections for summary, learned points, important points, and unclear areas. The personalization is evident in the mention of `async/await`, which was specifically brought up by the user. The actionability is good, as it identifies a specific area of ambiguity regarding `send()` and `throw()`, although it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-009",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about generators, including the use of `yield`, `send`, and the mention of `async/await`. The structure is clear, with sections for what was learned and important points, though the depth could be slightly improved by expanding on the concepts. Personalization is evident as the notes reflect the user's understanding and mention of `async/await`. The actionability is good, with a specific question about `throw()` that can guide further learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-009",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about generators, including the use of `yield`, `send`, and `throw`. The explanation is clear and detailed, showing a good understanding of the topic. Personalization is evident as the notes reflect the user's specific mention of `async/await` being more common now. The actionability is also good, as the user identifies a specific area of ambiguity regarding `send()` and `throw()`, which can guide future learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-010",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes provide a clear and structured explanation of async/await, aligning well with the user's initial query about non-blocking operations. The depth is adequate, covering basic usage and important points like error handling, but could delve deeper into internal workings. Personalization is moderate; it reflects the user's initial understanding but lacks specific user expressions or misconceptions. The actionability is good, identifying a need to understand the internal workings and relationship with Promises, which is a concrete next step for learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-010",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The note provides a clear and concise explanation of async/await, aligning well with the user's initial understanding and question. It covers the basics of async functions and the use of await, which matches the user's request for more information. However, the note lacks personalization, as it doesn't reflect any specific misunderstandings or unique expressions from the user. The \"まだ曖昧な点\" section is actionable, pointing out specific areas for further exploration, such as detailed behavior and error handling of async/await.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-010",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The note provides a clear and concise explanation of async/await, aligning well with the user's initial understanding and question. It correctly identifies async/await as tools for handling asynchronous operations in JavaScript, which matches the user's mention of non-detailed knowledge about asynchronous processing. The note is structured well, covering what was learned and important points, but lacks deeper personalization reflecting the user's specific misunderstandings or expressions. The actionability is good, as it identifies a need for foundational learning on async/await, though it could be more specific about what aspects to focus on.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-011",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートは対話内容に基づいており、async/await とスレッドの違いについてのユーザーの理解が反映されている。\"まだ曖昧な点\"として具体的な違いと境界線が挙げられており、次回の学習につながる内容になっている。個別の誤解や表現も含まれており、ユーザーの視点が反映されている。ただし、\"重要なポイント\"の部分で一般論が多く、もう少し具体的な例があるとさらに良い。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-011",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and questions about async/await and threads. The explanatory depth is good, providing a clear summary and learning points. Personalization is evident as the notes reflect the user's specific confusion about the boundary between threads and async/await. The actionability is also strong, as the user has identified a specific area of ambiguity to explore further. However, the depth could be slightly improved by providing more detailed explanations or examples.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-011",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and questions about async/await and threads. The explanatory depth is good, summarizing the key points discussed. Personalization is evident as the notes reflect the user's specific confusion about the boundary between threads and async/await. The actionability is also strong, as the user has identified a specific area of ambiguity to explore further. However, the depth could be slightly improved by providing more detailed explanations or examples.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-012",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about async/await and its limitations with CPU-bound tasks. The structure is clear, with sections for summary, learned points, important points, and unclear areas. However, the \"まだ曖昧な点\" section could be more specific about what aspects of the await point's operation are unclear, which affects actionability.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-012",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about async/await and its limitations with CPU-bound tasks. The structure is clear, with sections for summary, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's understanding and specific points raised in the conversation. The actionability is good, as it identifies a specific area (scheduling details) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-012",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about async/await and its limitations with CPU-bound tasks. The structure is clear, with sections for summary, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's understanding and specific points raised in the conversation. The actionability is good, as it identifies a specific area (scheduling details) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-013",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The note captures the basic concept of INNER JOIN and reflects the user's limited experience with it, aligning well with the dialogue. However, the explanatory depth is moderate as it lacks detailed examples or explanations of how INNER JOIN works. Personalization is present but not deeply explored, as it mentions the user's unfamiliarity but doesn't delve into specific misunderstandings or questions they might have. The actionability is somewhat limited, as the \"still unclear points\" section could be more specific about what the user needs to learn next, such as specific SQL queries or scenarios where INNER JOIN is applicable.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-013",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note provides a basic understanding of INNER JOIN, aligning well with the user's initial understanding that it \"joins tables.\" However, it lacks depth in explaining how INNER JOIN works beyond the basic concept. The note is somewhat personalized, reflecting the user's admission of limited experience with INNER JOIN. The actionability is decent, as it identifies the need for learning specific examples and syntax, which is a concrete next step for the user.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-013",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The note provides a basic understanding of INNER JOIN, aligning with the user's initial understanding that it \"connects tables.\" However, it lacks depth in explaining how INNER JOIN works in practice, such as SQL syntax or examples, which is noted as an area of ambiguity. The note is somewhat personalized, reflecting the user's limited experience with INNER JOIN. However, it could be more tailored by addressing specific misunderstandings or questions the user might have. The actionability is moderate, as it identifies a need for examples but doesn't specify what kind of examples or scenarios the user might encounter.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-014",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of INNER JOIN and LEFT JOIN. The explanatory depth is good, providing a clear distinction between the two types of JOINs. The notes are well-aligned with the dialogue, showing no signs of hallucination. Personalization is present as the notes reflect the user's specific understanding and confusion about LEFT JOIN. The actionability is also strong, as the user identifies a specific area of ambiguity regarding the use of LEFT JOIN, which can guide future learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-014",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートはINNER JOINとLEFT JOINの違いについての理解を深めており、ユーザーの発言に基づいているためprotege_alignmentは高い。ユーザーの具体的な例（usersテーブルとordersテーブル）も反映されており、personalizationも高い。曖昧な点としてLEFT JOINの境界や使い分けが挙げられており、次回の学習につながる具体性があるためactionabilityも高い。ただし、学んだことの深さにおいては、もう少し具体例や応用例があるとさらに良いのでexplanatory_depthは4とした。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-014",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートはINNER JOINとLEFT JOINの違いを明確に説明しており、ユーザーの理解を反映している。特にLEFT JOINの曖昧さについてユーザーの発言が反映されている点でpersonalizationが高い。曖昧な点としてLEFT JOINの境界と使い分けが挙げられており、次回の学習につながる具体性があるためactionabilityも高い。ただし、全体的な説明の深さはもう少し詳細にできる余地があるため、explanatory_depthは4とした。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-015",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about INNER JOIN, NULL handling, and performance considerations. The explanatory depth is good, covering the main aspects of INNER JOIN and related performance issues. Personalization is evident as the notes reflect the user's specific concerns and understanding. However, the actionability could be improved by specifying more concrete steps or questions regarding the use of LEFT JOIN and IS NULL, rather than just stating it as an ambiguous area.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-015",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key points about INNER JOIN, NULL handling, and performance considerations. The structure is clear, with sections for overview, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's specific concerns about performance and NULL handling. The actionability is good, with a specific area of ambiguity identified, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-015",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key points about INNER JOIN, NULL handling, and performance considerations. The explanatory depth is good, covering the main aspects discussed, but could be enhanced with more detailed examples or explanations. Personalization is evident as the notes reflect the user's specific concerns and understanding. However, the actionability is slightly lower because the 'still unclear points' section could be more specific, such as asking about particular scenarios or examples of optimization.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-016",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.55,
+          "passed": false,
+          "reason": "The notes provide a basic understanding of REST API, covering its purpose and some key points like statelessness and HTTP methods. However, the depth of explanation is limited, lacking detailed insights into REST principles or examples. The alignment with the dialogue is moderate; it captures the user's initial confusion but doesn't fully address their need for what to focus on. Personalization is low as the notes don't reflect the user's specific context or misunderstandings. The actionability is average, as it identifies a need to learn about design principles and implementation, but lacks specificity.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 3,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 11,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-016",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.6,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of REST API, covering its purpose and key concepts like HTTP methods and statelessness. However, the depth of explanation is moderate, lacking detailed insights into REST principles or examples. The notes align well with the dialogue, focusing on what REST API is and what to be aware of, but they don't reflect any specific user misunderstandings or unique expressions, thus scoring lower on personalization. The actionability is moderate, as it identifies a need to learn about design principles and best practices, but lacks specificity in what aspects to explore further.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 12,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-016",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.6,
+          "passed": true,
+          "reason": "The note provides a basic understanding of REST API, covering its purpose and key points like statelessness and HTTP methods. However, it lacks depth in explaining these concepts further, which affects the explanatory_depth score. The protege_alignment is relatively high as the note aligns with the user's request for understanding REST API, but it doesn't fully address the user's uncertainty about what to focus on. Personalization is low because the note doesn't reflect the user's specific confusion or context. The actionability is moderate; while it identifies a need to learn about design principles and examples, it could be more specific in guiding the next steps.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 12,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-017",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of REST API principles and idempotency. The structure is clear, with sections for overview, learned points, key points, and unclear areas. Personalization is evident in the user's specific mention of their understanding and uncertainty about idempotency. The actionability is good, as it identifies a specific area (idempotency details) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-017",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding and areas of uncertainty about REST API principles and idempotency. The structure is clear, with sections for what was learned and what remains unclear. The user's specific confusion about idempotency is noted, showing personalization. However, the depth could be slightly improved by expanding on the HTTP methods' roles and idempotency in more detail.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-017",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of REST API principles and idempotency. The structure is clear, with sections for what was learned and important points. Personalization is evident in the user's specific mention of their understanding and uncertainty about idempotency. The actionability is good, as it identifies a specific area (idempotency details) for further exploration, though it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-018",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about REST API design and versioning. The explanatory depth is good, summarizing the main concepts without unnecessary detail. Personalization is present as the notes reflect the user's specific understanding and terminology. The actionability is also strong, with a clear area for further exploration identified, though it could be more specific about what aspects of versioning implementation need clarification.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-018",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key points discussed such as URI identification, statelessness, HTTP methods, status codes, HATEOAS, and versioning. The structure is clear, with sections for summary, learned points, important points, and unclear areas. Personalization is evident in the inclusion of specific user responses about versioning. The actionability is good, with a specific question about HATEOAS implementation, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-018",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue content, capturing key points discussed about REST API design, including resource identification, statelessness, HTTP methods, status codes, HATEOAS, and versioning. The structure is clear, with sections for what was learned and important points, though the depth could be slightly improved by expanding on each point. Personalization is evident as the notes reflect the user's specific understanding and terminology. The actionability is good, with a specific area of ambiguity identified for further learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-019",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The note provides a basic understanding of HTTPS, aligning with the user's initial knowledge. However, it lacks depth in explaining the technical aspects of HTTPS and SSL/TLS, which could enhance understanding. The note is aligned with the user's input but could be more personalized by reflecting specific questions or misunderstandings the user might have. The actionability is moderate, as it identifies a need to understand the specifics of HTTPS and SSL/TLS, but could be more detailed in guiding further learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-019",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note provides a basic understanding of HTTPS and its encryption mechanism, aligning well with the user's initial knowledge. However, it lacks depth in explaining the technical details of SSL/TLS, which is acknowledged in the 'still unclear points'. The note is somewhat personalized, reflecting the user's initial statement about encryption, but could include more specific misunderstandings or questions from the user. The actionability is good as it identifies a clear area for further learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-019",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.6,
+          "passed": true,
+          "reason": "The note provides a basic understanding of HTTPS, aligning well with the user's initial knowledge. However, it lacks depth in explaining the technical aspects of HTTPS and SSL/TLS, which could enhance understanding. The note is somewhat generic and doesn't reflect the user's specific expressions or misunderstandings, affecting personalization. The actionability is moderate, as it identifies a specific area (SSL/TLS) for further exploration, but could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 2,
+            "actionability": 3,
+            "total": 12,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-020",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.9,
+          "passed": true,
+          "reason": "The notes accurately reflect the user's understanding and the conversation content, particularly focusing on the user's uncertainty about the key exchange process. The structure is clear, with sections for learned points and areas of ambiguity, which are actionable for future learning. Personalization is evident in the mention of the user's specific confusion about key exchange, though it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 5,
+            "total": 18,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-020",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the user's understanding and the conversation content, particularly regarding the use of TLS and certificates in HTTPS. The user's specific confusion about the key exchange process is noted, which aligns well with the dialogue. However, the explanatory depth could be improved by providing more detailed insights into the HTTPS process. The notes are personalized to the user's expressed understanding and confusion, and the actionability is clear with a specific area of ambiguity identified for further learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-020",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.9,
+          "passed": true,
+          "reason": "The notes accurately reflect the user's understanding and the conversation content, particularly focusing on the user's uncertainty about the key exchange process. The structure is clear, with sections for learned points and unclear areas, which are actionable for future learning. Personalization is evident in the mention of the user's specific confusion about key exchange, though more detail could enhance depth.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 5,
+            "total": 18,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-021",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about the TLS handshake and its security aspects. The explanatory depth is good, providing a clear summary and learning points. Personalization is evident as the notes reflect the user's specific understanding and terminology. The actionability is also strong, with a specific question about additional defenses against man-in-the-middle attacks, although it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-021",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue content, capturing the key points discussed about TLS handshake and security measures against man-in-the-middle attacks. The structure is clear, with sections for overview, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's understanding and specific points raised in the conversation. The actionability is good, as it identifies specific areas (HSTS and HPKP) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-021",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about TLS handshake and security measures against man-in-the-middle attacks. The explanatory depth is good, providing a clear sequence of the handshake process and highlighting important security features. Personalization is evident as the notes reflect the user's specific understanding and terminology used in the dialogue. The actionability is also strong, with specific areas of ambiguity identified for further exploration, though it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-022",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note provides a basic understanding of binary search, aligning well with the user's initial mention of dividing the array in half. However, it lacks depth in explaining the algorithm's steps or implementation, which is noted as an area of ambiguity. The note is somewhat personalized, reflecting the user's initial understanding, but could include more specific details from the dialogue. The actionability is good, as it identifies a clear area for further learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-022",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of binary search, aligning with the user's initial knowledge about dividing the array in half. However, the depth of explanation is limited, as it doesn't delve into the algorithm's steps or conditions, which are noted as unclear. The notes are somewhat personalized, reflecting the user's prior knowledge, but lack specific user expressions or misunderstandings. The actionability is moderate, as the \"曖昧な点\" identifies a need for more detailed algorithmic understanding, but could be more specific.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-022",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes provide a clear and structured understanding of binary search, aligning well with the user's initial mention of dividing the array in half. The explanatory depth is good, covering the necessity of a sorted array and the method of narrowing the search range. However, it could delve deeper into the algorithm's mechanics. Personalization is moderate, as it reflects the user's prior knowledge but lacks unique insights or misunderstandings. The actionability is strong, with a specific area (implementation details) identified for further learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-023",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed: the time complexity of binary search, the requirement for a sorted array, and the potential overflow issue when calculating the midpoint. The structure is clear, with sections for what was learned and important points, though the depth could be slightly improved by expanding on the overflow issue. The notes are personalized, reflecting the user's specific mention of the overflow concern. The actionability is good, as it identifies a specific area (overflow risk) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-023",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートは対話内容に基づいており、バイナリサーチの計算量や実装上の注意点についての理解が記録されている。ユーザーの発言に基づく具体的な誤解（オーバーフローの可能性）も反映されており、個別性がある。曖昧な点としてオーバーフローを防ぐ具体的な実装方法が挙げられており、次回の学習につながる内容になっている。ただし、オーバーフローの具体的な実装方法についての詳細がもう少し記載されていると、さらに深い理解につながる可能性があるため、explanatory_depthを4とした。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-023",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed: the time complexity of binary search, the requirement for a sorted array, and the potential overflow issue when calculating the midpoint. The structure is clear, with sections for what was learned and important points, though the depth could be slightly improved by expanding on the overflow issue. The notes are personalized, reflecting the user's specific mention of the overflow concern. The actionability is good, as it identifies a specific area (overflow risk) for further exploration, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-024",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue content, capturing the essence of binary search and its applications. The explanatory depth is good, covering the algorithm's basic principles and its computational complexity. Personalization is evident as the notes include specific details mentioned by the user, such as the method to avoid overflow. However, the actionability could be improved by specifying which application the user finds most intriguing or challenging, to guide further learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-024",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about binary search, including its definition, method, and applications. The explanatory depth is good, covering the algorithm's mechanics and its time complexity, but could be improved with more detailed examples or explanations. The protege alignment is perfect as the notes align well with the dialogue. Personalization is present, reflecting the user's understanding and specific points mentioned in the conversation. However, the actionability is slightly lacking as the 'still unclear points' section could be more specific about what aspects of implementation or applications need further exploration.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-024",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue content, capturing the essence of binary search and its applications. The explanatory depth is good, covering the algorithm's mechanism and its computational complexity. Personalization is evident as the notes include specific user-provided examples of binary search applications. The actionability is also strong, with a clear indication of what remains unclear, specifically the need for more detailed implementation examples and application scope. However, the depth could be slightly improved by expanding on these points.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-025",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the user's understanding and questions about recursive functions, aligning well with the dialogue. The explanatory depth is good, covering the basic concept and potential pitfalls of recursion. Personalization is present as it notes the user's limited experience with writing recursive functions. The actionability is also strong, identifying a specific area (examples and usage) where the user needs further clarification.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-025",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note captures the basic understanding of recursive functions as discussed in the dialogue, aligning well with the user's statement about their limited experience. However, the explanatory depth is moderate as it doesn't delve deeply into the mechanics or examples of recursion. Personalization is present but not deeply reflective of the user's unique perspective beyond their stated experience level. The actionability is good, as it identifies a specific area (examples and usage) for further exploration.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-025",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.7,
+          "passed": true,
+          "reason": "The note captures the basic understanding of recursive functions as discussed in the dialogue, but lacks depth in explaining the concept further. The alignment with the dialogue is mostly accurate, though it slightly expands on the user's understanding by mentioning the need for a base case and avoiding infinite loops, which were not explicitly discussed. Personalization is moderate, reflecting the user's limited experience with writing recursive functions. The actionability is good, as it identifies the need for examples and deeper understanding as areas for further learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 4,
+            "total": 14,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-026",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートは対話内容に基づいており、再帰関数の基本構造やパフォーマンスの懸念点についての理解が深く記録されています。ユーザーの発言が反映されており、個別の理解が示されています。曖昧な点として末尾再帰最適化の具体的な仕組みが挙げられており、次回の学習につながる具体的な疑問が示されています。全体的に構造も整っており、内容も対話に忠実です。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-026",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of recursion, including base and recursive cases, and performance concerns like stack depth and memoization. The structure is clear, with sections for summary, learned points, key points, and unclear areas. Personalization is evident in the mention of Python's lack of tail call optimization, which aligns with the user's specific interest. The actionability is good, with a specific question about tail call optimization, though it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-026",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "ノートは対話内容に基づいており、再帰関数の基本構造やパフォーマンスの懸念点についての理解が記録されている。ユーザーの発言が反映されており、個別の理解が示されているため、personalizationも高い。曖昧な点として末尾再帰最適化の具体的な仕組みが挙げられており、次回の学習につながる具体的な疑問が示されているため、actionabilityも高い。ただし、全体的な深さはもう少し詳細に記述できる余地があるため、explanatory_depthは4とした。",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-027",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the key points discussed about recursion, including its definition, applications, and pitfalls. The structure is clear, with sections for overview, learned points, important points, and unclear areas. The notes are personalized, reflecting the user's specific mention of Python's recursion limit and strategies like memoization. The actionability is good, as it identifies a specific area for further exploration (optimal rewriting methods and examples), though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-027",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key points about recursion, its pitfalls, and solutions. The structure is clear, with sections for summary, learned points, important points, and unclear areas. Personalization is evident in the mention of Python-specific details, aligning with the user's focus. The actionability is good, with a specific area for further exploration identified, though it could be more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-027",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key points about recursion, its pitfalls, and solutions like memoization and dynamic programming. The structure is clear, with sections for summary, learned points, important points, and unclear areas. Personalization is evident in the mention of Python-specific details, aligning with the user's focus. However, the depth could be improved by expanding on the implementation examples and memoization details, which are noted as unclear.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-028",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The notes provide a basic understanding of inheritance, aligning well with the user's initial understanding. However, the depth is limited as it doesn't delve into more complex aspects of inheritance. The notes are somewhat personalized, reflecting the user's initial statement, but could include more specific misunderstandings or questions the user might have. The actionability is moderate, as it identifies a need to understand the mechanism and usage of inheritance, but lacks specific next steps or resources to explore.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-028",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The note provides a basic understanding of inheritance, aligning well with the user's initial understanding. However, it lacks depth in explaining the concept further, such as examples or more detailed mechanisms. The note is somewhat personalized, reflecting the user's initial statement, but could include more specific misunderstandings or questions the user might have. The actionability is moderate, as it identifies a vague area of ambiguity but does not specify what aspects of the mechanism or constraints are unclear.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-028",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.65,
+          "passed": true,
+          "reason": "The note provides a basic understanding of inheritance, aligning well with the user's initial understanding. However, it lacks depth in explaining the concept further, such as examples or more detailed mechanisms. The note is somewhat personalized, reflecting the user's initial statement, but could include more specific misunderstandings or questions the user might have. The actionability is moderate, as it identifies a need to understand the mechanism and constraints of inheritance, but could be more specific in guiding the next steps for learning.",
+          "metadata": {
+            "explanatory_depth": 3,
+            "protege_alignment": 4,
+            "personalization": 3,
+            "actionability": 3,
+            "total": 13,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-029",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of inheritance and its comparison with composition. The structure is clear, with sections for learned points and important considerations. Personalization is evident in the user's mention of the \"boundary being vague,\" which aligns with their dialogue. The actionability is good, as it identifies a specific area of ambiguity (judgment criteria for using composition), though it could be slightly more detailed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-029",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of inheritance and its pros and cons. The structure is clear, with sections for learned points and important aspects. Personalization is evident in the user's mention of hearing about the drawbacks of inheritance and the ambiguity in choosing between inheritance and composition. The actionability is good, as the user identifies a specific area of ambiguity regarding the criteria for choosing between inheritance and composition, which can guide future learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-029",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing the user's understanding of inheritance and its pros and cons. The structure is clear, with sections for learned points and important aspects, though the depth could be slightly improved by expanding on the concepts. Personalization is evident in the user's specific mention of the ambiguity in choosing between inheritance and composition. The actionability is good, as the user identifies a specific area of ambiguity to explore further.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-030",
+      "trial": 0,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.85,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key concepts like inheritance, Liskov substitution principle, and issues with multiple inheritance. The user's understanding is well-documented, and the notes are aligned with the conversation. Personalization is evident in the mention of Python's MRO and the user's preference for composition over inheritance. The actionability is good, with a specific area for further exploration identified (MRO details). However, the explanatory depth could be slightly improved by expanding on the concepts discussed.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 4,
+            "total": 17,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-030",
+      "trial": 1,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key concepts like inheritance, Liskov substitution principle, and issues with multiple inheritance. The explanatory depth is good, but could be improved with more detailed examples or explanations. Personalization is present as the notes reflect the user's specific understanding and terminology. However, the actionability is slightly lower because the 'still unclear points' section could be more specific about what aspects of multiple inheritance need further exploration.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "case_id": "ng-030",
+      "trial": 2,
+      "grader_results": [
+        {
+          "grader_name": "note_has_sections",
+          "score": 1.0,
+          "passed": true,
+          "reason": "all sections present",
+          "metadata": {
+            "missing_sections": [],
+            "required_sections": [
+              "概要",
+              "学んだこと",
+              "重要なポイント",
+              "まだ曖昧な点"
+            ]
+          }
+        },
+        {
+          "grader_name": "note_quality_judge",
+          "score": 0.8,
+          "passed": true,
+          "reason": "The notes accurately reflect the dialogue, capturing key concepts like inheritance, Liskov substitution principle, and issues with multiple inheritance. The explanatory depth is good, but could be improved with more detailed examples or explanations. Personalization is evident as the notes reflect the user's specific understanding and terminology. However, the actionability is slightly lacking as the 'still unclear points' could be more specific or detailed to guide further learning.",
+          "metadata": {
+            "explanatory_depth": 4,
+            "protege_alignment": 5,
+            "personalization": 4,
+            "actionability": 3,
+            "total": 16,
+            "max_score": 20,
+            "pass_threshold": 12
+          }
+        }
+      ],
+      "error": null
+    }
+  ],
+  "summary": {
+    "note_has_sections": 0.9833333333333333,
+    "note_quality_judge": 0.7833333333333333
+  }
+}

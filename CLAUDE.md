@@ -12,30 +12,6 @@
 
 ---
 
-## クイックスタート
-
-```bash
-# 1. DB 起動
-make dev-db              # docker compose up -d db
-
-# 2. サーバー（別ターミナル）
-make dev-server          # cd server && uv run fastapi dev main.py
-
-# 3. クライアント（別ターミナル）
-make dev-client          # cd client && npm run dev
-```
-
-**初回のみ:**
-```bash
-# BetterAuth マイグレーションを先に適用してから alembic を実行すること
-psql ... < client/better-auth_migrations/*.sql
-cd server && uv sync && uv run alembic upgrade head
-cd client && npm install
-uv run pre-commit install  # コミット時フックを有効化
-```
-
----
-
 ## 開発コマンド
 
 ### バックエンド（`server/`）
@@ -69,7 +45,7 @@ make test-db              # テスト用 DB 起動
 
 ## ディレクトリ構成
 
-```
+```text
 server/
 ├── main.py                    # FastAPI エントリーポイント・lifespan
 ├── api/
@@ -191,29 +167,6 @@ PR マージ前に全通過が必須:
 - ruff check + format（server/）
 - mypy（server/）
 - prettier（client/ の .ts/.tsx）
-
----
-
-## 環境変数
-
-### `server/.env`
-```
-DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
-OPENAI_API_KEY=...
-BETTER_AUTH_URL=http://localhost:3000
-JWKS_URL=http://localhost:3000/api/auth/jwks
-CORS_ORIGINS=http://localhost:3000
-```
-
-### `client/.env.local`
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
-DATABASE_URL=postgresql://learning_optimizer:localdev@localhost:5432/learning_optimizer
-BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-```
 
 ---
 

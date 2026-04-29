@@ -100,7 +100,7 @@ async def summarize_recent(
         COUNT(*) FILTER (WHERE status = 'success')::float
             / NULLIF(COUNT(*), 0) AS success_rate
     FROM run_traces
-    WHERE event_type = 'node' AND created_at >= $1
+    WHERE event_type = 'node' AND started_at >= $1
     """
     node_row = await conn.fetchrow(node_query, since)
 
@@ -108,7 +108,7 @@ async def summarize_recent(
     SELECT
         PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95
     FROM run_traces
-    WHERE created_at >= $1
+    WHERE started_at >= $1
     """
     p95_row = await conn.fetchrow(p95_query, since)
 
@@ -117,7 +117,7 @@ async def summarize_recent(
     FROM (
         SELECT dialogue_session_id, SUM(total_tokens) AS session_total
         FROM run_traces
-        WHERE created_at >= $1 AND total_tokens IS NOT NULL
+        WHERE started_at >= $1 AND total_tokens IS NOT NULL
         GROUP BY dialogue_session_id
     ) t
     """
@@ -128,7 +128,7 @@ async def summarize_recent(
     FROM (
         SELECT dialogue_session_id, MAX(dialogue_turn_count) AS max_turn
         FROM run_traces
-        WHERE created_at >= $1 AND dialogue_turn_count IS NOT NULL
+        WHERE started_at >= $1 AND dialogue_turn_count IS NOT NULL
         GROUP BY dialogue_session_id
     ) t
     """
@@ -141,7 +141,7 @@ async def summarize_recent(
     FROM run_traces
     WHERE event_type = 'node'
       AND node_name = 'generate_note'
-      AND created_at >= $1
+      AND started_at >= $1
     """
     note_row = await conn.fetchrow(note_failure_query, since)
 

@@ -37,6 +37,14 @@ dev = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
+[tool.coverage.report]
+fail_under = 60
+omit = [
+    "tests/*",
+    "migrations/*",
+    "alembic/*",
+]
+
 [tool.ruff]
 line-length = 119
 target-version = "py313"

@@ -62,7 +62,7 @@ jobs:
       - name: Create BetterAuth tables (prerequisite for app migrations)
         run: psql $DATABASE_URL -f ../client/better-auth_migrations/*.sql
       - run: uv run alembic upgrade head
-      - run: uv run pytest --cov=. --cov-report=xml -v
+      - run: uv run pytest --cov=. --cov-report=xml --cov-fail-under=60 -v
 
   client-lint:
     runs-on: ubuntu-latest

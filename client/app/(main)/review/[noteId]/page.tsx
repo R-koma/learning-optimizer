@@ -9,6 +9,7 @@ import { fetchAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/chat/chat-input";
 import { Badge } from "@/components/ui/badge";
+import { Markdown } from "@/components/ui/markdown";
 import {
   ArrowLeftIcon,
   NotebookPenIcon,
@@ -165,17 +166,7 @@ export default function ReviewPage({
               前回の要約
             </h2>
           </div>
-          <ul className="space-y-2 pl-1">
-            {note.summary.split("\n").map((line, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-base leading-relaxed"
-              >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                {line}
-              </li>
-            ))}
-          </ul>
+          <Markdown>{note.summary}</Markdown>
         </div>
 
         <Button

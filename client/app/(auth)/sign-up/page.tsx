@@ -83,7 +83,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md mx-auto min-h-125 flex flex-col justify-center p-6 ring-0 border-0 shadow-none">
         <CardHeader>
-          <CardTitle className="text-center text-2xl">Sign up</CardTitle>
+          <CardTitle className="text-center text-2xl">新規登録</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6 p-0">
           <div className="flex justify-center">
@@ -108,7 +108,7 @@ export default function SignUpPage() {
                       {...field}
                       id="name"
                       aria-invalid={fieldState.invalid}
-                      placeholder="Name"
+                      placeholder="名前"
                       autoComplete="off"
                       className="p-6 text-base tracking-wide"
                     />
@@ -127,7 +127,7 @@ export default function SignUpPage() {
                       {...field}
                       id="email"
                       aria-invalid={fieldState.invalid}
-                      placeholder="Email address"
+                      placeholder="メールアドレス"
                       autoComplete="off"
                       className="p-6 text-base tracking-wide"
                     />
@@ -147,7 +147,7 @@ export default function SignUpPage() {
                       type="password"
                       id="password"
                       aria-invalid={fieldState.invalid}
-                      placeholder="Password"
+                      placeholder="パスワード"
                       autoComplete="off"
                       className="p-6 text-base tracking-wide"
                     />
@@ -167,7 +167,7 @@ export default function SignUpPage() {
                       type="password"
                       id="passwordConfirmation"
                       aria-invalid={fieldState.invalid}
-                      placeholder="Password Confirmation"
+                      placeholder="確認用パスワード"
                       autoComplete="off"
                       className="p-6 text-base tracking-wide"
                     />
@@ -196,12 +196,12 @@ export default function SignUpPage() {
           </Field>
         </CardFooter>
         <p className="text-center text-sm text-muted-foreground pb-6">
-          Already have an account?{" "}
+          アカウントをお持ちの方はこちら
           <Link
             href="/sign-in"
             className="text-primary underline underline-offset-4 hover:opacity-80"
           >
-            Log in
+            ログイン
           </Link>
         </p>
       </Card>

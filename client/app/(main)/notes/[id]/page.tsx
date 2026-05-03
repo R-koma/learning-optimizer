@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { fetchAPI, getToken } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Markdown } from "@/components/ui/markdown";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -139,26 +140,14 @@ export default async function NotePage({
                 要約
               </h3>
             </div>
-            <ul className="space-y-2 pl-1">
-              {note.summary.split("\n").map((line, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-base leading-relaxed"
-                >
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                  {line}
-                </li>
-              ))}
-            </ul>
+            <Markdown>{note.summary}</Markdown>
             <div className="my-4 flex items-center gap-2">
               <FileTextIcon className="h-4 w-4 text-muted-foreground" />
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 内容
               </h3>
             </div>
-            <div className="whitespace-pre-wrap text-base leading-7 text-foreground/90">
-              {note.content}
-            </div>
+            <Markdown>{note.content}</Markdown>
           </section>
         </div>
       </div>

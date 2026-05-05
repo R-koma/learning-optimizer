@@ -21,7 +21,7 @@ async def learning_start(state: LearningState) -> dict[str, Any]:
             summary=state.get("note_summary"),
         )
     else:
-        prompt = LEARNING_PLANNER_PROMPT.format(topic=topic)
+        prompt = LEARNING_PLANNER_PROMPT
 
     user_message = HumanMessage(content=topic)
     response = await measured_ainvoke(

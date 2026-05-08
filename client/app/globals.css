@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -125,5 +126,63 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Syntax highlighting (rehype-highlight / highlight.js) — shadcn-aligned palette */
+@layer components {
+  .hljs {
+    color: var(--foreground);
+    background: transparent;
+  }
+  .hljs-comment,
+  .hljs-quote {
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-tag,
+  .hljs-name,
+  .hljs-built_in,
+  .hljs-meta {
+    color: var(--primary);
+  }
+  .hljs-string,
+  .hljs-attr,
+  .hljs-template-tag,
+  .hljs-template-variable {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+  .hljs-number,
+  .hljs-literal,
+  .hljs-symbol,
+  .hljs-bullet {
+    @apply text-amber-600 dark:text-amber-400;
+  }
+  .hljs-title,
+  .hljs-title.class_,
+  .hljs-title.function_,
+  .hljs-section,
+  .hljs-selector-id {
+    @apply text-sky-600 dark:text-sky-400;
+  }
+  .hljs-variable,
+  .hljs-attribute,
+  .hljs-property,
+  .hljs-params {
+    color: var(--foreground);
+  }
+  .hljs-deletion {
+    color: var(--destructive);
+  }
+  .hljs-addition {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+  .hljs-emphasis {
+    font-style: italic;
+  }
+  .hljs-strong {
+    font-weight: 600;
   }
 }

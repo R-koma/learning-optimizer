@@ -1,6 +1,26 @@
+import type { ComponentProps } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { cn } from "@/lib/utils";
+
+const articleRehypePlugins = [
+  rehypeSlug,
+  [
+    rehypeAutolinkHeadings,
+    {
+      behavior: "append",
+      properties: {
+        className: ["heading-anchor"],
+        ariaLabel: "セクションへのリンク",
+      },
+      content: { type: "text", value: "#" },
+    },
+  ],
+  rehypeHighlight,
+] as const;
 
 const components: Components = {
   h1: ({ className, ...props }) => (
@@ -117,9 +137,81 @@ const components: Components = {
 interface MarkdownProps {
   children: string;
   className?: string;
+  variant?: "default" | "article";
 }
 
-export function Markdown({ children, className }: MarkdownProps) {
+const articleProseClasses = cn(
+  "prose prose-neutral dark:prose-invert max-w-[68ch] text-[17px]",
+  // headings
+  "prose-headings:font-semibold prose-headings:tracking-tight prose-headings:scroll-mt-24",
+  "prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg",
+  "prose-h2:mt-12 prose-h2:mb-4 prose-h3:mt-10 prose-h3:mb-3",
+  // paragraphs
+  "prose-p:leading-[1.85] prose-p:my-5",
+  "[&>p:first-child]:text-lg [&>p:first-child]:text-foreground/80",
+  // lists
+  "prose-ul:my-5 prose-ol:my-5 prose-ul:pl-5 prose-ol:pl-5",
+  "prose-li:leading-[1.85] prose-li:my-1",
+  "prose-ul:marker:text-primary/60 prose-ol:marker:text-primary/60",
+  "[&_li>input]:mr-2 [&_li>input]:translate-y-[1px]",
+  // emphasis
+  "prose-strong:text-foreground prose-strong:font-semibold",
+  // inline code
+  "prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5",
+  "prose-code:font-mono prose-code:text-[0.9em] prose-code:text-primary",
+  "prose-code:before:content-none prose-code:after:content-none",
+  // code block
+  "prose-pre:rounded-lg prose-pre:bg-muted prose-pre:border prose-pre:border-border",
+  "prose-pre:p-4 prose-pre:text-[0.9em] prose-pre:leading-relaxed",
+  "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground",
+  "[&_pre_code]:before:content-none [&_pre_code]:after:content-none",
+  // blockquote (callout style)
+  "prose-blockquote:rounded-r prose-blockquote:bg-muted/40",
+  "prose-blockquote:border-l-4 prose-blockquote:border-primary/60",
+  "prose-blockquote:px-5 prose-blockquote:py-3",
+  "prose-blockquote:text-foreground/80 prose-blockquote:not-italic",
+  "[&_blockquote_p]:before:content-none [&_blockquote_p]:after:content-none",
+  // links
+  "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
+  '[&_a[href^="http"]]:after:content-["_↗"] [&_a[href^="http"]]:after:text-xs',
+  // tables
+  "prose-table:border-collapse",
+  "prose-thead:border-b prose-thead:border-border",
+  "prose-th:py-2.5 prose-td:py-2.5 prose-th:px-3 prose-td:px-3",
+  "prose-th:text-left prose-th:font-semibold",
+  "[&_tbody_tr]:border-b [&_tbody_tr]:border-border/60",
+  "[&_tbody_tr:nth-child(even)]:bg-muted/30",
+  // hr
+  "prose-hr:my-12 prose-hr:border-border/60",
+  // heading anchor (rehype-autolink-headings)
+  "[&_.heading-anchor]:ml-2 [&_.heading-anchor]:text-muted-foreground/40",
+  "[&_.heading-anchor]:no-underline hover:[&_.heading-anchor]:text-primary",
+  "[&_h2:not(:hover)>.heading-anchor]:opacity-0 [&_h3:not(:hover)>.heading-anchor]:opacity-0",
+  "[&_.heading-anchor]:transition-opacity",
+);
+
+export function Markdown({
+  children,
+  className,
+  variant = "default",
+}: MarkdownProps) {
+  if (variant === "article") {
+    return (
+      <div className={cn(articleProseClasses, className)}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={
+            articleRehypePlugins as unknown as ComponentProps<
+              typeof ReactMarkdown
+            >["rehypePlugins"]
+          }
+        >
+          {children}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("text-base text-foreground/90", className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

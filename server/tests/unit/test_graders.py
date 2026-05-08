@@ -8,20 +8,28 @@ from graph.model import FeedbackOutput
 
 
 class TestNoteHasSections:
-    def test_all_sections_present(self) -> None:
-        content = "## 概要\nx\n## 学んだこと\ny\n## 重要なポイント\nz\n## まだ曖昧な点\nw"
+    def test_all_required_present_with_callout(self) -> None:
+        content = "リード段落です。\n\n## 学んだこと\n- y\n\n## 重要なポイント\n- z\n\n> **まだ曖昧な点**\n> - w"
         result = note_has_sections.grade(content)
         assert result.passed is True
         assert result.score == 1.0
+        assert result.metadata["has_ambiguity_callout"] is True
 
-    def test_one_section_missing(self) -> None:
-        content = "## 概要\nx\n## 学んだこと\ny\n## 重要なポイント\nz"
+    def test_all_required_present_without_callout(self) -> None:
+        content = "リード段落です。\n\n## 学んだこと\n- y\n\n## 重要なポイント\n- z"
+        result = note_has_sections.grade(content)
+        assert result.passed is True
+        assert result.score == 1.0
+        assert result.metadata["has_ambiguity_callout"] is False
+
+    def test_one_h2_missing(self) -> None:
+        content = "リード段落です。\n\n## 学んだこと\n- y"
         result = note_has_sections.grade(content)
         assert result.passed is False
-        assert result.score == 0.75
-        assert "まだ曖昧な点" in result.reason
+        assert result.score == 0.5
+        assert "重要なポイント" in result.reason
 
-    def test_all_sections_missing(self) -> None:
+    def test_all_h2_missing(self) -> None:
         content = "Some random text without any section"
         result = note_has_sections.grade(content)
         assert result.passed is False

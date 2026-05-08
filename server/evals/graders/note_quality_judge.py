@@ -36,9 +36,11 @@ def _build_judge_prompt(rubric: dict[str, Any]) -> str:
         f"{rubric_text}\n\n"
         "## 評価ルール\n"
         "- 対話内容に基づかない記述（ハルシネーション）は protege_alignment を 1-2 に下げる\n"
-        "- 「概要 / 学んだこと / 重要なポイント / まだ曖昧な点」の構造が崩れている場合は explanatory_depth を下げる\n"
+        "- ノート構造: 『リード段落 → ## 学んだこと → ## 重要なポイント → "
+        "> **まだ曖昧な点** の blockquote callout（曖昧な点なしなら省略可）』。"
+        "崩れていれば explanatory_depth を下げる\n"
         "- ユーザーの実際の発言と無関係な一般論ばかりなら personalization を 1-2 に下げる\n"
-        "- 「まだ曖昧な点」が空、または曖昧で具体性がなければ actionability を 1-2 に下げる\n"
+        "- 「まだ曖昧な点」blockquote が存在するのに内容が空・曖昧で具体性がなければ actionability を 1-2 に下げる\n"
     )
 
 

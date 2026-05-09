@@ -15,10 +15,12 @@ async def learning_start(state: LearningState) -> dict[str, Any]:
     session_type = state.get("session_type", "learning")
 
     if session_type == "review":
+        note_content = state["note_content"]
+        note_summary = state["note_summary"]
         prompt = REVIEW_SYSTEM_PROMPT.format(
             topic=topic,
-            content=state.get("note_content"),
-            summary=state.get("note_summary"),
+            content=note_content,
+            summary=note_summary,
         )
     else:
         prompt = LEARNING_PLANNER_PROMPT

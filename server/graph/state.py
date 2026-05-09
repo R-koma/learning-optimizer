@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, NotRequired
 from uuid import UUID
 
 from langchain_core.messages import BaseMessage
@@ -15,5 +15,5 @@ class LearningState(TypedDict):
     turn_count: int
     should_generate_note: bool
     session_type: str
-    note_content: str
-    note_summary: str
+    note_content: NotRequired[str]
+    note_summary: NotRequired[str]

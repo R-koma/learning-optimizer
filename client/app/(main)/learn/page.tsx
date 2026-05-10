@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useChatWebSocket } from "@/hooks/use-chat-websocket";
+import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,12 +15,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
-import { Loader2Icon, NotebookPenIcon, PencilIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  Loader2Icon,
+  NotebookPenIcon,
+  PencilIcon,
+} from "lucide-react";
+
+const TARGET_DEPTH_OPTIONS: {
+  value: TargetDepth;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "recognize",
+    label: "概要を掴みたい",
+    hint: "言葉の意味と全体像が分かる",
+  },
+  {
+    value: "explain",
+    label: "自分の言葉で説明できる",
+    hint: "他人に教えられる、具体例を出せる",
+  },
+  {
+    value: "apply",
+    label: "実践・応用できる",
+    hint: "具体的な場面で使える、応用展開できる",
+  },
+];
 
 export default function LearnPage() {
   const router = useRouter();
   const [topic, setTopic] = useState("");
+  const [learningGoal, setLearningGoal] = useState("");
+  const [targetDepth, setTargetDepth] = useState<TargetDepth | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const { setNavbarCenter } = useNavbarSlot();
@@ -86,7 +117,11 @@ export default function LearnPage() {
 
   const handleStartLearning = () => {
     if (!topic.trim()) return;
-    startLearning(topic.trim());
+
+    startLearning(topic.trim(), {
+      learning_goal: learningGoal.trim() || undefined,
+      target_depth: targetDepth ?? undefined,
+    });
   };
 
   const handleSendMessage = (content: string) => {
@@ -97,15 +132,12 @@ export default function LearnPage() {
 
   if (messages.length === 0 && !isConnected) {
     return (
-      <div className="flex h-full items-center justify-center p-4">
-        <Card className="w-full max-w-lg shadow-lg">
+      <div className="flex h-full items-center justify-center overflow-y-auto p-4">
+        <Card className="w-full max-w-lg shadow-lg my-4">
           <CardHeader className="space-y-2 px-8 pt-10 pb-4">
             <CardTitle className="text-center text-2xl font-bold">
               新規学習
             </CardTitle>
-            <p className="text-center text-sm text-muted-foreground">
-              学習したいトピックを入力して開始しましょう
-            </p>
           </CardHeader>
           <CardContent className="px-8 pb-4">
             <form
@@ -114,7 +146,7 @@ export default function LearnPage() {
                 handleStartLearning();
               }}
             >
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 <div className="grid gap-2">
                   <Label htmlFor="topic" className="text-sm font-medium">
                     トピック
@@ -128,6 +160,74 @@ export default function LearnPage() {
                     className="h-12 text-base"
                     required
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="flex items-baseline gap-2 text-sm font-medium">
+                    到達したいレベル
+                    <span className="text-xs font-normal text-muted-foreground">
+                      （任意）
+                    </span>
+                  </Label>
+                  <div className="grid gap-2">
+                    {TARGET_DEPTH_OPTIONS.map((option) => {
+                      const isSelected = targetDepth === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setTargetDepth(isSelected ? null : option.value)
+                          }
+                          className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? "border-primary bg-primary/5"
+                              : "border-input hover:bg-muted/40"
+                          }`}
+                        >
+                          <span className="text-sm font-medium">
+                            {option.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {option.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailsOpen((v) => !v)}
+                    className="flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    aria-expanded={isDetailsOpen}
+                  >
+                    <ChevronDownIcon
+                      className={`h-4 w-4 transition-transform ${
+                        isDetailsOpen ? "rotate-0" : "-rotate-90"
+                      }`}
+                    />
+                    詳細を追加（任意）
+                  </button>
+                  {isDetailsOpen && (
+                    <div className="grid gap-2 pt-1">
+                      <Label
+                        htmlFor="learning-goal"
+                        className="text-sm font-medium"
+                      >
+                        学習ゴール
+                      </Label>
+                      <Textarea
+                        id="learning-goal"
+                        placeholder="例: ReAct で Tool 呼び出しの設計パターンを理解したい"
+                        value={learningGoal}
+                        onChange={(e) => setLearningGoal(e.target.value)}
+                        className="min-h-16 text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </form>

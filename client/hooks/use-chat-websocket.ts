@@ -53,6 +53,13 @@ interface NoteStatusResponse {
   feedback?: Feedback | null;
 }
 
+export type TargetDepth = "recognize" | "explain" | "apply";
+
+export interface StartLearningOptions {
+  learning_goal?: string;
+  target_depth?: TargetDepth;
+}
+
 interface UseChatWebSocketReturn {
   messages: ChatMessage[];
   isConnected: boolean;
@@ -63,7 +70,7 @@ interface UseChatWebSocketReturn {
   feedback: Feedback | null;
   error: string | null;
   editingMessage: string | null;
-  startLearning: (topic: string) => void;
+  startLearning: (topic: string, options?: StartLearningOptions) => void;
   startReview: (noteId: string) => void;
   sendMessage: (content: string) => void;
   endSession: () => void;
@@ -296,12 +303,24 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
   }, [pollNoteStatus, startTypewriter, flushTypewriter]);
 
   const startLearning = useCallback(
-    (topic: string) => {
+    (topic: string, options?: StartLearningOptions) => {
       connect();
+
+      const payload: {
+        type: "start_learning";
+        topic: string;
+        learning_goal?: string;
+        target_depth?: TargetDepth;
+      } = { type: "start_learning", topic };
+
+      const goal = options?.learning_goal?.trim();
+      if (goal) payload.learning_goal = goal;
+
+      if (options?.target_depth) payload.target_depth = options.target_depth;
 
       const checkAndSend = () => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: "start_learning", topic }));
+          wsRef.current.send(JSON.stringify(payload));
           setMessages([{ role: "user", content: topic }]);
           setIsLoading(true);
           setIsSessionEnded(false);

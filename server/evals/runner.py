@@ -41,6 +41,7 @@ from graph.prompts import (
     GENERATE_NOTE_PROMPT,
     GENERATE_QUESTION_PROMPT,
     REVIEW_SYSTEM_PROMPT,
+    format_learning_plan_fields,
 )
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,16 @@ async def _invoke_feedback_generation(case: dict[str, Any], llm_structured: Chat
 
 async def _invoke_question_generation(case: dict[str, Any], llm: ChatOpenAI) -> str:
     recent_messages = f"ユーザー: {case['user_message']}"
-    prompt = GENERATE_QUESTION_PROMPT.format(topic=case["topic"], recent_messages=recent_messages)
+    plan_fields = format_learning_plan_fields(
+        learning_goal=case.get("learning_goal"),
+        target_depth=case.get("target_depth") or "recognize",
+        focus_aspects=case.get("focus_aspects"),
+    )
+    prompt = GENERATE_QUESTION_PROMPT.format(
+        topic=case["topic"],
+        recent_messages=recent_messages,
+        **plan_fields,
+    )
     response = await llm.ainvoke([SystemMessage(content=prompt)])
     return response.content if isinstance(response.content, str) else str(response.content)
 

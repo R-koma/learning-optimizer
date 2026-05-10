@@ -3,10 +3,15 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from graph.state import TargetDepth
+
 
 class StartLearningMessage(BaseModel):
     type: Literal["start_learning"]
     topic: str
+    learning_goal: str | None = None
+    target_depth: TargetDepth | None = None
+    focus_aspects: list[str] | None = None
 
 
 class StartReviewMessage(BaseModel):

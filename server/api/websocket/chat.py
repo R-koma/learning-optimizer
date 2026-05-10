@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessageChunk, HumanMessage, RemoveMessage
 
 from api.websocket.auth import authenticate_websocket
 from core.database import get_pool
+from graph.state import TARGET_DEPTH_VALUES
 from repositories import (
     dialogue_message_repository,
     dialogue_session_repository,
@@ -110,6 +111,20 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     "should_generate_note": False,
                     "session_type": "learning",
                 }
+
+                learning_goal = data.get("learning_goal")
+                if isinstance(learning_goal, str) and learning_goal.strip():
+                    initial_state["learning_goal"] = learning_goal.strip()
+
+                target_depth = data.get("target_depth")
+                if target_depth in TARGET_DEPTH_VALUES:
+                    initial_state["target_depth"] = target_depth
+
+                focus_aspects = data.get("focus_aspects")
+                if isinstance(focus_aspects, list):
+                    cleaned_aspects = [a.strip() for a in focus_aspects if isinstance(a, str) and a.strip()]
+                    if cleaned_aspects:
+                        initial_state["focus_aspects"] = cleaned_aspects
 
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "user", data["topic"], message_order)

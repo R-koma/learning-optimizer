@@ -3,7 +3,11 @@ from typing import Any
 from langchain_core.messages import SystemMessage
 
 from graph.llm import llm
-from graph.prompts import GENERATE_QUESTION_PROMPT, REVIEW_SYSTEM_PROMPT
+from graph.prompts import (
+    GENERATE_QUESTION_PROMPT,
+    REVIEW_SYSTEM_PROMPT,
+    format_learning_plan_fields,
+)
 from graph.state import LearningState
 from observability.llm import measured_ainvoke
 from observability.tracing import build_trace_context
@@ -45,9 +49,15 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
     recent_messages = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"][-6:]
     )
+    plan_fields = format_learning_plan_fields(
+        learning_goal=state.get("learning_goal"),
+        target_depth=state.get("target_depth") or "recognize",
+        focus_aspects=state.get("focus_aspects"),
+    )
     question_prompt = GENERATE_QUESTION_PROMPT.format(
         topic=topic,
         recent_messages=recent_messages,
+        **plan_fields,
     )
     response = await measured_ainvoke(
         runnable=llm,

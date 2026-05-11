@@ -61,6 +61,18 @@ class SessionEndedMessage(BaseModel):
     session_id: UUID | None = None
 
 
+class SessionStartedMessage(BaseModel):
+    type: Literal["session_started"] = "session_started"
+    session_id: UUID
+    session_type: Literal["learning", "review"]
+
+
+class SessionResumedMessage(BaseModel):
+    type: Literal["session_resumed"] = "session_resumed"
+    session_id: UUID
+    session_type: Literal["learning", "review"]
+
+
 class CancelLastMessageSuccess(BaseModel):
     type: Literal["cancel_last_message_success"] = "cancel_last_message_success"
     cancelled_content: str

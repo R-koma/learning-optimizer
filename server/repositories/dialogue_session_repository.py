@@ -39,12 +39,20 @@ async def update_status(
     session_id: UUID,
     status: str,
 ) -> dict[str, Any] | None:
-    query = """--sql
-    UPDATE dialogue_sessions
-    SET status = $2
-    WHERE id = $1
-    RETURNING *
-    """
+    if status == "disconnect":
+        query = """--sql
+        UPDATE dialogue_sessions
+        SET status = $2, ended_at = NOW()
+        WHERE id = $1
+        RETURNING *
+        """
+    else:
+        query = """--sql
+        UPDATE dialogue_sessions
+        SET status = $2
+        WHERE id = $1
+        RETURNING *
+        """
     record = await conn.fetchrow(query, str(session_id), status)
     return dict(record) if record else None
 
@@ -60,6 +68,23 @@ async def find_by_id(
     WHERE id = $1 AND user_id = $2
     """
     record = await conn.fetchrow(query, str(session_id), user_id)
+    return dict(record) if record else None
+
+
+async def find_resumable_by_user(
+    conn: asyncpg.Connection,
+    user_id: str,
+) -> dict[str, Any] | None:
+    query = """--sql
+    SELECT id, user_id, session_type, status, note_id, started_at, ended_at
+    FROM dialogue_sessions
+    WHERE user_id = $1
+      AND status IN ('in_progress', 'disconnect')
+      AND COALESCE(ended_at, started_at) > NOW() - INTERVAL '30 days'
+    ORDER BY COALESCE(ended_at, started_at) DESC
+    LIMIT 1
+    """
+    record = await conn.fetchrow(query, user_id)
     return dict(record) if record else None
 
 

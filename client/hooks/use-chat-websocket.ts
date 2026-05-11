@@ -22,6 +22,8 @@ interface ServerMessage {
     | "assistant_message_end"
     | "note_generated"
     | "feedback_generated"
+    | "session_started"
+    | "session_resumed"
     | "session_ended"
     | "cancel_last_message_success"
     | "cancel_last_message_error"
@@ -36,6 +38,7 @@ interface ServerMessage {
   improvements?: string;
   cancelled_content?: string;
   session_id?: string;
+  session_type?: "learning" | "review";
 }
 
 interface Feedback {
@@ -70,8 +73,10 @@ interface UseChatWebSocketReturn {
   feedback: Feedback | null;
   error: string | null;
   editingMessage: string | null;
+  sessionId: string | null;
   startLearning: (topic: string, options?: StartLearningOptions) => void;
   startReview: (noteId: string) => void;
+  resumeSession: (sessionId: string, initialMessages: ChatMessage[]) => void;
   sendMessage: (content: string) => void;
   endSession: () => void;
   cancelLastMessage: () => void;
@@ -92,6 +97,7 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const pendingTextRef = useRef<string>("");
   const typewriterTimerRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -252,6 +258,11 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           setIsGeneratingNote(false);
           break;
 
+        case "session_started":
+        case "session_resumed":
+          if (data.session_id) setSessionId(data.session_id);
+          break;
+
         case "feedback_generated":
           setFeedback({
             understanding_level: data.understanding_level ?? "",
@@ -358,6 +369,29 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     [connect],
   );
 
+  const resumeSession = useCallback(
+    (sid: string, initialMessages: ChatMessage[]) => {
+      connect();
+      setSessionId(sid);
+      setMessages(initialMessages);
+      setIsSessionEnded(false);
+      setGeneratedNote(null);
+      setFeedback(null);
+
+      const checkAndSend = () => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({ type: "resume_session", session_id: sid }),
+          );
+        } else {
+          setTimeout(checkAndSend, 50);
+        }
+      };
+      checkAndSend();
+    },
+    [connect],
+  );
+
   const sendMessage = useCallback((content: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
@@ -394,8 +428,10 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     feedback,
     error,
     editingMessage,
+    sessionId,
     startLearning,
     startReview,
+    resumeSession,
     sendMessage,
     endSession,
     cancelLastMessage,

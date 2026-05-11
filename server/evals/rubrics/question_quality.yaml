@@ -1,0 +1,15 @@
+rubric:
+  avoids_repeated_aspects:
+    description: ユーザーが直近の発言で既にカバーした観点を再度質問していないか（最重要）
+    scale: "1-5"
+  expands_to_uncovered:
+    description: 未カバーの観点・観点間関係・トレードオフへ展開できているか
+    scale: "1-5"
+  acknowledges_coverage:
+    description: 複数観点が一度に提示された場合、それらをまとめて受け止めている（要約復唱）か
+    scale: "1-5"
+  single_question:
+    description: 1レスポンス内の質問は1つに収まっているか
+    scale: "1-5"
+max_score: 20
+pass_threshold: 14

@@ -29,6 +29,7 @@ from evals.graders import (
     feedback_is_actionable,
     note_has_sections,
     note_quality_judge,
+    question_quality_judge,
     response_label_match,
 )
 from evals.graders.base import GraderResult
@@ -212,12 +213,17 @@ async def _grade_feedback_generation_case(case: dict[str, Any], *, llm_structure
     return [feedback_is_actionable.grade(feedback)]
 
 
-async def _grade_question_generation_case(case: dict[str, Any], *, llm: ChatOpenAI) -> list[GraderResult]:
+async def _grade_question_generation_case(
+    case: dict[str, Any],
+    *,
+    llm: ChatOpenAI,
+    judge_llm: ChatOpenAI | None,
+) -> list[GraderResult]:
     response = await _invoke_question_generation(case, llm)
     is_nonempty = bool(response.strip())
     has_question_mark = "？" in response or "?" in response
     passed = is_nonempty and has_question_mark
-    return [
+    results: list[GraderResult] = [
         GraderResult(
             grader_name="question_generation_smoke",
             score=1.0 if passed else 0.0,
@@ -228,6 +234,16 @@ async def _grade_question_generation_case(case: dict[str, Any], *, llm: ChatOpen
             metadata={"is_nonempty": is_nonempty, "has_question_mark": has_question_mark},
         )
     ]
+    if judge_llm is not None:
+        results.append(
+            await question_quality_judge.grade(
+                user_message=case["user_message"],
+                ai_question=response,
+                topic=case["topic"],
+                judge_llm=judge_llm,
+            )
+        )
+    return results
 
 
 async def _grade_response_analysis_case(case: dict[str, Any], *, llm: ChatOpenAI) -> list[GraderResult]:
@@ -252,7 +268,7 @@ async def _run_case(
     if task == "feedback_generation":
         return await _grade_feedback_generation_case(case, llm_structured=llm_structured)
     if task == "question_generation":
-        return await _grade_question_generation_case(case, llm=llm)
+        return await _grade_question_generation_case(case, llm=llm, judge_llm=judge_llm)
     if task == "response_analysis":
         return await _grade_response_analysis_case(case, llm=llm)
     raise ValueError(f"unknown task: {task}")
@@ -290,7 +306,7 @@ async def run_eval(
     effective_llm = llm or default_llm
     effective_structured = llm_structured or default_llm_structured
     effective_judge: ChatOpenAI | None = None
-    if judge_enabled and task == "note_generation":
+    if judge_enabled and task in ("note_generation", "question_generation"):
         effective_judge = judge_llm or ChatOpenAI(model="gpt-4o", temperature=0)  # type: ignore[call-arg]
 
     case_results: list[CaseResult] = []
@@ -333,7 +349,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--task", required=True, choices=TASK_NAMES)
     parser.add_argument("--smoke", action="store_true", help="run only first 5 cases")
     parser.add_argument("--trials", type=int, default=1)
-    parser.add_argument("--judge", action="store_true", help="enable LLM-as-judge (note_generation only)")
+    parser.add_argument(
+        "--judge",
+        action="store_true",
+        help="enable LLM-as-judge (note_generation / question_generation)",
+    )
     parser.add_argument("--no-save", action="store_true", help="skip writing report JSON")
     return parser.parse_args(argv)
 

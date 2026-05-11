@@ -2,8 +2,9 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
+import { fetchAPI } from "@/lib/api";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,13 +47,38 @@ const TARGET_DEPTH_OPTIONS: {
   },
 ];
 
+interface ActiveSessionResponse {
+  session_id: string;
+  session_type: "learning" | "review";
+  status: string;
+  started_at: string;
+}
+
+interface SessionMessageItem {
+  role: "user" | "assistant";
+  content: string;
+  message_order: number;
+}
+
+interface SessionMessagesResponse {
+  session_id: string;
+  session_type: "learning" | "review";
+  status: string;
+  note_id: string | null;
+  messages: SessionMessageItem[];
+}
+
 export default function LearnPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
   const [topic, setTopic] = useState("");
   const [learningGoal, setLearningGoal] = useState("");
   const [targetDepth, setTargetDepth] = useState<TargetDepth | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const bootstrappedRef = useRef(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { setNavbarCenter } = useNavbarSlot();
 
@@ -65,12 +91,64 @@ export default function LearnPage() {
     generatedNote,
     error,
     editingMessage,
+    sessionId,
     startLearning,
+    resumeSession,
     sendMessage,
     endSession,
     cancelLastMessage,
     clearEditingMessage,
   } = useChatWebSocket();
+
+  useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
+
+    const restoreFromSessionId = async (sid: string) => {
+      try {
+        const data = await fetchAPI<SessionMessagesResponse>(
+          `/api/dialogue-sessions/${sid}/messages`,
+        );
+        if (data.status !== "in_progress" && data.status !== "disconnect") {
+          setIsBootstrapping(false);
+          return;
+        }
+        const initialMessages = data.messages.map(({ role, content }) => ({
+          role,
+          content,
+        }));
+        if (data.session_type === "learning" && initialMessages.length > 0) {
+          setTopic(initialMessages[0].content);
+        }
+        resumeSession(sid, initialMessages);
+      } catch {
+        // セッションが無効化 / 404 の場合は新規開始フローに戻す
+      } finally {
+        setIsBootstrapping(false);
+      }
+    };
+
+    if (sessionParam) {
+      restoreFromSessionId(sessionParam);
+      return;
+    }
+
+    fetchAPI<ActiveSessionResponse | null>("/api/dialogue-sessions/active")
+      .then((res) => {
+        if (res?.session_id) {
+          router.replace(`/learn?session=${res.session_id}`);
+          return;
+        }
+        setIsBootstrapping(false);
+      })
+      .catch(() => setIsBootstrapping(false));
+  }, [sessionParam, resumeSession, router]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    if (sessionParam === sessionId) return;
+    router.replace(`/learn?session=${sessionId}`);
+  }, [sessionId, sessionParam, router]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,6 +207,14 @@ export default function LearnPage() {
     sendMessage(content);
     setInput("");
   };
+
+  if (isBootstrapping) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (messages.length === 0 && !isConnected) {
     return (

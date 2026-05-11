@@ -16,6 +16,20 @@ async def insert(
     return dict(record)
 
 
+async def find_by_session_id(
+    conn: asyncpg.Connection,
+    dialogue_session_id: UUID,
+) -> list[dict[str, Any]]:
+    query = """--sql
+    SELECT id, role, content, message_order, created_at
+    FROM dialogue_messages
+    WHERE dialogue_session_id = $1
+    ORDER BY message_order ASC
+    """
+    records = await conn.fetch(query, str(dialogue_session_id))
+    return [dict(r) for r in records]
+
+
 async def delete_last_n(conn: asyncpg.Connection, dialogue_session_id: UUID, n: int) -> int:
     query = """--sql
     DELETE FROM dialogue_messages

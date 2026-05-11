@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,3 +18,24 @@ class NoteStatusResponse(BaseModel):
     topic: str | None = None
     summary: str | None = None
     feedback: FeedbackData | None = None
+
+
+class ActiveSessionResponse(BaseModel):
+    session_id: UUID
+    session_type: Literal["learning", "review"]
+    status: Literal["in_progress", "disconnect"]
+    started_at: datetime
+
+
+class DialogueMessageData(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    message_order: int
+
+
+class SessionMessagesResponse(BaseModel):
+    session_id: UUID
+    session_type: Literal["learning", "review"]
+    status: str
+    note_id: UUID | None = None
+    messages: list[DialogueMessageData]

@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any
+from typing import Any, Literal, cast
 from uuid import UUID
 
 import asyncpg
@@ -27,6 +27,8 @@ from schemas.websocket_message import (
     FeedbackGeneratedMessage,
     NoteGeneratedMessage,
     SessionEndedMessage,
+    SessionResumedMessage,
+    SessionStartedMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,10 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     session_type="learning",
                 )
 
+                await websocket.send_text(
+                    SessionStartedMessage(session_id=session_id, session_type="learning").model_dump_json()
+                )
+
                 initial_state = {
                     "user_id": user_id,
                     "dialogue_session_id": str(session_id),
@@ -152,6 +158,10 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     session_type="review",
                 )
 
+                await websocket.send_text(
+                    SessionStartedMessage(session_id=session_id, session_type="review").model_dump_json()
+                )
+
                 initial_state = {
                     "user_id": user_id,
                     "dialogue_session_id": str(session_id),
@@ -170,6 +180,42 @@ async def websocket_chat(websocket: WebSocket) -> None:
                 ai_msg = await _stream_ai_response(graph, initial_state, config, websocket)
                 message_order += 1
                 await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
+
+            elif data["type"] == "resume_session":
+                resume_id = UUID(data["session_id"])
+                existing = await dialogue_session_repository.find_by_id(pool, resume_id, user_id)
+                if not existing:
+                    await websocket.send_text(ErrorMessage(detail="Session not found").model_dump_json())
+                    continue
+
+                if existing["status"] not in ("in_progress", "disconnect"):
+                    await websocket.send_text(ErrorMessage(detail="Session is not resumable").model_dump_json())
+                    continue
+
+                if existing["status"] == "disconnect":
+                    await dialogue_session_repository.update_status(pool, resume_id, "in_progress")
+
+                session_id = resume_id
+                if existing["session_type"] not in ("learning", "review"):
+                    await websocket.send_text(ErrorMessage(detail="Invalid session type").model_dump_json())
+                    continue
+                resumed_session_type = cast(Literal["learning", "review"], existing["session_type"])
+                session_type = resumed_session_type
+                config = {"configurable": {"thread_id": str(session_id)}}
+                is_session_ended = False
+
+                last_order = await pool.fetchval(
+                    "SELECT COALESCE(MAX(message_order), 0) FROM dialogue_messages WHERE dialogue_session_id = $1",
+                    str(session_id),
+                )
+                message_order = int(last_order or 0)
+
+                await websocket.send_text(
+                    SessionResumedMessage(
+                        session_id=session_id,
+                        session_type=resumed_session_type,
+                    ).model_dump_json()
+                )
 
             elif data["type"] == "user_message":
                 if not config or not session_id:

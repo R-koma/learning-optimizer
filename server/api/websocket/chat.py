@@ -94,9 +94,13 @@ async def websocket_chat(websocket: WebSocket) -> None:
             data = json.loads(user_input)
 
             if data["type"] == "start_learning":
+                await dialogue_session_repository.abandon_active_by_user(pool, user_id)
+
                 session_id = uuid.uuid4()
                 config = {"configurable": {"thread_id": str(session_id)}}
                 session_type = "learning"
+                message_order = 0
+                is_session_ended = False
 
                 await dialogue_session_repository.create(
                     conn=pool,
@@ -147,9 +151,13 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     await websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
                     continue
 
+                await dialogue_session_repository.abandon_active_by_user(pool, user_id)
+
                 session_id = uuid.uuid4()
                 config = {"configurable": {"thread_id": str(session_id)}}
                 session_type = "review"
+                message_order = 0
+                is_session_ended = False
 
                 await dialogue_session_repository.create(
                     conn=pool,

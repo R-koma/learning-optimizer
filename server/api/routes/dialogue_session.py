@@ -34,7 +34,22 @@ async def get_active_session(
         session_type=session["session_type"],
         status=session["status"],
         started_at=session["started_at"],
+        topic=session.get("topic"),
     )
+
+
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def abandon_session(
+    session_id: UUID,
+    current_user_id: CurrentUser,
+    db: DB,
+) -> Response:
+    session = await dialogue_session_repository.find_by_id(db, session_id, current_user_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    await dialogue_session_repository.abandon_by_id(db, session_id, current_user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{session_id}/messages", response_model=SessionMessagesResponse)

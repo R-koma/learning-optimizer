@@ -48,6 +48,19 @@ async def insert(
     return dict(record)
 
 
+async def update_aspect_map(
+    conn: asyncpg.Connection,
+    note_id: UUID,
+    aspect_map: str,
+) -> None:
+    query = """--sql
+        UPDATE notes
+        SET aspect_map = $2::jsonb, updated_at = NOW()
+        WHERE id = $1
+    """
+    await conn.execute(query, note_id, aspect_map)
+
+
 async def update(
     conn: asyncpg.Connection,
     note_id: UUID,

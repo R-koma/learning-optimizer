@@ -151,6 +151,7 @@ export default function LearnPage() {
   useEffect(() => {
     if (!sessionId) return;
     if (sessionParam === sessionId) return;
+    restoredSessionRef.current = sessionId;
     router.replace(`/learn?session=${sessionId}`);
   }, [sessionId, sessionParam, router]);
 
@@ -225,7 +226,7 @@ export default function LearnPage() {
       <div className="flex h-full items-center justify-center overflow-y-auto p-4">
         <div className="w-full max-w-lg my-4 space-y-4">
           {resumableSession && (
-            <div className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-background p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+            <div className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-liner-to-br from-primary/8 via-background to-background p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
               <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 
               <div className="relative flex items-start justify-between gap-3">
@@ -276,13 +277,13 @@ export default function LearnPage() {
               </button>
             </div>
           )}
-          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-background p-8 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/8 via-background to-background p-8 shadow-sm">
             <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
 
             <div className="relative">
               <div className="mb-6 flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm shadow-primary/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/70 text-primary-foreground shadow-sm shadow-primary/20">
                   <SparklesIcon className="h-4 w-4" />
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-foreground">

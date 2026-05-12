@@ -9,7 +9,64 @@ interface Feedback {
   created_at: string;
 }
 
+function splitItems(text: string): string[] {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/^[\s・\-*]+/, "").trim())
+    .filter((line) => line.length > 0);
+}
+
+interface FeedbackSectionProps {
+  label: string;
+  items: string[];
+  tone: "positive" | "improvement";
+}
+
+function FeedbackSection({ label, items, tone }: FeedbackSectionProps) {
+  const toneStyles =
+    tone === "positive"
+      ? {
+          border: "border-emerald-500",
+          text: "text-emerald-600 dark:text-emerald-400",
+          marker: "bg-emerald-500",
+        }
+      : {
+          border: "border-amber-500",
+          text: "text-amber-600 dark:text-amber-400",
+          marker: "bg-amber-500",
+        };
+  const Icon = tone === "positive" ? CheckCircleIcon : AlertCircleIcon;
+
+  return (
+    <div className={`border-l-2 ${toneStyles.border} pl-3`}>
+      <div
+        className={`mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider ${toneStyles.text}`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <ul className="space-y-2">
+        {items.map((item, index) => (
+          <li
+            key={index}
+            className="flex gap-2 text-sm leading-6 text-foreground/90"
+          >
+            <span
+              className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${toneStyles.marker}`}
+              aria-hidden
+            />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function NoteFeedbackCard({ feedback }: { feedback: Feedback }) {
+  const strengths = splitItems(feedback.strength);
+  const improvements = splitItems(feedback.improvements);
+
   return (
     <article className="rounded-lg border bg-card p-4">
       <Badge variant="secondary" className="gap-1 font-normal">
@@ -17,24 +74,16 @@ export function NoteFeedbackCard({ feedback }: { feedback: Feedback }) {
         理解度: {feedback.understanding_level}
       </Badge>
       <div className="mt-4 space-y-4">
-        <div className="border-l-2 border-emerald-500 pl-3">
-          <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-            <CheckCircleIcon className="h-3.5 w-3.5" />
-            強み
-          </div>
-          <p className="text-sm leading-6 text-foreground/90">
-            {feedback.strength}
-          </p>
-        </div>
-        <div className="border-l-2 border-amber-500 pl-3">
-          <div className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400">
-            <AlertCircleIcon className="h-3.5 w-3.5" />
-            改善点
-          </div>
-          <p className="text-sm leading-6 text-foreground/90">
-            {feedback.improvements}
-          </p>
-        </div>
+        {strengths.length > 0 && (
+          <FeedbackSection label="強み" items={strengths} tone="positive" />
+        )}
+        {improvements.length > 0 && (
+          <FeedbackSection
+            label="改善点"
+            items={improvements}
+            tone="improvement"
+          />
+        )}
       </div>
     </article>
   );

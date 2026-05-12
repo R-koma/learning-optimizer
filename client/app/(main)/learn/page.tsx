@@ -1,28 +1,26 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
 import { fetchAPI } from "@/lib/api";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
 import {
+  ArrowRightIcon,
+  CheckIcon,
   ChevronDownIcon,
+  HistoryIcon,
   Loader2Icon,
   NotebookPenIcon,
   PencilIcon,
+  SparklesIcon,
+  XIcon,
 } from "lucide-react";
 
 const TARGET_DEPTH_OPTIONS: {
@@ -52,6 +50,7 @@ interface ActiveSessionResponse {
   session_type: "learning" | "review";
   status: string;
   started_at: string;
+  topic: string | null;
 }
 
 interface SessionMessageItem {
@@ -78,7 +77,9 @@ export default function LearnPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const bootstrappedRef = useRef(false);
+  const [resumableSession, setResumableSession] =
+    useState<ActiveSessionResponse | null>(null);
+  const restoredSessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { setNavbarCenter } = useNavbarSlot();
 
@@ -101,48 +102,51 @@ export default function LearnPage() {
   } = useChatWebSocket();
 
   useEffect(() => {
-    if (bootstrappedRef.current) return;
-    bootstrappedRef.current = true;
-
-    const restoreFromSessionId = async (sid: string) => {
-      try {
-        const data = await fetchAPI<SessionMessagesResponse>(
-          `/api/dialogue-sessions/${sid}/messages`,
-        );
-        if (data.status !== "in_progress" && data.status !== "disconnect") {
-          setIsBootstrapping(false);
-          return;
-        }
-        const initialMessages = data.messages.map(({ role, content }) => ({
-          role,
-          content,
-        }));
-        if (data.session_type === "learning" && initialMessages.length > 0) {
-          setTopic(initialMessages[0].content);
-        }
-        resumeSession(sid, initialMessages);
-      } catch {
-        // セッションが無効化 / 404 の場合は新規開始フローに戻す
-      } finally {
-        setIsBootstrapping(false);
-      }
-    };
-
     if (sessionParam) {
-      restoreFromSessionId(sessionParam);
+      if (restoredSessionRef.current === sessionParam) return;
+      restoredSessionRef.current = sessionParam;
+      setIsBootstrapping(true);
+      setResumableSession(null);
+
+      (async () => {
+        try {
+          const data = await fetchAPI<SessionMessagesResponse>(
+            `/api/dialogue-sessions/${sessionParam}/messages`,
+          );
+          if (data.status !== "in_progress" && data.status !== "disconnect") {
+            return;
+          }
+          const initialMessages = data.messages.map(({ role, content }) => ({
+            role,
+            content,
+          }));
+          if (data.session_type === "learning" && initialMessages.length > 0) {
+            setTopic(initialMessages[0].content);
+          }
+          resumeSession(sessionParam, initialMessages);
+        } catch {
+          // セッションが無効化 / 404 の場合は新規開始フローに戻す
+        } finally {
+          setIsBootstrapping(false);
+        }
+      })();
       return;
     }
 
+    restoredSessionRef.current = null;
     fetchAPI<ActiveSessionResponse | null>("/api/dialogue-sessions/active")
       .then((res) => {
         if (res?.session_id) {
-          router.replace(`/learn?session=${res.session_id}`);
-          return;
+          setResumableSession(res);
+        } else {
+          setResumableSession(null);
         }
-        setIsBootstrapping(false);
       })
-      .catch(() => setIsBootstrapping(false));
-  }, [sessionParam, resumeSession, router]);
+      .catch(() => {
+        // 取得失敗時は再開バナーを出さずに新規学習フォームを表示する
+      })
+      .finally(() => setIsBootstrapping(false));
+  }, [sessionParam, resumeSession]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -219,114 +223,195 @@ export default function LearnPage() {
   if (messages.length === 0 && !isConnected) {
     return (
       <div className="flex h-full items-center justify-center overflow-y-auto p-4">
-        <Card className="w-full max-w-lg shadow-lg my-4">
-          <CardHeader className="space-y-2 px-8 pt-10 pb-4">
-            <CardTitle className="text-center text-2xl font-bold">
-              新規学習
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-8 pb-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleStartLearning();
-              }}
-            >
-              <div className="flex flex-col gap-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="topic" className="text-sm font-medium">
-                    トピック
-                  </Label>
-                  <Input
-                    id="topic"
-                    type="text"
-                    placeholder="例: TCP/IP、二分探索木、デザインパターン"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    className="h-12 text-base"
-                    required
-                  />
-                </div>
+        <div className="w-full max-w-lg my-4 space-y-4">
+          {resumableSession && (
+            <div className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-background p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+              <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
 
-                <div className="grid gap-2">
-                  <Label className="flex items-baseline gap-2 text-sm font-medium">
-                    到達したいレベル
-                    <span className="text-xs font-normal text-muted-foreground">
-                      （任意）
-                    </span>
-                  </Label>
-                  <div className="grid gap-2">
-                    {TARGET_DEPTH_OPTIONS.map((option) => {
-                      const isSelected = targetDepth === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() =>
-                            setTargetDepth(isSelected ? null : option.value)
-                          }
-                          className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2 text-left transition-colors cursor-pointer ${
-                            isSelected
-                              ? "border-primary bg-primary/5"
-                              : "border-input hover:bg-muted/40"
-                          }`}
-                        >
-                          <span className="text-sm font-medium">
-                            {option.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {option.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <HistoryIcon className="h-3.5 w-3.5" />
                   </div>
+                  <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    前回の会話
+                  </span>
                 </div>
-
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsDetailsOpen((v) => !v)}
-                    className="flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    aria-expanded={isDetailsOpen}
-                  >
-                    <ChevronDownIcon
-                      className={`h-4 w-4 transition-transform ${
-                        isDetailsOpen ? "rotate-0" : "-rotate-90"
-                      }`}
-                    />
-                    詳細を追加（任意）
-                  </button>
-                  {isDetailsOpen && (
-                    <div className="grid gap-2 pt-1">
-                      <Label
-                        htmlFor="learning-goal"
-                        className="text-sm font-medium"
-                      >
-                        学習ゴール
-                      </Label>
-                      <Textarea
-                        id="learning-goal"
-                        placeholder="例: ReAct で Tool 呼び出しの設計パターンを理解したい"
-                        value={learningGoal}
-                        onChange={(e) => setLearningGoal(e.target.value)}
-                        className="min-h-16 text-sm"
-                      />
-                    </div>
-                  )}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => {
+                    const target = resumableSession;
+                    setResumableSession(null);
+                    try {
+                      await fetchAPI(
+                        `/api/dialogue-sessions/${target.session_id}`,
+                        { method: "DELETE" },
+                      );
+                    } catch {
+                      setResumableSession(target);
+                    }
+                  }}
+                  className="-mt-1 -mr-1 h-7 w-7 shrink-0 cursor-pointer rounded-full text-muted-foreground opacity-60 transition-opacity hover:bg-background hover:text-foreground hover:opacity-100"
+                  title="前回の会話を削除"
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                </Button>
               </div>
-            </form>
-          </CardContent>
-          <CardFooter className="px-8 pb-10">
-            <Button
-              onClick={handleStartLearning}
-              className="h-12 w-full text-base cursor-pointer"
-            >
-              学習を開始する
-            </Button>
-          </CardFooter>
-        </Card>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/learn?session=${resumableSession.session_id}`)
+                }
+                className="group/btn relative mt-3 flex w-full items-center justify-between gap-4 text-left cursor-pointer"
+              >
+                <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
+                  {resumableSession.topic ?? "（タイトル未設定）"}
+                </p>
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-transform group-hover/btn:translate-x-0.5">
+                  続きから再開
+                  <ArrowRightIcon className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            </div>
+          )}
+          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-background p-8 shadow-sm">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+
+            <div className="relative">
+              <div className="mb-6 flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm shadow-primary/20">
+                  <SparklesIcon className="h-4 w-4" />
+                </div>
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
+                  新規学習
+                </h1>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleStartLearning();
+                }}
+              >
+                <div className="flex flex-col gap-6">
+                  <div className="grid gap-2">
+                    <Label
+                      htmlFor="topic"
+                      className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                    >
+                      トピック
+                    </Label>
+                    <Input
+                      id="topic"
+                      type="text"
+                      placeholder="例: TCP/IP、二分探索木、デザインパターン"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="h-12 rounded-xl border-input/60 bg-background/60 text-base shadow-sm backdrop-blur transition-colors focus-visible:border-primary/60"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="flex items-baseline gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      到達したいレベル
+                      <span className="text-[10px] font-normal normal-case tracking-normal">
+                        （任意）
+                      </span>
+                    </Label>
+                    <div className="grid gap-2">
+                      {TARGET_DEPTH_OPTIONS.map((option) => {
+                        const isSelected = targetDepth === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() =>
+                              setTargetDepth(isSelected ? null : option.value)
+                            }
+                            className={`group/opt relative flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? "border-primary/60 bg-primary/8 shadow-sm"
+                                : "border-input/60 bg-background/40 hover:border-primary/30 hover:bg-background/80"
+                            }`}
+                          >
+                            <span
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                                isSelected
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-input/80 bg-background"
+                              }`}
+                            >
+                              {isSelected && (
+                                <CheckIcon
+                                  className="h-3 w-3"
+                                  strokeWidth={3}
+                                />
+                              )}
+                            </span>
+                            <span className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium">
+                                {option.label}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {option.hint}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsDetailsOpen((v) => !v)}
+                      className="flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      aria-expanded={isDetailsOpen}
+                    >
+                      <ChevronDownIcon
+                        className={`h-4 w-4 transition-transform ${
+                          isDetailsOpen ? "rotate-0" : "-rotate-90"
+                        }`}
+                      />
+                      詳細を追加（任意）
+                    </button>
+                    {isDetailsOpen && (
+                      <div className="grid gap-2 pt-1">
+                        <Label
+                          htmlFor="learning-goal"
+                          className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                        >
+                          学習ゴール
+                        </Label>
+                        <Textarea
+                          id="learning-goal"
+                          placeholder="例: ReAct で Tool 呼び出しの設計パターンを理解したい"
+                          value={learningGoal}
+                          onChange={(e) => setLearningGoal(e.target.value)}
+                          className="min-h-16 rounded-xl border-input/60 bg-background/60 text-sm shadow-sm backdrop-blur transition-colors focus-visible:border-primary/60"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!topic.trim()}
+                    className="group/cta mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-medium text-primary-foreground shadow-sm transition-all cursor-pointer hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    学習を開始する
+                    <ArrowRightIcon className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

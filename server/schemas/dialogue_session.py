@@ -25,6 +25,7 @@ class ActiveSessionResponse(BaseModel):
     session_type: Literal["learning", "review"]
     status: Literal["in_progress", "disconnect"]
     started_at: datetime
+    topic: str | None = None
 
 
 class DialogueMessageData(BaseModel):

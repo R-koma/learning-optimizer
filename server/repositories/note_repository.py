@@ -6,7 +6,8 @@ import asyncpg
 
 async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
-    SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status, n.created_at, n.updated_at,
+    SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status,
+           n.aspect_map, n.created_at, n.updated_at,
     COALESCE(rs.review_count, 0) AS review_count
     From notes n
     LEFT JOIN review_schedules rs ON rs.note_id = n.id
@@ -20,7 +21,7 @@ async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[s
 
 async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
     query = """--sql
-    SELECT id, user_id, topic, content, summary, status, created_at, updated_at
+    SELECT id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
     FROM notes
     WHERE id = $1 AND user_id = $2
   """
@@ -36,13 +37,14 @@ async def insert(
     topic: str,
     content: str,
     summary: str,
+    aspect_map: str | None = None,
 ) -> dict[str, Any]:
     query = """--sql
-        INSERT INTO notes (id, user_id, topic, content, summary, status)
-        VALUES ($1, $2, $3, $4, $5, 'active')
-        RETURNING id, user_id, topic, content, summary, status, created_at, updated_at
+        INSERT INTO notes (id, user_id, topic, content, summary, status, aspect_map)
+        VALUES ($1, $2, $3, $4, $5, 'active', $6::jsonb)
+        RETURNING id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
     """
-    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary)
+    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, aspect_map)
     return dict(record)
 
 
@@ -63,7 +65,7 @@ async def update(
         status = COALESCE($6, status),
         updated_at = NOW()
     WHERE id = $1 AND user_id = $2
-    RETURNING id, user_id, topic, content, summary, status, created_at, updated_at
+    RETURNING id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
   """
 
     record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, status)

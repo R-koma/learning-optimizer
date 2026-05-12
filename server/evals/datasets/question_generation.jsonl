@@ -18,3 +18,6 @@
 {"id":"qg-018","topic":"データベースのインデックス","user_message":"インデックスにはB-tree、ハッシュ、全文検索の3種類があります。B-treeは範囲検索に強く、ハッシュは等価検索に最速、全文検索はテキスト検索向けです","turn_count":1}
 {"id":"qg-019","topic":"オブジェクト指向の三原則","user_message":"カプセル化、継承、ポリモーフィズムの3つです。カプセル化は内部状態を隠蔽し、継承は親クラスを拡張し、ポリモーフィズムは同じインターフェースで異なる振る舞いを実現します","turn_count":1}
 {"id":"qg-020","topic":"CAP定理","user_message":"分散システムでは一貫性（Consistency）、可用性（Availability）、分断耐性（Partition tolerance）の3つのうち同時に満たせるのは2つまでという定理です","turn_count":1}
+{"id":"qg-021","topic":"データシステムの基礎","target_depth":"explain","recent_messages":[{"role":"user","content":"信頼性、スケーラビリティ、メンテナンス性という概念がある。信頼性：障害の発生に関わらず動作するか。スケーラビリティ：規模が大きくなっても品質が変わらないか。メンテナンス性：開発・運用保守の容易さ"},{"role":"assistant","content":"3つの観点を整理されましたね。これらが相互にトレードオフになる場面はありそうですか？"}],"user_message":"わかりません","turn_count":2}
+{"id":"qg-022","topic":"Pythonのデコレータ","target_depth":"explain","recent_messages":[{"role":"user","content":"デコレータは関数に機能を追加するものです"},{"role":"assistant","content":"デコレータの基本的な役割を捉えていますね。実際にどのような場面で機能追加が役立つか、具体例は思いつきますか？"}],"user_message":"わかりません","turn_count":2}
+{"id":"qg-023","topic":"統計学","target_depth":"recognize","user_message":"わかりません","turn_count":1}

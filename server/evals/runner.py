@@ -156,7 +156,16 @@ async def _invoke_feedback_generation(case: dict[str, Any], llm_structured: Chat
 
 
 async def _invoke_question_generation(case: dict[str, Any], llm: ChatOpenAI) -> str:
-    recent_messages = f"ユーザー: {case['user_message']}"
+    prior = case.get("recent_messages")
+    if isinstance(prior, list) and prior:
+        lines: list[str] = []
+        for msg in prior:
+            role = "ユーザー" if msg.get("role") == "user" else "AI"
+            lines.append(f"{role}: {msg.get('content', '')}")
+        lines.append(f"ユーザー: {case['user_message']}")
+        recent_messages = "\n".join(lines)
+    else:
+        recent_messages = f"ユーザー: {case['user_message']}"
     plan_fields = format_learning_plan_fields(
         learning_goal=case.get("learning_goal"),
         target_depth=case.get("target_depth") or "recognize",

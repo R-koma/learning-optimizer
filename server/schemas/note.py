@@ -1,7 +1,9 @@
+import json
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class NoteResponse(BaseModel):
@@ -11,11 +13,24 @@ class NoteResponse(BaseModel):
     content: str
     summary: str | None
     status: str
+    aspect_map: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
     review_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("aspect_map", mode="before")
+    @classmethod
+    def _parse_aspect_map(cls, value: Any) -> Any:
+        if value is None or isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                return None
+        return value
 
 
 class NoteUpdate(BaseModel):

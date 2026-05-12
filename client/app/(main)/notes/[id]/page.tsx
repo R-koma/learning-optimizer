@@ -8,6 +8,10 @@ import {
   NoteFeedbackCard,
   NoteFeedbackEmpty,
 } from "@/components/notes/note-feedback-card";
+import {
+  NoteAspectMap,
+  type AspectMap,
+} from "@/components/notes/note-aspect-map";
 import { SparklesIcon, FileTextIcon, MessageSquareIcon } from "lucide-react";
 
 interface Note {
@@ -16,6 +20,7 @@ interface Note {
   content: string;
   summary: string;
   status: string;
+  aspect_map: AspectMap | null;
   created_at: string;
   updated_at: string;
   review_count: number;
@@ -72,6 +77,14 @@ export default async function NotePage({
           >
             内容
           </a>
+          {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
+            <a
+              href="#aspect-map"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              観点マップ
+            </a>
+          )}
           <a
             href="#feedback"
             className="text-muted-foreground transition-colors hover:text-foreground"
@@ -109,6 +122,10 @@ export default async function NotePage({
               </div>
               <Markdown variant="article">{note.content}</Markdown>
             </section>
+
+            {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
+              <NoteAspectMap aspectMap={note.aspect_map} />
+            )}
           </main>
 
           <aside

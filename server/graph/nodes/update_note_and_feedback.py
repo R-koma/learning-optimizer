@@ -4,7 +4,7 @@ from langchain_core.messages import SystemMessage
 
 from core.database import get_pool
 from graph.llm import llm_structured
-from graph.model import FeedbackOutput, NoteContent
+from graph.model import DialogueAnalysis, FeedbackOutput, NoteContent
 from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT, UPDATE_NOTE_PROMPT
 from graph.state import LearningState
 from observability.llm import measured_ainvoke
@@ -60,13 +60,16 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
             topic=topic,
             conversation_history=conversation_history,
         )
-        analysis_result = await measured_ainvoke(
-            runnable=llm_structured,
+        analysis_llm = llm_structured.with_structured_output(DialogueAnalysis)
+        analysis_data = await measured_ainvoke(
+            runnable=analysis_llm,
             messages=[SystemMessage(content=analyze_prompt)],
             context=trace_ctx,
             node_name="update_note_and_feedback",
         )
-        analysis = analysis_result.content
+        if not isinstance(analysis_data, DialogueAnalysis):
+            raise RuntimeError("LLM did not return structured DialogueAnalysis")
+        analysis = analysis_data.to_markdown()
 
         note_text = f"トピック: {topic}\n\n{revised_note.content}"
         feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)

@@ -35,3 +35,41 @@ class FeedbackOutput(BaseModel):
     understanding_level: Literal["low", "medium", "high"] = Field(..., description="ユーザーの回答から理解度を算出")
     strength: list[str] = Field(..., description="良かった点")
     improvement_points: list[str] = Field(..., description="改善点")
+
+
+class DialogueAnalysis(BaseModel):
+    """対話分析結果（generate_feedback の前段で生成される構造化データ）。"""
+
+    accurate_understanding: list[str] = Field(
+        default_factory=list,
+        description="ユーザーが正しく理解・説明できている概念。各項目は1文で具体的に",
+    )
+    misconceptions: list[str] = Field(
+        default_factory=list,
+        description="誤解・用語の混同。「○○と△△を混同している」「○○を△△の意味で使っている」のように具体的に",
+    )
+    ambiguous_expressions: list[str] = Field(
+        default_factory=list,
+        description="曖昧な表現。何が曖昧で、正確にはどう表現すべきかを示す",
+    )
+    unmentioned_concepts: list[str] = Field(
+        default_factory=list,
+        description="このトピックで言及されるべきだが触れられていない概念",
+    )
+    depth_level: Literal["surface", "principle", "applied"] = Field(
+        ...,
+        description="理解の深さ。surface=表面的な暗記 / principle=原理の理解 / applied=応用レベル",
+    )
+
+    def to_markdown(self) -> str:
+        def _fmt(items: list[str]) -> str:
+            return "\n".join(f"- {x}" for x in items) if items else "- （該当なし）"
+
+        depth_label = {"surface": "表面的な暗記", "principle": "原理の理解", "applied": "応用レベル"}[self.depth_level]
+        return (
+            f"### 正確な理解\n{_fmt(self.accurate_understanding)}\n\n"
+            f"### 誤解・用語の混同\n{_fmt(self.misconceptions)}\n\n"
+            f"### 曖昧な表現\n{_fmt(self.ambiguous_expressions)}\n\n"
+            f"### 未言及の重要概念\n{_fmt(self.unmentioned_concepts)}\n\n"
+            f"### 理解の深さ\n- {depth_label}"
+        )

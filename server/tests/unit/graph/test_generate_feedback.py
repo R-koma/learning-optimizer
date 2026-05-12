@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 from langchain_core.messages import HumanMessage
 
-from graph.model import FeedbackOutput
+from graph.model import DialogueAnalysis, FeedbackOutput
 from graph.state import LearningState
 
 NOTE_ID = UUID("00000000-0000-0000-0000-000000000001")
@@ -25,6 +25,25 @@ FAKE_FEEDBACK_OUTPUT = FeedbackOutput(
     strength=["概念をよく理解している"],
     improvement_points=["具体例をもっと使うと良い"],
 )
+
+FAKE_ANALYSIS = DialogueAnalysis(
+    accurate_understanding=["Pythonが動的型付けであることを理解している"],
+    misconceptions=[],
+    ambiguous_expressions=[],
+    unmentioned_concepts=[],
+    depth_level="principle",
+)
+
+
+def _make_structured_mock(feedback_output: object) -> MagicMock:
+    """with_structured_output(DialogueAnalysis | FeedbackOutput) の両方に対応するモックを返す"""
+
+    def _route(schema: type) -> AsyncMock:
+        if schema is DialogueAnalysis:
+            return AsyncMock(ainvoke=AsyncMock(return_value=FAKE_ANALYSIS))
+        return AsyncMock(ainvoke=AsyncMock(return_value=feedback_output))
+
+    return MagicMock(side_effect=_route)
 
 
 def _make_state(**overrides: object) -> LearningState:
@@ -75,11 +94,7 @@ class TestGenerateFeedback:
                 "graph.nodes.generate_feedback.review_schedule_repository.update_schedule", AsyncMock()
             ) as mock_rs_update,
         ):
-            # llm_structured.ainvoke（analyze_prompt 用）
-            mock_llm.ainvoke = AsyncMock(return_value=MagicMock(content="分析結果テキスト"))
-            # llm_structured.with_structured_output(...).ainvoke（feedback 用）
-            mock_structured = AsyncMock(return_value=FAKE_FEEDBACK_OUTPUT)
-            mock_llm.with_structured_output = MagicMock(return_value=AsyncMock(ainvoke=mock_structured))
+            mock_llm.with_structured_output = _make_structured_mock(FAKE_FEEDBACK_OUTPUT)
 
             from graph.nodes.generate_feedback import generate_feedback
 
@@ -108,9 +123,7 @@ class TestGenerateFeedback:
                 "graph.nodes.generate_feedback.review_schedule_repository.update_schedule", AsyncMock()
             ) as mock_rs_update,
         ):
-            mock_llm.ainvoke = AsyncMock(return_value=MagicMock(content="分析結果テキスト"))
-            mock_structured = AsyncMock(return_value=FAKE_FEEDBACK_OUTPUT)
-            mock_llm.with_structured_output = MagicMock(return_value=AsyncMock(ainvoke=mock_structured))
+            mock_llm.with_structured_output = _make_structured_mock(FAKE_FEEDBACK_OUTPUT)
 
             from graph.nodes.generate_feedback import generate_feedback
 
@@ -129,7 +142,7 @@ class TestGenerateFeedback:
             patch("graph.nodes.generate_feedback.llm_structured") as mock_llm,
             patch("graph.nodes.generate_feedback.note_repository.find_by_id", AsyncMock(return_value=None)),
         ):
-            mock_llm.ainvoke = AsyncMock(return_value=MagicMock(content="分析結果テキスト"))
+            mock_llm.with_structured_output = _make_structured_mock(FAKE_FEEDBACK_OUTPUT)
 
             from graph.nodes.generate_feedback import generate_feedback
 
@@ -146,10 +159,8 @@ class TestGenerateFeedback:
             patch("graph.nodes.generate_feedback.note_repository.find_by_id", AsyncMock(return_value=FAKE_NOTE)),
             patch("graph.nodes.generate_feedback.feedback_repository.insert", AsyncMock()),
         ):
-            mock_llm.ainvoke = AsyncMock(return_value=MagicMock(content="分析結果テキスト"))
-            # 意図的に dict を返す（FeedbackOutput ではない）
-            mock_structured = AsyncMock(return_value={"wrong": "type"})
-            mock_llm.with_structured_output = MagicMock(return_value=AsyncMock(ainvoke=mock_structured))
+            # FeedbackOutput の代わりに dict を返す
+            mock_llm.with_structured_output = _make_structured_mock({"wrong": "type"})
 
             from graph.nodes.generate_feedback import generate_feedback
 
@@ -171,9 +182,7 @@ class TestGenerateFeedback:
             ),
             patch("graph.nodes.generate_feedback.review_schedule_repository.insert", AsyncMock()),
         ):
-            mock_llm.ainvoke = AsyncMock(return_value=MagicMock(content="分析結果テキスト"))
-            mock_structured = AsyncMock(return_value=FAKE_FEEDBACK_OUTPUT)
-            mock_llm.with_structured_output = MagicMock(return_value=AsyncMock(ainvoke=mock_structured))
+            mock_llm.with_structured_output = _make_structured_mock(FAKE_FEEDBACK_OUTPUT)
 
             from graph.nodes.generate_feedback import generate_feedback
 

@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from evals.graders import (
@@ -40,10 +40,10 @@ from graph.prompts import (
     ANALYZE_RESPONSE_PROMPT,
     GENERATE_FEEDBACK_PROMPT,
     GENERATE_NOTE_PROMPT,
-    GENERATE_QUESTION_PROMPT,
     REVIEW_SYSTEM_PROMPT,
     format_learning_plan_fields,
 )
+from graph.question_prompt import build_question_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -157,24 +157,28 @@ async def _invoke_feedback_generation(case: dict[str, Any], llm_structured: Chat
 
 async def _invoke_question_generation(case: dict[str, Any], llm: ChatOpenAI) -> str:
     prior = case.get("recent_messages")
+    history_messages: list[Any] = []
+    lines: list[str] = []
     if isinstance(prior, list) and prior:
-        lines: list[str] = []
         for msg in prior:
-            role = "ユーザー" if msg.get("role") == "user" else "AI"
-            lines.append(f"{role}: {msg.get('content', '')}")
-        lines.append(f"ユーザー: {case['user_message']}")
-        recent_messages = "\n".join(lines)
-    else:
-        recent_messages = f"ユーザー: {case['user_message']}"
+            role = msg.get("role")
+            content = msg.get("content", "")
+            display_role = "ユーザー" if role == "user" else "AI"
+            lines.append(f"{display_role}: {content}")
+            history_messages.append(HumanMessage(content=content) if role == "user" else AIMessage(content=content))
+    lines.append(f"ユーザー: {case['user_message']}")
+    history_messages.append(HumanMessage(content=case["user_message"]))
+    recent_messages = "\n".join(lines)
     plan_fields = format_learning_plan_fields(
         learning_goal=case.get("learning_goal"),
         target_depth=case.get("target_depth") or "recognize",
         focus_aspects=case.get("focus_aspects"),
     )
-    prompt = GENERATE_QUESTION_PROMPT.format(
+    prompt, _intent = build_question_prompt(
         topic=case["topic"],
         recent_messages=recent_messages,
-        **plan_fields,
+        plan_fields=plan_fields,
+        messages=history_messages,
     )
     response = await llm.ainvoke([SystemMessage(content=prompt)])
     return response.content if isinstance(response.content, str) else str(response.content)

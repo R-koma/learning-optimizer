@@ -4,10 +4,10 @@ from langchain_core.messages import SystemMessage
 
 from graph.llm import llm
 from graph.prompts import (
-    GENERATE_QUESTION_PROMPT,
     REVIEW_SYSTEM_PROMPT,
     format_learning_plan_fields,
 )
+from graph.question_prompt import build_question_prompt
 from graph.state import LearningState
 from observability.llm import measured_ainvoke
 from observability.tracing import build_trace_context
@@ -54,10 +54,11 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         target_depth=state.get("target_depth") or "recognize",
         focus_aspects=state.get("focus_aspects"),
     )
-    question_prompt = GENERATE_QUESTION_PROMPT.format(
+    question_prompt, _intent = build_question_prompt(
         topic=topic,
         recent_messages=recent_messages,
-        **plan_fields,
+        plan_fields=plan_fields,
+        messages=state["messages"],
     )
     response = await measured_ainvoke(
         runnable=llm,

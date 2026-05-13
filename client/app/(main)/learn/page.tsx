@@ -99,6 +99,7 @@ export default function LearnPage() {
     endSession,
     cancelLastMessage,
     clearEditingMessage,
+    resetSession,
   } = useChatWebSocket();
 
   useEffect(() => {
@@ -134,6 +135,15 @@ export default function LearnPage() {
     }
 
     restoredSessionRef.current = null;
+    resetSession();
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setTopic("");
+    setLearningGoal("");
+    setTargetDepth(null);
+    setIsDetailsOpen(false);
+    setInput("");
+    setIsBootstrapping(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
     fetchAPI<ActiveSessionResponse | null>("/api/dialogue-sessions/active")
       .then((res) => {
         if (res?.session_id) {
@@ -146,7 +156,7 @@ export default function LearnPage() {
         // 取得失敗時は再開バナーを出さずに新規学習フォームを表示する
       })
       .finally(() => setIsBootstrapping(false));
-  }, [sessionParam, resumeSession]);
+  }, [sessionParam, resumeSession, resetSession]);
 
   useEffect(() => {
     if (!sessionId) return;

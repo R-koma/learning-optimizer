@@ -81,6 +81,7 @@ interface UseChatWebSocketReturn {
   endSession: () => void;
   cancelLastMessage: () => void;
   clearEditingMessage: () => void;
+  resetSession: () => void;
 }
 
 export function useChatWebSocket(): UseChatWebSocketReturn {
@@ -418,6 +419,39 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     setEditingMessage(null);
   }, []);
 
+  const resetSession = useCallback(() => {
+    pollAbortRef.current?.abort();
+    pollAbortRef.current = null;
+    if (typewriterTimerRef.current !== null) {
+      clearInterval(typewriterTimerRef.current);
+      typewriterTimerRef.current = null;
+    }
+    pendingTextRef.current = "";
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      if (
+        wsRef.current.readyState === WebSocket.OPEN ||
+        wsRef.current.readyState === WebSocket.CONNECTING
+      ) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    }
+    setMessages([]);
+    setIsConnected(false);
+    setIsLoading(false);
+    setIsSessionEnded(false);
+    setIsGeneratingNote(false);
+    setGeneratedNote(null);
+    setFeedback(null);
+    setError(null);
+    setEditingMessage(null);
+    setSessionId(null);
+  }, []);
+
   return {
     messages,
     isConnected,
@@ -436,5 +470,6 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     endSession,
     cancelLastMessage,
     clearEditingMessage,
+    resetSession,
   };
 }

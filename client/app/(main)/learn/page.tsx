@@ -8,17 +8,21 @@ import { fetchAPI } from "@/lib/api";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRightIcon,
+  BookOpenIcon,
   CheckIcon,
-  ChevronDownIcon,
   HistoryIcon,
   Loader2Icon,
+  MessageCircleIcon,
   NotebookPenIcon,
   PencilIcon,
+  FlagIcon,
+  PlusIcon,
+  RocketIcon,
   SparklesIcon,
   XIcon,
 } from "lucide-react";
@@ -27,21 +31,25 @@ const TARGET_DEPTH_OPTIONS: {
   value: TargetDepth;
   label: string;
   hint: string;
+  icon: LucideIcon;
 }[] = [
   {
     value: "recognize",
-    label: "概要を掴みたい",
+    label: "概要",
     hint: "言葉の意味と全体像が分かる",
+    icon: BookOpenIcon,
   },
   {
     value: "explain",
-    label: "自分の言葉で説明できる",
+    label: "説明",
     hint: "他人に教えられる、具体例を出せる",
+    icon: MessageCircleIcon,
   },
   {
     value: "apply",
-    label: "実践・応用できる",
+    label: "実践応用",
     hint: "具体的な場面で使える、応用展開できる",
+    icon: RocketIcon,
   },
 ];
 
@@ -308,17 +316,11 @@ export default function LearnPage() {
                 }}
               >
                 <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
-                    <Label
-                      htmlFor="topic"
-                      className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-                    >
-                      トピック
-                    </Label>
+                  <div>
                     <Input
                       id="topic"
                       type="text"
-                      placeholder="例: TCP/IP、二分探索木、デザインパターン"
+                      placeholder="学びたいトピックを入力"
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
                       className="h-12 rounded-xl border-input/60 bg-background/60 text-base shadow-sm backdrop-blur transition-colors focus-visible:border-primary/60"
@@ -326,16 +328,19 @@ export default function LearnPage() {
                     />
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label className="flex items-baseline gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                      到達したいレベル
-                      <span className="text-[10px] font-normal normal-case tracking-normal">
-                        （任意）
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        習熟レベル
                       </span>
-                    </Label>
-                    <div className="grid gap-2">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        任意
+                      </span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
                       {TARGET_DEPTH_OPTIONS.map((option) => {
                         const isSelected = targetDepth === option.value;
+                        const Icon = option.icon;
                         return (
                           <button
                             key={option.value}
@@ -343,33 +348,40 @@ export default function LearnPage() {
                             onClick={() =>
                               setTargetDepth(isSelected ? null : option.value)
                             }
-                            className={`group/opt relative flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all cursor-pointer ${
+                            className={`group/opt relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none ${
                               isSelected
-                                ? "border-primary/60 bg-primary/8 shadow-sm"
-                                : "border-input/60 bg-background/40 hover:border-primary/30 hover:bg-background/80"
+                                ? "border-primary/60 bg-primary/10 shadow-sm ring-1 ring-primary/15"
+                                : "border-input/60 bg-background/45 hover:border-primary/30 hover:bg-background/80 hover:shadow-sm"
                             }`}
                           >
-                            <span
-                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                                isSelected
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-input/80 bg-background"
-                              }`}
-                            >
-                              {isSelected && (
-                                <CheckIcon
-                                  className="h-3 w-3"
-                                  strokeWidth={3}
-                                />
-                              )}
-                            </span>
-                            <span className="flex flex-col gap-0.5">
-                              <span className="text-sm font-medium">
+                            <span className="flex items-center gap-2">
+                              <Icon
+                                className={`h-3.5 w-3.5 shrink-0 transition-colors ${
+                                  isSelected
+                                    ? "text-primary"
+                                    : "text-muted-foreground group-hover/opt:text-primary"
+                                }`}
+                              />
+                              <span className="flex-1 text-sm font-semibold tracking-tight text-foreground">
                                 {option.label}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                {option.hint}
+                              <span
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                                  isSelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-input/80 bg-background/80"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <CheckIcon
+                                    className="h-3 w-3"
+                                    strokeWidth={3}
+                                  />
+                                )}
                               </span>
+                            </span>
+                            <span className="text-xs leading-relaxed text-muted-foreground">
+                              {option.hint}
                             </span>
                           </button>
                         );
@@ -377,36 +389,42 @@ export default function LearnPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsDetailsOpen((v) => !v)}
-                      className="flex items-center gap-1.5 self-start text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                      aria-expanded={isDetailsOpen}
-                    >
-                      <ChevronDownIcon
-                        className={`h-4 w-4 transition-transform ${
-                          isDetailsOpen ? "rotate-0" : "-rotate-90"
-                        }`}
-                      />
-                      詳細を追加（任意）
-                    </button>
-                    {isDetailsOpen && (
-                      <div className="grid gap-2 pt-1">
-                        <Label
-                          htmlFor="learning-goal"
-                          className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
-                        >
-                          学習ゴール
-                        </Label>
+                  <div>
+                    {isDetailsOpen ? (
+                      <div className="rounded-xl border border-input/60 bg-background/60 shadow-sm backdrop-blur">
+                        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <FlagIcon className="h-3.5 w-3.5 shrink-0" />
+                            学習を通じて達成したいゴール
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsDetailsOpen(false);
+                              setLearningGoal("");
+                            }}
+                            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          >
+                            <XIcon className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <Textarea
                           id="learning-goal"
-                          placeholder="例: ReAct で Tool 呼び出しの設計パターンを理解したい"
+                          autoFocus
                           value={learningGoal}
                           onChange={(e) => setLearningGoal(e.target.value)}
-                          className="min-h-16 rounded-xl border-input/60 bg-background/60 text-sm shadow-sm backdrop-blur transition-colors focus-visible:border-primary/60"
+                          className="min-h-20 resize-none border-0 bg-transparent px-4 pb-4 pt-2 text-sm shadow-none focus-visible:ring-0"
                         />
                       </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsDetailsOpen(true)}
+                        className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      >
+                        <PlusIcon className="h-3.5 w-3.5" />
+                        学習ゴールを追加
+                      </button>
                     )}
                   </div>
 

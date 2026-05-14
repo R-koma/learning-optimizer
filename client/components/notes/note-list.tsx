@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -26,6 +27,7 @@ import {
   RotateCcwIcon,
   CalendarIcon,
   EllipsisIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
 
@@ -150,12 +152,14 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
                     <EllipsisIcon className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-auto">
                   <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
+                    variant="destructive"
+                    className="gap-2 px-3"
                     onClick={() => setDeleteTargetId(note.id)}
                   >
-                    削除する
+                    <Trash2Icon className="h-4 w-4" />
+                    削除
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -1,5 +1,4 @@
-"""Eval runner for phase-2 measurement harness.
-
+"""
 Usage:
     uv run python -m evals.runner --task note_generation --smoke
     uv run python -m evals.runner --task note_generation --trials 3

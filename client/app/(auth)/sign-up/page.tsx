@@ -111,7 +111,7 @@ export default function SignUpPage() {
                     aria-invalid={fieldState.invalid}
                     placeholder="名前"
                     autoComplete="off"
-                    className="h-11 text-sm"
+                    className="h-11 text-base text-slate-700 dark:text-slate-300"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -130,7 +130,7 @@ export default function SignUpPage() {
                     aria-invalid={fieldState.invalid}
                     placeholder="メールアドレス"
                     autoComplete="off"
-                    className="h-11 text-sm"
+                    className="h-11 text-base text-slate-700 dark:text-slate-300"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -150,7 +150,7 @@ export default function SignUpPage() {
                     aria-invalid={fieldState.invalid}
                     placeholder="パスワード"
                     autoComplete="off"
-                    className="h-11 text-sm"
+                    className="h-11 text-3xl tracking-[0.25em] placeholder:text-sm placeholder:tracking-normal text-slate-700 dark:text-slate-300"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -170,7 +170,7 @@ export default function SignUpPage() {
                     aria-invalid={fieldState.invalid}
                     placeholder="確認用パスワード"
                     autoComplete="off"
-                    className="h-11 text-sm"
+                    className="h-11 text-3xl tracking-[0.25em] placeholder:text-sm placeholder:tracking-normal text-slate-700 dark:text-slate-300"
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -189,7 +189,7 @@ export default function SignUpPage() {
           type="submit"
           form="sign-up-form"
           isLoading={isLoading}
-          className="bg-indigo-600 hover:bg-indigo-700 text-sm text-white"
+          className="bg-indigo-600 hover:bg-indigo-700 text-sm text-slate-100"
         >
           続ける
         </MorphingButton>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { fileTypeFromBuffer } from "file-type";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -11,13 +12,6 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/gif",
 ]);
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-const MIME_TO_EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -35,6 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Early reject by declared MIME type before reading the buffer
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
     return NextResponse.json(
       { error: "JPEG, PNG, WebP, GIF のみアップロード可能です" },
@@ -49,16 +44,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ext = MIME_TO_EXT[file.type];
-
   // Sanitize userId to prevent path traversal (alphanumeric, hyphen, underscore only)
   const safeUserId = session.user.id.replace(/[^a-zA-Z0-9_-]/g, "");
   if (!safeUserId) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Validate actual file content via magic bytes — file.type is client-declared and untrustworthy
+  const detected = await fileTypeFromBuffer(buffer);
+  if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
+    return NextResponse.json(
+      { error: "JPEG, PNG, WebP, GIF のみアップロード可能です" },
+      { status: 400 },
+    );
+  }
+
   // Fixed filename per user — overwrites previous avatar, preventing unbounded disk growth
-  const filename = `${safeUserId}.${ext}`;
+  const filename = `${safeUserId}.${detected.ext}`;
   const avatarsDir = path.join(process.cwd(), "public", "avatars");
   const filePath = path.join(avatarsDir, filename);
 
@@ -68,8 +72,6 @@ export async function POST(request: NextRequest) {
   }
 
   await mkdir(avatarsDir, { recursive: true });
-
-  const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(filePath, buffer);
 
   return NextResponse.json({ url: `/avatars/${filename}` });

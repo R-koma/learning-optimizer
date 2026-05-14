@@ -14,12 +14,11 @@ export default function GoogleLoginButton() {
   return (
     <Button
       variant="outline"
-      size="lg"
-      className="w-full p-6 cursor-pointer"
+      className="w-full h-11 cursor-pointer"
       onClick={handleGoogleSignIn}
     >
       <FcGoogle />
-      <p className="text-lg">Continue with Google</p>
+      <p className="text-sm">Google で続ける</p>
     </Button>
   );
 }

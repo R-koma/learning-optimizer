@@ -7,6 +7,7 @@ import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { fetchAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChatInput } from "@/components/chat/chat-input";
 import { Badge } from "@/components/ui/badge";
 import { Markdown } from "@/components/ui/markdown";
@@ -132,8 +133,24 @@ export default function ReviewPage({
 
   if (!note) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">読み込み中...</p>
+      <div className="mx-auto max-w-3xl px-6 py-8 space-y-6">
+        <Skeleton className="h-4 w-24" />
+        <div className="flex items-center gap-3 mb-8">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="space-y-1">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
       </div>
     );
   }

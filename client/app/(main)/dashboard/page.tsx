@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { fetchAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   PlusIcon,
   BookOpenIcon,
@@ -38,8 +39,24 @@ export default function DashBoard() {
 
   if (isPending || isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">読み込み中...</p>
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="mb-8 space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="mb-8 h-11 w-44 rounded-lg" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-5 w-3/5" />
+              </div>
+              <Skeleton className="h-4 w-4/5 ml-6" />
+              <Skeleton className="h-3 w-2/5 ml-6" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

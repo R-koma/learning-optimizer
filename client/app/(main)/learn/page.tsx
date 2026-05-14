@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
 import { fetchAPI } from "@/lib/api";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -233,8 +234,21 @@ export default function LearnPage() {
 
   if (isBootstrapping) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex h-full flex-col">
+        <div className="flex-1 space-y-4 p-4 overflow-hidden">
+          <div className="flex justify-start">
+            <Skeleton className="h-16 w-2/3 rounded-2xl" />
+          </div>
+          <div className="flex justify-end">
+            <Skeleton className="h-16 w-1/2 rounded-2xl" />
+          </div>
+          <div className="flex justify-start">
+            <Skeleton className="h-16 w-3/5 rounded-2xl" />
+          </div>
+        </div>
+        <div className="border-t p-4">
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
       </div>
     );
   }

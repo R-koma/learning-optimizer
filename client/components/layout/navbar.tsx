@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,29 +59,32 @@ export function Navbar({ user }: NavbarProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 rounded-full px-2 cursor-pointer outline-none hover:!bg-transparent active:!bg-transparent aria-expanded:!bg-transparent"
-            >
-              <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 cursor-pointer ring-offset-background transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <AvatarImage src={user.image ?? undefined} />
+              <AvatarFallback className="text-xs">
+                {user.name?.charAt(0).toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end">
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Avatar className="h-9 w-9 shrink-0">
                 <AvatarImage src={user.image ?? undefined} />
-                <AvatarFallback className="text-xs">
+                <AvatarFallback className="text-sm">
                   {user.name?.charAt(0).toUpperCase() ?? "U"}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm font-medium sm:inline">
-                {user.name}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48" align="end">
-            <DropdownMenuItem
-              disabled
-              className="text-xs text-muted-foreground"
-            >
-              {user.email}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut}>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold truncate">
+                  {user.name}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </span>
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="gap-2 text-sm">
               <LogOutIcon className="h-4 w-4" />
               ログアウト
             </DropdownMenuItem>

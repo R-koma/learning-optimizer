@@ -133,7 +133,12 @@ export default function LearnPage() {
           if (data.session_type === "learning" && initialMessages.length > 0) {
             setTopic(initialMessages[0].content);
           }
-          resumeSession(sessionParam, initialMessages);
+          resumeSession(
+            sessionParam,
+            data.session_type === "learning"
+              ? initialMessages.slice(1)
+              : initialMessages,
+          );
         } catch {
           // セッションが無効化 / 404 の場合は新規開始フローに戻す
         } finally {

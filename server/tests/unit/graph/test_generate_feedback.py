@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 from langchain_core.messages import HumanMessage
 
-from graph.model import DialogueAnalysis, FeedbackOutput
+from graph.output_schemas import DialogueAnalysis, FeedbackOutput
 from graph.state import LearningState
 
 NOTE_ID = UUID("00000000-0000-0000-0000-000000000001")

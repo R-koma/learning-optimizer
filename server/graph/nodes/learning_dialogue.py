@@ -5,9 +5,9 @@ from langchain_core.messages import SystemMessage
 from graph.llm import llm
 from graph.prompts import (
     REVIEW_SYSTEM_PROMPT,
+    build_question_prompt,
     format_learning_plan_fields,
 )
-from graph.question_prompt import build_question_prompt
 from graph.state import LearningState
 from observability.llm import measured_ainvoke
 from observability.tracing import build_trace_context

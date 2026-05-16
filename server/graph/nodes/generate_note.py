@@ -8,7 +8,7 @@ from langchain_core.messages import SystemMessage
 
 from core.database import get_pool
 from graph.llm import llm_structured
-from graph.model import AspectMap, NoteContent
+from graph.output_schemas import AspectMap, NoteContent
 from graph.prompts import GENERATE_ASPECT_MAP_PROMPT, GENERATE_NOTE_PROMPT
 from graph.state import LearningState
 from observability.llm import measured_ainvoke

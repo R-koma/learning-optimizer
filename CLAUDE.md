@@ -61,7 +61,7 @@ server/
 │   ├── builder.py             # グラフ定義・route_after_dialogue
 │   ├── state.py               # LearningState TypedDict
 │   ├── nodes/                 # learning_start, learning_dialogue, generate_note, generate_feedback, update_note_and_feedback
-│   └── prompts.py
+│   └── prompts/               # タスク別プロンプト（learning_planner, analysis, note, feedback, review, question）
 ├── observability/             # tracing.py（measured_node）, metrics.py, llm.py
 ├── repositories/              # SQL-first データアクセス（asyncpg 直接）
 ├── schemas/                   # Pydantic モデル（リクエスト/レスポンス）

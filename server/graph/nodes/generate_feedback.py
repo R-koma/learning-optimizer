@@ -4,7 +4,7 @@ from langchain_core.messages import SystemMessage
 
 from core.database import get_pool
 from graph.llm import llm_structured
-from graph.model import DialogueAnalysis, FeedbackOutput
+from graph.output_schemas import DialogueAnalysis, FeedbackOutput
 from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT
 from graph.state import LearningState
 from observability.llm import measured_ainvoke

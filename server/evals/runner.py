@@ -34,15 +34,15 @@ from evals.graders import (
 from evals.graders.base import GraderResult
 from graph.llm import llm as default_llm
 from graph.llm import llm_structured as default_llm_structured
-from graph.model import FeedbackOutput, NoteContent
+from graph.output_schemas import FeedbackOutput, NoteContent
 from graph.prompts import (
     ANALYZE_RESPONSE_PROMPT,
     GENERATE_FEEDBACK_PROMPT,
     GENERATE_NOTE_PROMPT,
     REVIEW_SYSTEM_PROMPT,
+    build_question_prompt,
     format_learning_plan_fields,
 )
-from graph.question_prompt import build_question_prompt
 
 logger = logging.getLogger(__name__)
 

@@ -23,6 +23,7 @@ uv run ruff check . --fix && uv run ruff format .             # Lint + フォー
 uv run mypy .                                                 # 型チェック（strict）
 uv run pytest                                                 # テスト全実行
 uv run pytest --cov=. --cov-report=term                      # カバレッジ付き
+uv run python -m evals.runner --task note_generation --smoke  # プロンプト評価ハーネス（詳細は evals/README.md）
 ```
 
 ### フロントエンド（`client/`）
@@ -57,13 +58,16 @@ server/
 │   ├── config.py              # 環境変数
 │   └── database.py            # asyncpg コネクションプール
 ├── graph/                     # LangGraph ワークフロー
-│   ├── builder.py             # グラフ定義
+│   ├── builder.py             # グラフ定義・route_after_dialogue
 │   ├── state.py               # LearningState TypedDict
-│   ├── nodes/                 # learning_start, learning_dialogue, generate_note, generate_feedback
+│   ├── nodes/                 # learning_start, learning_dialogue, generate_note, generate_feedback, update_note_and_feedback
 │   └── prompts.py
+├── observability/             # tracing.py（measured_node）, metrics.py, llm.py
 ├── repositories/              # SQL-first データアクセス（asyncpg 直接）
 ├── schemas/                   # Pydantic モデル（リクエスト/レスポンス）
 ├── services/review_scheduler.py
+├── migrations/                # Alembic（env.py, versions/）
+├── evals/                     # プロンプト評価フレームワーク（runner.py, graders/, datasets/）
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/
@@ -71,7 +75,9 @@ server/
 client/
 ├── app/
 │   ├── (auth)/                # sign-in, sign-up
-│   └── (main)/                # dashboard, learn, notes, review/[noteId]
+│   ├── (main)/                # dashboard, learn, notes/[id], review/[noteId]
+│   └── api/                   # Next.js Route Handlers（auth/[...all], upload-avatar）
+├── context/                   # navbar-slot-context.tsx（ナビバー差し込み）
 ├── components/
 │   ├── chat/                  # chat-input など
 │   ├── layout/                # sidebar, navbar, main-layout-client
@@ -92,11 +98,15 @@ client/
 ### LangGraph ワークフロー
 
 ```
-learning_start → learning_dialogue（最大 3 ターン or LEARNING_END）
-  → generate_note → generate_feedback → END
+learning_start → learning_dialogue（対話継続中はループ）
+  ├─ session_type="learning" → generate_note → generate_feedback → END
+  └─ session_type="review"   → update_note_and_feedback → END
 ```
 
-- レビューセッション: 同じグラフを使用、既存ノートをプロンプトに注入し `generate_note` をスキップ
+- 分岐は `graph/builder.py` の `route_after_dialogue` が担当：`should_generate_note` が立つまで `learning_dialogue` をループ、立った後 `session_type` で `generate_note` / `update_note_and_feedback` に分岐
+- レビューセッション: 既存ノートをプロンプトに注入し、`update_note_and_feedback` でノート・フィードバックを更新（`generate_note` / `generate_feedback` は通らない）
+- `interrupt_before=["learning_dialogue"]` でユーザー入力待ちのため毎ターン中断する（再開はチェックポイントから）
+- 各ノードは `observability.tracing.measured_node` でラップされ、レイテンシ等が計測される
 - グラフ状態は `langgraph-checkpoint-postgres` で DB に永続化
 - `LearningState` は `session_type`（`"learning"` / `"review"`）で分岐
 

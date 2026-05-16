@@ -1,0 +1,57 @@
+"""LangGraph 各ノードが使うプロンプト群。
+
+タスク別モジュールに分割しているが、`from graph.prompts import X` の
+従来 import を維持するため公開シンボルをここで再エクスポートする。
+"""
+
+from graph.prompts._base import (
+    NO_FABRICATION_CHARTER,
+    TARGET_DEPTH_LABELS,
+    UNSPECIFIED_PLACEHOLDER,
+    format_learning_plan_fields,
+    inject_charter,
+)
+from graph.prompts.analysis import ANALYZE_RESPONSE_PROMPT
+from graph.prompts.feedback import GENERATE_FEEDBACK_PROMPT
+from graph.prompts.learning_planner import LEARNING_PLANNER_PROMPT
+from graph.prompts.note import (
+    GENERATE_ASPECT_MAP_PROMPT,
+    GENERATE_NOTE_PROMPT,
+    UPDATE_NOTE_PROMPT,
+)
+from graph.prompts.question import (
+    MODE_DIALOGUE,
+    MODE_HINT,
+    MODE_UNKNOWN_A,
+    MODE_UNKNOWN_B,
+    MODE_UNKNOWN_C,
+    QUESTION_PROMPT_BASE,
+    UserIntent,
+    build_question_prompt,
+    classify_user_intent,
+)
+from graph.prompts.review import REVIEW_SYSTEM_PROMPT
+
+__all__ = [
+    "ANALYZE_RESPONSE_PROMPT",
+    "GENERATE_ASPECT_MAP_PROMPT",
+    "GENERATE_FEEDBACK_PROMPT",
+    "GENERATE_NOTE_PROMPT",
+    "LEARNING_PLANNER_PROMPT",
+    "MODE_DIALOGUE",
+    "MODE_HINT",
+    "MODE_UNKNOWN_A",
+    "MODE_UNKNOWN_B",
+    "MODE_UNKNOWN_C",
+    "NO_FABRICATION_CHARTER",
+    "QUESTION_PROMPT_BASE",
+    "REVIEW_SYSTEM_PROMPT",
+    "TARGET_DEPTH_LABELS",
+    "UNSPECIFIED_PLACEHOLDER",
+    "UPDATE_NOTE_PROMPT",
+    "UserIntent",
+    "build_question_prompt",
+    "classify_user_intent",
+    "format_learning_plan_fields",
+    "inject_charter",
+]

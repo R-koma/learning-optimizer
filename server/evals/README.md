@@ -97,7 +97,7 @@ uv run python -m evals.compare \
 ## プロンプト改善の A/B サイクル
 
 ```
-1. prompts.py を編集
+1. graph/prompts/ 配下の該当モジュールを編集
 2. smoke 実行でざっくり確認
    uv run python -m evals.runner --task note_generation --smoke --judge
 3. フル実行

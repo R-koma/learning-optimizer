@@ -1,6 +1,6 @@
 from langchain_core.messages import AIMessage, HumanMessage
 
-from graph.question_prompt import (
+from graph.prompts.question import (
     MODE_DIALOGUE,
     MODE_HINT,
     MODE_UNKNOWN_A,

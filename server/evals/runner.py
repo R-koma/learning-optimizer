@@ -40,9 +40,9 @@ from graph.prompts import (
     GENERATE_FEEDBACK_PROMPT,
     GENERATE_NOTE_PROMPT,
     REVIEW_SYSTEM_PROMPT,
+    build_question_prompt,
     format_learning_plan_fields,
 )
-from graph.question_prompt import build_question_prompt
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ from evals.graders import (
     note_has_sections,
     response_label_match,
 )
-from graph.model import FeedbackOutput
+from graph.output_schemas import FeedbackOutput
 
 
 class TestNoteHasSections:

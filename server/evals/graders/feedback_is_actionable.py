@@ -1,5 +1,5 @@
 from evals.graders.base import GraderResult
-from graph.model import FeedbackOutput
+from graph.output_schemas import FeedbackOutput
 
 
 def grade(feedback: FeedbackOutput) -> GraderResult:

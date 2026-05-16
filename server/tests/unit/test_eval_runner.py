@@ -5,7 +5,7 @@ import pytest
 
 from evals import runner
 from evals.runner import EvalReport, _load_dataset, run_eval
-from graph.model import FeedbackOutput, NoteContent
+from graph.output_schemas import FeedbackOutput, NoteContent
 
 
 def _make_structured_llm_returning(value: Any) -> MagicMock:

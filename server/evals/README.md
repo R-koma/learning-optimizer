@@ -11,7 +11,7 @@ evals/
 ├── datasets/               # 評価用 JSONL（合成データ、PII なし）
 │   ├── note_generation.jsonl      (30件)
 │   ├── feedback_generation.jsonl  (20件)
-│   ├── question_generation.jsonl  (15件)
+│   ├── question_generation.jsonl  (23件)
 │   └── response_analysis.jsonl    (20件)
 ├── graders/                # 採点ロジック
 │   ├── base.py             # GraderResult dataclass

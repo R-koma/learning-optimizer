@@ -12,13 +12,15 @@ RUBRIC_PATH = Path(__file__).parent.parent / "rubrics" / "question_quality.yaml"
 
 
 class QuestionQualityScore(BaseModel):
+    rationale: str = Field(
+        description="各評価軸をユーザー発話と AI 質問に照らして 1 つずつ分析した根拠。これを書いた後にスコアを付与する"
+    )
     avoids_repeated_aspects: int = Field(ge=1, le=5)
     expands_or_reinforces: int = Field(ge=1, le=5)
     positive_acknowledgment: int = Field(ge=1, le=5)
     prompts_re_explanation: int = Field(ge=1, le=5)
     handles_unknown_appropriately: int = Field(ge=1, le=5)
     single_question: int = Field(ge=1, le=5)
-    rationale: str = Field(description="採点理由を簡潔に")
 
 
 def _load_rubric() -> dict[str, Any]:
@@ -68,7 +70,10 @@ def _build_judge_prompt(rubric: dict[str, Any]) -> str:
         "- 含まれている場合:\n"
         "  - 直前の AI 質問の答えを LLM 側が具体的に提示している（定義 / 動作原理 / 具体例）なら 4-5。\n"
         "  - 「どの観点について？」「どこから始めますか？」のように同じ質問を別形で問い直していたら 1-2。\n"
-        "  - トピック冒頭の不知に対して、基礎レベルに下げて具体例で導入できていれば 4-5。\n"
+        "  - トピック冒頭の不知に対して、基礎レベルに下げて具体例で導入できていれば 4-5。\n\n"
+        "## 出力手順\n"
+        "- まず rationale で各評価軸をユーザー発話と AI 質問に照らして 1 つずつ分析せよ。\n"
+        "- その分析を踏まえてから各軸のスコアを付与せよ。スコアを先に決めて理由を後付けしてはならない。\n"
     )
 
 

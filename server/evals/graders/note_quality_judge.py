@@ -12,11 +12,13 @@ RUBRIC_PATH = Path(__file__).parent.parent / "rubrics" / "note_quality.yaml"
 
 
 class NoteQualityScore(BaseModel):
+    rationale: str = Field(
+        description="各評価軸を対話履歴とノートに照らして 1 つずつ分析した根拠。これを書いた後にスコアを付与する"
+    )
     explanatory_depth: int = Field(ge=1, le=5)
     protege_alignment: int = Field(ge=1, le=5)
     personalization: int = Field(ge=1, le=5)
     actionability: int = Field(ge=1, le=5)
-    rationale: str = Field(description="採点理由を簡潔に")
 
 
 def _load_rubric() -> dict[str, Any]:
@@ -40,7 +42,10 @@ def _build_judge_prompt(rubric: dict[str, Any]) -> str:
         "> **まだ曖昧な点** の blockquote callout（曖昧な点なしなら省略可）』。"
         "崩れていれば explanatory_depth を下げる\n"
         "- ユーザーの実際の発言と無関係な一般論ばかりなら personalization を 1-2 に下げる\n"
-        "- 「まだ曖昧な点」blockquote が存在するのに内容が空・曖昧で具体性がなければ actionability を 1-2 に下げる\n"
+        "- 「まだ曖昧な点」blockquote が存在するのに内容が空・曖昧で具体性がなければ actionability を 1-2 に下げる\n\n"
+        "## 出力手順\n"
+        "- まず rationale で各評価軸を対話履歴とノートに照らして 1 つずつ分析せよ。\n"
+        "- その分析を踏まえてから各軸のスコアを付与せよ。スコアを先に決めて理由を後付けしてはならない。\n"
     )
 
 

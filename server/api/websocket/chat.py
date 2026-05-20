@@ -68,6 +68,48 @@ async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], we
     return ai_content
 
 
+async def _start_session(
+    *,
+    session_type: Literal["learning", "review"],
+    user_id: str,
+    pool: asyncpg.Pool,
+    graph: Any,
+    websocket: WebSocket,
+    initial_state: dict[str, Any],
+    first_user_content: str,
+) -> tuple[UUID, dict[str, Any], int]:
+    """セッション作成・SessionStarted 送信・初期 user/assistant メッセージ保存までを共通化。
+
+    戻り値: (session_id, config, message_order)
+    """
+    await dialogue_session_repository.abandon_active_by_user(pool, user_id)
+
+    session_id = uuid.uuid4()
+    config = {"configurable": {"thread_id": str(session_id)}}
+
+    await dialogue_session_repository.create(
+        conn=pool,
+        session_id=session_id,
+        user_id=user_id,
+        session_type=session_type,
+    )
+
+    await websocket.send_text(
+        SessionStartedMessage(session_id=session_id, session_type=session_type).model_dump_json()
+    )
+
+    initial_state["dialogue_session_id"] = str(session_id)
+
+    message_order = 1
+    await dialogue_message_repository.insert(pool, session_id, "user", first_user_content, message_order)
+
+    ai_msg = await _stream_ai_response(graph, initial_state, config, websocket)
+    message_order += 1
+    await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
+
+    return session_id, config, message_order
+
+
 router = APIRouter()
 
 
@@ -94,28 +136,11 @@ async def websocket_chat(websocket: WebSocket) -> None:
             data = json.loads(user_input)
 
             if data["type"] == "start_learning":
-                await dialogue_session_repository.abandon_active_by_user(pool, user_id)
-
-                session_id = uuid.uuid4()
-                config = {"configurable": {"thread_id": str(session_id)}}
                 session_type = "learning"
-                message_order = 0
                 is_session_ended = False
 
-                await dialogue_session_repository.create(
-                    conn=pool,
-                    session_id=session_id,
-                    user_id=user_id,
-                    session_type="learning",
-                )
-
-                await websocket.send_text(
-                    SessionStartedMessage(session_id=session_id, session_type="learning").model_dump_json()
-                )
-
-                initial_state = {
+                initial_state: dict[str, Any] = {
                     "user_id": user_id,
-                    "dialogue_session_id": str(session_id),
                     "topic": data["topic"],
                     "turn_count": 0,
                     "should_generate_note": False,
@@ -136,12 +161,15 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     if cleaned_aspects:
                         initial_state["focus_aspects"] = cleaned_aspects
 
-                message_order += 1
-                await dialogue_message_repository.insert(pool, session_id, "user", data["topic"], message_order)
-
-                ai_msg: str = await _stream_ai_response(graph, initial_state, config, websocket)
-                message_order += 1
-                await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
+                session_id, config, message_order = await _start_session(
+                    session_type="learning",
+                    user_id=user_id,
+                    pool=pool,
+                    graph=graph,
+                    websocket=websocket,
+                    initial_state=initial_state,
+                    first_user_content=data["topic"],
+                )
 
             elif data["type"] == "start_review":
                 note_id = UUID(data["note_id"])
@@ -151,28 +179,11 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     await websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
                     continue
 
-                await dialogue_session_repository.abandon_active_by_user(pool, user_id)
-
-                session_id = uuid.uuid4()
-                config = {"configurable": {"thread_id": str(session_id)}}
                 session_type = "review"
-                message_order = 0
                 is_session_ended = False
-
-                await dialogue_session_repository.create(
-                    conn=pool,
-                    session_id=session_id,
-                    user_id=user_id,
-                    session_type="review",
-                )
-
-                await websocket.send_text(
-                    SessionStartedMessage(session_id=session_id, session_type="review").model_dump_json()
-                )
 
                 initial_state = {
                     "user_id": user_id,
-                    "dialogue_session_id": str(session_id),
                     "note_id": note_id,
                     "topic": note["topic"],
                     "note_content": note["content"],
@@ -182,12 +193,15 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     "session_type": "review",
                 }
 
-                message_order += 1
-                await dialogue_message_repository.insert(pool, session_id, "user", note["topic"], message_order)
-
-                ai_msg = await _stream_ai_response(graph, initial_state, config, websocket)
-                message_order += 1
-                await dialogue_message_repository.insert(pool, session_id, "assistant", ai_msg, message_order)
+                session_id, config, message_order = await _start_session(
+                    session_type="review",
+                    user_id=user_id,
+                    pool=pool,
+                    graph=graph,
+                    websocket=websocket,
+                    initial_state=initial_state,
+                    first_user_content=note["topic"],
+                )
 
             elif data["type"] == "resume_session":
                 resume_id = UUID(data["session_id"])

@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import uuid
 from typing import Any, Literal, cast
@@ -8,10 +7,10 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from langchain_core.messages import AIMessageChunk, HumanMessage, RemoveMessage
+from pydantic import TypeAdapter, ValidationError
 
 from api.websocket.auth import authenticate_websocket
 from core.database import get_pool
-from graph.state import TARGET_DEPTH_VALUES
 from repositories import (
     dialogue_message_repository,
     dialogue_session_repository,
@@ -22,14 +21,23 @@ from schemas.websocket_message import (
     AssistantMessageChunk,
     AssistantMessageEnd,
     CancelLastMessageError,
+    CancelLastMessageRequest,
     CancelLastMessageSuccess,
+    EndSessionMessage,
     ErrorMessage,
     FeedbackGeneratedMessage,
+    IncomingMessage,
     NoteGeneratedMessage,
+    ResumeSessionMessage,
     SessionEndedMessage,
     SessionResumedMessage,
     SessionStartedMessage,
+    StartLearningMessage,
+    StartReviewMessage,
+    UserMessage,
 )
+
+_incoming_adapter: TypeAdapter[IncomingMessage] = TypeAdapter(IncomingMessage)
 
 logger = logging.getLogger(__name__)
 
@@ -133,31 +141,33 @@ async def websocket_chat(websocket: WebSocket) -> None:
     try:
         while True:
             user_input = await websocket.receive_text()
-            data = json.loads(user_input)
 
-            if data["type"] == "start_learning":
+            try:
+                msg = _incoming_adapter.validate_json(user_input)
+            except ValidationError:
+                await websocket.send_text(ErrorMessage(detail="Invalid message format").model_dump_json())
+                continue
+
+            if isinstance(msg, StartLearningMessage):
                 session_type = "learning"
                 is_session_ended = False
 
                 initial_state: dict[str, Any] = {
                     "user_id": user_id,
-                    "topic": data["topic"],
+                    "topic": msg.topic,
                     "turn_count": 0,
                     "should_generate_note": False,
                     "session_type": "learning",
                 }
 
-                learning_goal = data.get("learning_goal")
-                if isinstance(learning_goal, str) and learning_goal.strip():
-                    initial_state["learning_goal"] = learning_goal.strip()
+                if msg.learning_goal and msg.learning_goal.strip():
+                    initial_state["learning_goal"] = msg.learning_goal.strip()
 
-                target_depth = data.get("target_depth")
-                if target_depth in TARGET_DEPTH_VALUES:
-                    initial_state["target_depth"] = target_depth
+                if msg.target_depth is not None:
+                    initial_state["target_depth"] = msg.target_depth
 
-                focus_aspects = data.get("focus_aspects")
-                if isinstance(focus_aspects, list):
-                    cleaned_aspects = [a.strip() for a in focus_aspects if isinstance(a, str) and a.strip()]
+                if msg.focus_aspects:
+                    cleaned_aspects = [a.strip() for a in msg.focus_aspects if a and a.strip()]
                     if cleaned_aspects:
                         initial_state["focus_aspects"] = cleaned_aspects
 
@@ -168,13 +178,11 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     graph=graph,
                     websocket=websocket,
                     initial_state=initial_state,
-                    first_user_content=data["topic"],
+                    first_user_content=msg.topic,
                 )
 
-            elif data["type"] == "start_review":
-                note_id = UUID(data["note_id"])
-
-                note = await note_repository.find_by_id(pool, note_id, user_id)
+            elif isinstance(msg, StartReviewMessage):
+                note = await note_repository.find_by_id(pool, msg.note_id, user_id)
                 if not note:
                     await websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
                     continue
@@ -184,7 +192,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
 
                 initial_state = {
                     "user_id": user_id,
-                    "note_id": note_id,
+                    "note_id": msg.note_id,
                     "topic": note["topic"],
                     "note_content": note["content"],
                     "note_summary": note["summary"] or "",
@@ -203,9 +211,8 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     first_user_content=note["topic"],
                 )
 
-            elif data["type"] == "resume_session":
-                resume_id = UUID(data["session_id"])
-                existing = await dialogue_session_repository.find_by_id(pool, resume_id, user_id)
+            elif isinstance(msg, ResumeSessionMessage):
+                existing = await dialogue_session_repository.find_by_id(pool, msg.session_id, user_id)
                 if not existing:
                     await websocket.send_text(ErrorMessage(detail="Session not found").model_dump_json())
                     continue
@@ -215,12 +222,13 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     continue
 
                 if existing["status"] == "disconnect":
-                    await dialogue_session_repository.update_status(pool, resume_id, "in_progress")
+                    await dialogue_session_repository.update_status(pool, msg.session_id, "in_progress")
 
-                session_id = resume_id
                 if existing["session_type"] not in ("learning", "review"):
                     await websocket.send_text(ErrorMessage(detail="Invalid session type").model_dump_json())
                     continue
+
+                session_id = msg.session_id
                 resumed_session_type = cast(Literal["learning", "review"], existing["session_type"])
                 session_type = resumed_session_type
                 config = {"configurable": {"thread_id": str(session_id)}}
@@ -239,17 +247,17 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     ).model_dump_json()
                 )
 
-            elif data["type"] == "user_message":
+            elif isinstance(msg, UserMessage):
                 if not config or not session_id:
                     await websocket.send_text(ErrorMessage(detail="Session not started").model_dump_json())
                     continue
 
                 message_order += 1
-                await dialogue_message_repository.insert(pool, session_id, "user", data["content"], message_order)
+                await dialogue_message_repository.insert(pool, session_id, "user", msg.content, message_order)
 
                 await graph.aupdate_state(
                     config,
-                    {"messages": [HumanMessage(content=data["content"])]},
+                    {"messages": [HumanMessage(content=msg.content)]},
                 )
 
                 ai_msg = await _stream_ai_response(graph, None, config, websocket)
@@ -306,7 +314,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
 
                     await websocket.send_text(SessionEndedMessage().model_dump_json())
 
-            elif data["type"] == "cancel_last_message":
+            elif isinstance(msg, CancelLastMessageRequest):
                 if not config or not session_id:
                     await websocket.send_text(CancelLastMessageError(detail="Session not started").model_dump_json())
                     continue
@@ -346,7 +354,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
                     CancelLastMessageSuccess(cancelled_content=cancelled_content).model_dump_json()
                 )
 
-            elif data["type"] == "end_session":
+            elif isinstance(msg, EndSessionMessage):
                 is_session_ended = True
                 if config and session_id:
                     await graph.aupdate_state(config, {"should_generate_note": True}, as_node="learning_dialogue")
@@ -361,7 +369,11 @@ async def websocket_chat(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         if session_id:
             await dialogue_session_repository.update_status(pool, session_id, "disconnect")
-    except Exception as e:
+    except Exception:
+        logger.exception(
+            "WebSocket handler crashed",
+            extra={"session_id": str(session_id) if session_id else None},
+        )
         if session_id:
             await dialogue_session_repository.update_status(pool, session_id, "failed")
-        await websocket.send_text(ErrorMessage(detail=str(e)).model_dump_json())
+        await websocket.send_text(ErrorMessage(detail="Internal error").model_dump_json())

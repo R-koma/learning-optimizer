@@ -1,7 +1,7 @@
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from graph.state import TargetDepth
 
@@ -16,7 +16,12 @@ class StartLearningMessage(BaseModel):
 
 class StartReviewMessage(BaseModel):
     type: Literal["start_review"]
-    note_id: str
+    note_id: UUID
+
+
+class ResumeSessionMessage(BaseModel):
+    type: Literal["resume_session"]
+    session_id: UUID
 
 
 class UserMessage(BaseModel):
@@ -24,8 +29,23 @@ class UserMessage(BaseModel):
     content: str
 
 
+class CancelLastMessageRequest(BaseModel):
+    type: Literal["cancel_last_message"]
+
+
 class EndSessionMessage(BaseModel):
     type: Literal["end_session"]
+
+
+IncomingMessage = Annotated[
+    StartLearningMessage
+    | StartReviewMessage
+    | ResumeSessionMessage
+    | UserMessage
+    | CancelLastMessageRequest
+    | EndSessionMessage,
+    Field(discriminator="type"),
+]
 
 
 class AssistantMessage(BaseModel):

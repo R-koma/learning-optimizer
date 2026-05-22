@@ -1,0 +1,61 @@
+schema_version: 1
+
+invariants:
+  - id: inv_no_full_answer
+    polarity: must_not
+    type: judge
+    priority: P0
+    criterion: >
+      学習者が自力で到達すべき結論を、丸ごと先に説明してしまっている。
+
+  - id: inv_no_hallucination
+    polarity: must_not
+    type: judge
+    priority: P0
+    criterion: >
+      事実として誤った内容を述べている。
+
+  - id: inv_respectful_tone
+    polarity: must_not
+    type: judge
+    priority: P1
+    criterion: >
+      学習者を見下す、あるいは否定的・威圧的な口調になっている。
+
+  - id: inv_ends_with_question
+    polarity: must
+    type: deterministic
+    priority: P1
+    check: ends_with_question_mark
+    note: >
+      対話継続が期待されるターンにのみ適用。学習を締めくくる終了ターンには
+      適用しない (将来 eval_level=trajectory で終了判定を扱う際に要調整)。
+
+  - id: inv_no_bailout
+    polarity: must_not
+    type: deterministic
+    priority: P0
+    check: contains_any_phrase
+    parameters:
+      phrases:
+        - "そちらを先に話していただいても"
+        - "他に触れておきたい観点があれば"
+        - "先に話していただいても結構です"
+        - "他にお話ししたいことがあれば"
+        - "他に気になる点があれば、そちらを先に"
+    criterion: >
+      対話の方向決定を学習者に丸投げする bailout 表現を含んでいる。
+      システムは次の一手を具体的に提示し、対話の責任を引き受けるべき。
+    note: >
+      ハーネス側で contains_any_phrase は部分一致で実装する。
+      phrases リストは新しい bailout パターンを観測するたびに追記する。
+
+  - id: inv_no_empty_praise
+    polarity: must_not
+    type: judge
+    priority: P1
+    criterion: >
+      学習者の応答の具体的な内容に言及せず、定型的な賞賛表現
+      (「素晴らしいですね」「良い整理ですね」「なるほど、いいですね」等)
+      だけで応答を始めている。学習者の応答内容を具体的に参照した上での
+      acknowledgement は許容する (例:「RAID の例を挙げてくれましたね」)。

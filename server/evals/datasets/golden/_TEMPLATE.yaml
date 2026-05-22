@@ -1,0 +1,45 @@
+status: draft
+
+input:
+  learner_profile:
+    level: ""
+  conversation_history:
+    - role: system_question
+      content: ""
+    - role: learner
+      content: ""
+  graph_state:
+    current_topic: ""
+    depth: 0
+
+observed_output: |
+
+capture_note: |
+
+id: ""
+schema_version: 2
+eval_level: node
+target: generate_question
+category: ""
+difficulty: ""
+priority: ""
+source: ""
+tags: []
+
+expected_behavior:
+  assertions:
+    - id: a1
+      polarity: must
+      type: judge
+      criterion: ""
+    - id: a2
+      polarity: must
+      type: deterministic
+      check: ""
+  exemplar: |
+
+rationale: |
+
+created_at: ""
+verified_by: ryoma
+last_reviewed_at: ""

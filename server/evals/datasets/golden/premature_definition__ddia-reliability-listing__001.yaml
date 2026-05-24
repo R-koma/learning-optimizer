@@ -1,0 +1,76 @@
+status: active
+
+input:
+  learner_profile:
+    level: undergrad
+  conversation_history:
+    - role: system_question
+      content: >
+        データ指向アプリケーションの学習に興味があるんですね。もし学習ゴールや
+        特に焦点を当てたい点があれば教えてください。それでは、まず
+        データ指向アプリケーション 1章について、あなたが今知っていることを
+        自由に話してみてください。
+    - role: learner
+      content: 基礎として信頼性、スケーラビリティ、メンテナンス性という概念がある。
+  graph_state:
+    current_topic: データ指向アプリケーション 1章
+    depth: 1
+
+observed_output: |
+  良い整理ですね。信頼性については、システムが正確に動作し続ける能力を
+  指します。例えば、データの整合性やシステム障害時の復旧性などが含まれます。
+  これらはシステムの安定性や信頼性の保持に直結しますが、他に気になる
+  ポイントや詳しく知りたい側面はありますか?
+
+capture_note: |
+  学習者が3つの単語を並べただけの段階で、システムが信頼性の定義を
+  与えてしまった。直後の turn 4 で学習者はこの定義をほぼなぞって
+  応答しており、理解か反復かを区別できなくなる古典的な失敗。
+
+id: premature_definition__ddia-reliability-listing__001
+schema_version: 2
+eval_level: node
+target: generate_question
+category: premature_definition
+difficulty: easy
+priority: P0
+source: learning_session:2026-05-22
+tags: ["topic:ddia-ch1", "turn_position:opening", "failure_mode:scaffolding"]
+
+expected_behavior:
+  assertions:
+    - id: a1
+      polarity: must
+      type: judge
+      criterion: >
+        学習者が概念を「単語として列挙しただけ」と認識し、まずそれぞれを
+        学習者自身の言葉で定義するよう促す質問を投げている。
+    - id: a2
+      polarity: must_not
+      type: judge
+      criterion: >
+        学習者がまだ自分の言葉で定義していない概念について、システム側が
+        定義・説明を提示してしまっている。
+    - id: a3
+      polarity: must
+      type: judge
+      criterion: >
+        学習者が列挙した複数の概念のうち、1つに focus を絞って次の質問を
+        投げている (3つを並列に問わない)。
+  exemplar: |
+    ありがとうございます。3つとも DDIA 1章の核となる概念ですね。
+    まず最初の「信頼性」から深掘りしてみましょう ──
+    信頼性という言葉で、あなたは具体的にどんなことを思い浮かべますか?
+    あなた自身の言葉で説明してみてください。
+
+rationale: |
+  学習者が単語を並べただけの段階でシステムが定義を提示すると、
+  後続の応答が「学習者の理解」なのか「システムの定義の反復」なのかを
+  区別できなくなる。実際このセッションでは turn 4 で学習者が
+  turn 3 の定義をほぼなぞった応答を返しており、測定不能化が起きた。
+  ソクラテス的対話の原則として、学習者自身に定義させ、その後に
+  システムが補正・拡張するのが正しい順序。
+
+created_at: 2026-05-22
+verified_by: ryoma
+last_reviewed_at: 2026-05-22

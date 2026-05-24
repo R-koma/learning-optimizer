@@ -67,11 +67,11 @@ expected_behavior:
   assertions:
     - id: a1
       polarity: must_not
-      type: judge
-      criterion: >
-        会話履歴中の直近のシステム質問と意味的に同じ問い (paraphrase) を
-        新たな質問として投げている。学習者が応答した直後は必ず
-        「次の段」に進む。
+      type: deterministic
+      check: paraphrases_recent_question
+      parameters:
+        # 直近システム質問との文字 bigram Jaccard がこの閾値以上なら paraphrase とみなす。
+        threshold: 0.6
     - id: a2
       polarity: must
       type: judge

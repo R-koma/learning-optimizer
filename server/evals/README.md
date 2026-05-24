@@ -157,3 +157,51 @@ PR に `prompt-change` ラベルが付いている場合に自動実行。先頭
 ### `evals-regression`（回帰検知）
 
 `evals-smoke` 通過後に実行。`note_generation` をフル件数 x 3 trials で評価し、`baselines/note_generation_baseline.json` と比較。回帰検出時は CI fail（exit code 1）。
+
+### `golden-gate`（リグレッションゲート）
+
+`prompt-change` ラベル付き PR で実行。golden dataset を評価し、**P0 assertion が 1 件でも fail すると CI fail（exit code 1）**。baseline 比較ではなくハードゲート。
+
+---
+
+## Golden Dataset（assertion ベース評価）
+
+JSONL タスクとは別系統の、**レコード固有の二値 assertion ＋ 普遍 invariant** で
+`generate_question` の振る舞いを判定する仕組み。データとスキーマは
+`datasets/golden/`（`_TEMPLATE.yaml` / `_invariants.yaml` 参照）。
+
+### 仕組み
+
+- **1 レコード 1 ファイル**（`<category>__<slug>__<NNN>.yaml`）。`id` はファイル名と一致。
+- 各 assertion は `polarity`（must / must_not）× `type`（judge / deterministic）。
+  - `deterministic`: `checks.py` のレジストリ（`ends_with_question_mark` /
+    `contains_any_phrase` / `paraphrases_recent_question`）でコード検証。
+  - `judge`: 汎用・単一 criterion・二値の LLM-as-judge（`judge.py`, gpt-4o）。
+- `_invariants.yaml` の普遍ルールは全レコードに自動適用される。
+- polarity 解釈: `must` は性質成立で pass / `must_not` は性質成立で fail。
+- レコードは自身の全 assertion と全 invariant が pass したとき pass。
+
+### 構成
+
+```
+evals/golden/
+├── schema.py      # GoldenRecord / Assertion / Invariant (Pydantic)
+├── loader.py      # YAML ロード・id 検証・status フィルタ
+├── checks.py      # deterministic check レジストリ
+├── judge.py       # 汎用 LLM-as-judge
+├── adapter.py     # golden input -> generate_question 実行
+├── evaluator.py   # polarity 適用・record/invariant 評価
+├── aggregate.py   # category/priority 集計・P0 ゲート判定
+└── runner.py      # 実行エンジン（CLI）
+```
+
+### 使い方
+
+```bash
+cd server
+uv run python -m evals.golden.runner            # 全レコード評価（P0 fail で exit 1）
+uv run python -m evals.golden.runner --smoke    # 先頭数件のみ
+uv run python -m evals.golden.runner --no-save  # レポート JSON を書かない
+```
+
+実行後 `evals/reports/golden_<sha>_<ts>.json` に per-assertion 結果と集計が保存される。

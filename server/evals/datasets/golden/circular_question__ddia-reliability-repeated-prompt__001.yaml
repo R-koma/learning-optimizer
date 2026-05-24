@@ -1,0 +1,104 @@
+status: active
+
+input:
+  learner_profile:
+    level: undergrad
+  conversation_history:
+    - role: system_question
+      content: >
+        データ指向アプリケーションの学習に興味があるんですね。... まず
+        1章について、あなたが今知っていることを自由に話してみてください。
+    - role: learner
+      content: 基礎として信頼性、スケーラビリティ、メンテナンス性という概念がある。
+    - role: system_question
+      content: >
+        良い整理ですね。信頼性については、システムが正確に動作し続ける
+        能力を指します。...
+    - role: learner
+      content: >
+        信頼性は、システムに障害が生じても正しく動作し、機能すること。
+        スケーラビリティは...
+        メンテナンス性は、システムの運用・保守の容易さ。
+    - role: system_question
+      content: >
+        素晴らしいですね。信頼性、スケーラビリティ、メンテナンス性の
+        それぞれについて、もう少し具体的な内容や、どのような場面で
+        重要になるのかを考えてみませんか? 例えば、システムのどの部分に
+        これらの概念が関係しているかをイメージしてみると、理解が深まる
+        かもしれません。
+    - role: learner
+      content: |
+        信頼性には、以下のことが期待される。
+        - アプリケーションがユーザーの期待通りに機能すること
+        - ユーザーが間違いを犯しても、予想外の使い方をしても耐えること
+        ...
+        RAID 構成にして冗長性を持たせることで...データを失うリスクを
+        低減する。
+  graph_state:
+    current_topic: 信頼性
+    depth: 3
+
+observed_output: |
+  素晴らしいですね。信頼性については正確には...
+  もう少し、信頼性が実際のシステムのどの部分に関係しているのか、
+  具体的な場面や仕組みについて詳しく考えてみませんか?
+  もちろん、他に触れておきたい観点があれば、そちらを先に話していただいても
+  構いません。
+
+capture_note: |
+  この turn 7 の質問 (「信頼性がシステムのどの部分に関係しているのか、
+  具体的な場面や仕組みについて」) は、turn 5 の質問とほぼ同義。
+  しかし turn 6 で学習者は大きく前進している (4性質 / 用語 / RAID例)。
+  システムは前のターンの問いに戻してしまっており、対話が前進しない。
+  この失敗を deterministic に検知するには「同一会話内の直近 N ターンの
+  質問との類似度」を見るのが良い (将来検討)。
+
+id: circular_question__ddia-reliability-repeated-prompt__001
+schema_version: 2
+eval_level: node
+target: generate_question
+category: circular_question
+difficulty: medium
+priority: P0
+source: learning_session:2026-05-22
+tags: ["topic:ddia-ch1", "turn_position:deep", "failure_mode:no_progression"]
+
+expected_behavior:
+  assertions:
+    - id: a1
+      polarity: must_not
+      type: judge
+      criterion: >
+        会話履歴中の直近のシステム質問と意味的に同じ問い (paraphrase) を
+        新たな質問として投げている。学習者が応答した直後は必ず
+        「次の段」に進む。
+    - id: a2
+      polarity: must
+      type: judge
+      criterion: >
+        学習者の直前の応答で新たに登場した情報 (新しい用語・新しい具体例・
+        新しい観点) のいずれかを起点として、次の質問を構築している。
+    - id: a3
+      polarity: must
+      type: judge
+      criterion: >
+        質問の深度が前ターンより一段深くなっている (例: 定義→具体例、
+        具体例→反例、概念→限界・例外、分類→分類間の比較、等)。
+  exemplar: |
+    フォールトの種類とそれに対する RAID という具体的な対処まで挙げて
+    くれましたね。RAID はハードウェアレベルのフォールトに対する対処です。
+    では、ハードウェア以外のレベルで発生するフォールトには、どんな
+    種類があると思いますか?
+
+rationale: |
+  対話が前進しない (= 同じ問いの繰り返し) のは、学習者にとって最も
+  消耗するパターン。「答えても次に進めない = 自分の応答に意味がなかった」
+  という学習動機を削ぐシグナルになる。システムは常に直近の学習者応答を
+  起点として「次の段」を提示する責任がある。
+  この失敗の根本原因は、generate_question プロンプトが「直前の応答」
+  ではなく「現在のトピック」のみを文脈として参照している可能性が高く、
+  プロンプト側の修正が必要 (Eval だけでは治らない)。
+
+created_at: 2026-05-22
+verified_by: ryoma
+last_reviewed_at: 2026-05-22

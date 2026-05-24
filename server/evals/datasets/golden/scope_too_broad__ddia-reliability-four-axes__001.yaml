@@ -1,0 +1,88 @@
+status: active
+
+input:
+  learner_profile:
+    level: undergrad
+  conversation_history:
+    - role: system_question
+      content: >
+        データ指向アプリケーションの学習に興味があるんですね。... それでは、
+        まず データ指向アプリケーション 1章について、あなたが今知っている
+        ことを自由に話してみてください。
+    - role: learner
+      content: 基礎として信頼性、スケーラビリティ、メンテナンス性という概念がある。
+    - role: system_question
+      content: >
+        良い整理ですね。信頼性については、システムが正確に動作し続ける
+        能力を指します。... 他に気になるポイントや詳しく知りたい側面は
+        ありますか?
+    - role: learner
+      content: >
+        信頼性は、システムに障害が生じても正しく動作し、機能すること。
+        スケーラビリティは、システムの規模が大きくなっても正常に動作すること。
+        メンテナンス性は、システムの運用・保守の容易さ。
+  graph_state:
+    current_topic: データ指向アプリケーション 1章
+    depth: 2
+
+observed_output: |
+  素晴らしいですね。信頼性、スケーラビリティ、メンテナンス性のそれぞれに
+  ついて、もう少し具体的な内容や、どのような場面で重要になるのかを
+  考えてみませんか? 例えば、システムのどの部分にこれらの概念が
+  関係しているかをイメージしてみると、理解が深まるかもしれません。
+  他に触れておきたい観点があれば、そちらを先に話していただいても構いません。
+
+capture_note: |
+  3軸 (具体的内容 / 重要な場面 / 関係するシステム部分) × 3概念 = 9マス
+  の質問を1ターンに詰め込んでいる。focus がなく、結果として学習者は
+  どこから答えるか迷う。1概念に絞り、1つの問いに絞るべき。
+  末尾の bailout は _invariants.yaml の inv_no_bailout が拾う想定。
+
+id: scope_too_broad__ddia-reliability-four-axes__001
+schema_version: 2
+eval_level: node
+target: generate_question
+category: scope_too_broad
+difficulty: easy
+priority: P0
+source: learning_session:2026-05-22
+tags: ["topic:ddia-ch1", "turn_position:mid"]
+
+expected_behavior:
+  assertions:
+    - id: a1
+      polarity: must
+      type: judge
+      criterion: >
+        学習者が複数の概念について述べた場合、システムは1つの概念だけに
+        focus を絞って次の質問を投げている。
+    - id: a2
+      polarity: must_not
+      type: judge
+      criterion: >
+        複数の評価軸 (具体的内容、重要な場面、関係する部分、等) を
+        1つの質問にまとめて学習者に提示している。
+    - id: a3
+      polarity: must
+      type: judge
+      criterion: >
+        学習者の各定義の妥当性を簡潔に評価 (「この定義は的を射ている」
+        「この点はもう一歩」など) してから次の質問に進んでいる。
+        単に「素晴らしい」と賞賛して具体評価を飛ばすのは不可。
+  exemplar: |
+    3つそれぞれにあなた自身の定義をくれましたね。3つとも DDIA の核心ですが、
+    ここから1つに絞って深掘りしましょう。最初の「信頼性」── 「障害が生じても
+    正しく動作する」とのことですが、ここで言う「障害」とは具体的にどのような
+    ものを想定していますか? 例を1〜2個挙げてみてください。
+
+rationale: |
+  多軸の質問は学習者の思考を分散させ、結果として浅い応答を招く。
+  ソクラテス的対話の基本原則として「次の一手は常に1つに焦点を絞る」を
+  守る必要がある。複数概念を扱う場合は順序を決めて1つずつ進める。
+  このセッションでは scope_too_broad の結果として、後続の turn 6 で
+  学習者が「信頼性」だけに絞って回答する形となり、システムの広い問いが
+  機能していなかったことが明らか。
+
+created_at: 2026-05-22
+verified_by: ryoma
+last_reviewed_at: 2026-05-22

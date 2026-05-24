@@ -207,3 +207,27 @@ jobs:
           name: eval-regression-reports
           path: server/evals/reports/*.json
           if-no-files-found: ignore
+
+  golden-gate:
+    if: contains(github.event.pull_request.labels.*.name, 'prompt-change')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync --dev
+      - name: Run golden gate (P0 assertion failures block merge)
+        run: uv run python -m evals.golden.runner
+      - name: Upload golden reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-reports
+          path: server/evals/reports/golden_*.json
+          if-no-files-found: ignore

@@ -78,6 +78,8 @@ class Assertion(_Strict):
     criterion: str | None = None
     check: str | None = None
     parameters: dict[str, object] | None = None
+    # 省略時はレコードの priority を継承する。個別に緩めたい assertion で上書きする。
+    priority: Priority | None = None
 
     @model_validator(mode="after")
     def _check_type_fields(self) -> Assertion:

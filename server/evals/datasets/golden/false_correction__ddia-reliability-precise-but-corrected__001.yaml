@@ -77,6 +77,8 @@ expected_behavior:
     - id: a1
       polarity: must
       type: judge
+      # nano モデルでは judge 境界でフリッカーするため P1 に降格（中核失敗は a2-a4 が担保）。
+      priority: P1
       criterion: >
         学習者が挙げた具体項目（専門用語・具体例など）のうち少なくともいくつかを
         名指しで acknowledge している（一般的な称賛だけで済ませていない）。

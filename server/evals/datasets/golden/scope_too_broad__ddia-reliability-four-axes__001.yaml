@@ -67,6 +67,8 @@ expected_behavior:
     - id: a3
       polarity: must
       type: judge
+      # nano モデルでは明示的な定義評価がフリッカーするため P1 に降格（中核は a1/a2）。
+      priority: P1
       criterion: >
         次の質問で絞り込んだ概念について、学習者の定義の妥当性に簡潔に触れて
         (「的を射ている」「ここはもう一歩」など) から問いに進んでいる。

@@ -80,6 +80,17 @@ class TestLoadGoldenRecords:
         ids = {r.id for r in load_golden_records()}
         assert not any(i.startswith("_") for i in ids)
 
+    def test_shipped_records_have_learning_plan(self) -> None:
+        for r in load_golden_records():
+            assert r.input.learning_plan is not None, f"{r.id} missing learning_plan"
+            assert r.input.learning_plan.target_depth in ("recognize", "explain", "apply")
+
+    def test_learning_plan_is_optional(self, tmp_path: Path) -> None:
+        # learning_plan を持たないレコードも後方互換でロードできる
+        _write_yaml(tmp_path / "rec_active.yaml", _record_dict("rec_active"))
+        record = load_golden_records(tmp_path)[0]
+        assert record.input.learning_plan is None
+
     def test_id_must_match_filename(self, tmp_path: Path) -> None:
         _write_yaml(tmp_path / "mismatch.yaml", _record_dict("not_mismatch"))
         with pytest.raises(ValueError, match="does not match filename"):

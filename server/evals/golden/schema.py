@@ -12,6 +12,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
+from graph.state import TargetDepth
+
 Polarity = Literal["must", "must_not"]
 AssertionType = Literal["judge", "deterministic"]
 Status = Literal["draft", "active", "deprecated", "quarantined"]
@@ -47,10 +49,24 @@ class GraphState(_Strict):
     depth: int
 
 
+class LearningPlanContext(_Strict):
+    """generate_question の振る舞いを左右する学習プラン文脈。
+
+    target_depth は深掘りの天井判定に効くため省略不可。learning_goal /
+    focus_aspects は本番同様に未指定可。
+    """
+
+    target_depth: TargetDepth
+    learning_goal: str | None = None
+    focus_aspects: list[str] | None = None
+
+
 class GoldenInput(_Strict):
     learner_profile: LearnerProfile
     conversation_history: list[Turn]
     graph_state: GraphState
+    # 省略時はアダプタが既定値（target_depth=recognize）でフォールバックする。
+    learning_plan: LearningPlanContext | None = None
 
 
 class Assertion(_Strict):

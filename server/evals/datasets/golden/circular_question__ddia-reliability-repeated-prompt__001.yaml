@@ -37,6 +37,8 @@ input:
   graph_state:
     current_topic: 信頼性
     depth: 3
+  learning_plan:
+    target_depth: apply
 
 observed_output: |
   素晴らしいですね。信頼性については正確には...

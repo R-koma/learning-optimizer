@@ -8,7 +8,7 @@ from evals.golden.adapter import (
     generate_question_output,
     recent_system_questions,
 )
-from evals.golden.schema import GoldenInput, GraphState, LearnerProfile, Turn
+from evals.golden.schema import GoldenInput, GraphState, LearnerProfile, LearningPlanContext, Turn
 
 
 def _input() -> GoldenInput:
@@ -43,6 +43,20 @@ class TestBuildPrompt:
         assert isinstance(prompt, str)
         assert "信頼性" in prompt
         assert isinstance(intent, str)
+
+    def test_learning_plan_reflected_in_prompt(self) -> None:
+        record_input = _input()
+        record_input.learning_plan = LearningPlanContext(
+            target_depth="apply",
+            learning_goal="DDIA の信頼性を体系的に理解する",
+        )
+        prompt, _ = build_generate_question_prompt(record_input)
+        assert "DDIA の信頼性を体系的に理解する" in prompt
+
+    def test_falls_back_when_no_plan(self) -> None:
+        # learning_plan 無しでも例外なくプロンプトを構築できる（recognize フォールバック）
+        prompt, _ = build_generate_question_prompt(_input())
+        assert prompt
 
 
 class TestGenerateQuestionOutput:

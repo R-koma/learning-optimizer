@@ -13,6 +13,7 @@ from evals.golden.schema import (
     GoldenRecord,
     Invariant,
     InvariantsFile,
+    LearningPlanContext,
 )
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     "GoldenRecord",
     "Invariant",
     "InvariantsFile",
+    "LearningPlanContext",
     "load_golden_records",
     "load_invariants",
 ]

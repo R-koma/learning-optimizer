@@ -39,10 +39,11 @@ def build_generate_question_prompt(record_input: GoldenInput) -> tuple[str, str]
     history = record_input.conversation_history
     messages: list[Any] = [_to_message(t) for t in history]
     recent_messages = "\n".join(f"{_display_role(t)}: {t.content}" for t in history)
+    plan = record_input.learning_plan
     plan_fields = format_learning_plan_fields(
-        learning_goal=None,
-        target_depth=_DEFAULT_TARGET_DEPTH,
-        focus_aspects=None,
+        learning_goal=plan.learning_goal if plan else None,
+        target_depth=plan.target_depth if plan else _DEFAULT_TARGET_DEPTH,
+        focus_aspects=plan.focus_aspects if plan else None,
     )
     prompt, intent = build_question_prompt(
         topic=record_input.graph_state.current_topic,

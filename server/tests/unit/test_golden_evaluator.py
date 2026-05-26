@@ -124,6 +124,14 @@ class TestInvariants:
         assert inv_result.priority == "P1"
         assert inv_result.passed is False
 
+    async def test_assertion_priority_overrides_record(self) -> None:
+        assertion = Assertion(
+            id="a1", polarity="must", type="deterministic", check="ends_with_question_mark", priority="P1"
+        )
+        rec = _make_record([assertion], priority="P0")
+        result = await evaluate_record(rec, "終わりですか？", [])
+        assert result.results[0].priority == "P1"
+
     async def test_invariant_priority_preserved(self) -> None:
         rec = _make_record(
             [Assertion(id="a1", polarity="must", type="deterministic", check="ends_with_question_mark")],

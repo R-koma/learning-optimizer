@@ -123,7 +123,7 @@ async def evaluate_record(
                 assertion_id=assertion.id,
                 polarity=assertion.polarity,
                 type=assertion.type,
-                priority=record.priority,
+                priority=assertion.priority or record.priority,
                 holds=holds,
                 passed=_passed(assertion.polarity, holds),
                 detail=detail,

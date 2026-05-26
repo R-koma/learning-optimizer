@@ -27,11 +27,21 @@ from evals.golden.adapter import generate_question_output
 from evals.golden.aggregate import summarize
 from evals.golden.evaluator import evaluate_record
 from evals.golden.loader import load_golden_records, load_invariants
+from graph.llm import llm as production_llm
 
 logger = logging.getLogger(__name__)
 
 REPORTS_DIR = Path(__file__).parent.parent / "reports"
 SMOKE_MAX_RECORDS = 5
+
+
+def _eval_llm() -> ChatOpenAI:
+    """評価は再現性のため temperature=0 で生成する（本番の質問生成は 0.7）。
+
+    temp=0.7 のままだと同一入力でも出力が揺れ、assertion の合否がフリッカーして
+    ゲートが flaky になる。モデルは本番と同一を使う。
+    """
+    return ChatOpenAI(model=production_llm.model_name, temperature=0)  # type: ignore[call-arg]
 
 
 @dataclass
@@ -80,11 +90,12 @@ async def run_golden(
     if smoke:
         records = records[:SMOKE_MAX_RECORDS]
 
+    effective_llm = llm or _eval_llm()
     record_results = []
     errors: list[dict[str, str]] = []
     for record in records:
         try:
-            output = await generate_question_output(record.input, llm=llm)
+            output = await generate_question_output(record.input, llm=effective_llm)
             record_results.append(await evaluate_record(record, output, invariants, judge_llm=judge_llm))
         except Exception as exc:
             logger.exception("golden record failed: record_id=%s", record.id)

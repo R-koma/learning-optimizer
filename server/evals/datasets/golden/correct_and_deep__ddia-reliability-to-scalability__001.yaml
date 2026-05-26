@@ -1,0 +1,77 @@
+status: active
+
+input:
+  learner_profile:
+    level: undergrad
+  conversation_history:
+    - role: system_question
+      content: >
+        データ指向アプリケーション 1章について、まずは信頼性から、あなたが
+        知っていることを自分の言葉で説明してみてください。
+    - role: learner
+      content: |
+        信頼性には、以下のことが期待される。
+        - アプリケーションがユーザーの期待通りに機能すること
+        - ユーザーが間違いを犯しても、予想外の使い方をしても耐えること
+        - 予想される負荷とデータ量の下で十分なパフォーマンスを発揮すること
+        - 認可されていないアクセスや攻撃を回避できること
+        問題を起こしうるものをフォールトといい、これに対処できるシステムは
+        フォールトトレラント（耐障害性がある）と言える。例えばハードウェアを
+        RAID 構成にして冗長性を持たせると、障害時もデータを保持できる。
+  graph_state:
+    current_topic: 信頼性
+    depth: 3
+  learning_plan:
+    target_depth: apply
+    focus_aspects:
+      - 信頼性
+      - スケーラビリティ
+      - メンテナンス性
+
+capture_note: |
+  信頼性を apply レベル（定義 + 用語 + 具体例）まで説明し終えた地点。
+  ここで同じ信頼性を過剰に深掘りせず、未カバーの観点へ転換するのが正しい。
+  望ましい「深さ天井での転換」を固定するための正例レコード。
+
+id: correct_and_deep__ddia-reliability-to-scalability__001
+schema_version: 2
+eval_level: node
+target: generate_question
+category: correct_and_deep
+difficulty: medium
+priority: P1
+source: hand_authored
+tags: ["topic:ddia-ch1", "turn_position:deep", "behavior:depth_ceiling_transition"]
+
+expected_behavior:
+  assertions:
+    - id: a1
+      polarity: must
+      type: deterministic
+      check: ends_with_question_mark
+    - id: a2
+      polarity: must
+      type: judge
+      criterion: >
+        信頼性が十分に説明されたことを踏まえ、未カバーの観点（スケーラビリティ
+        またはメンテナンス性）へ、具体的な主導質問で転換している。
+    - id: a3
+      polarity: must_not
+      type: judge
+      criterion: >
+        既に十分説明された信頼性について、未カバー観点へ移らず、同じ深さの
+        深掘り質問を続けている（過剰深掘り）。
+  exemplar: |
+    信頼性は、4つの性質からフォールトトレラントの考え方、RAID の具体例まで
+    しっかり整理できていますね。ではここから観点を広げましょう ──
+    スケーラビリティについて、負荷が増えたとき何が起きると考えますか?
+
+rationale: |
+  「過剰な深掘りを止め、未カバー観点へ転換する」という望ましい振る舞いを
+  正例として固定する。bailout を廃した後、システムが次の方向を主導しつつ
+  問いで終える形を維持できているかを担保する（失敗例だけでなく成功例も
+  ロックする方針）。
+
+created_at: 2026-05-25
+verified_by: ryoma
+last_reviewed_at: 2026-05-25

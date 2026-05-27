@@ -16,12 +16,15 @@ evals/
 ├── graders/                # 採点ロジック
 │   ├── base.py             # GraderResult dataclass
 │   ├── note_has_sections.py
-│   ├── note_quality_judge.py      # LLM-as-judge (gpt-4o)
+│   ├── note_quality_judge.py      # LLM-as-judge（単一 criterion・二値、judge_criterion を共用）
+│   ├── question_quality_judge.py  # LLM-as-judge（同上）
+│   ├── _criterion_aggregate.py    # rubric 読み込み + 並列 judge_criterion 集約
 │   ├── feedback_is_actionable.py
 │   ├── dialogue_ended_correctly.py
 │   └── response_label_match.py
 ├── rubrics/
-│   └── note_quality.yaml   # note_quality_judge の採点基準
+│   ├── note_quality.yaml      # note_quality_judge の criterion 定義
+│   └── question_quality.yaml  # question_quality_judge の criterion 定義
 ├── baselines/              # git 管理対象（比較の基準値）
 │   └── note_generation_baseline.json
 ├── reports/                # .gitignore 対象（実行ごとの出力）
@@ -37,21 +40,20 @@ evals/
 | grader | 対象タスク | 検出内容 | 種別 |
 |--------|----------|---------|------|
 | `note_has_sections` | note_generation | 必須4セクション（概要/学んだこと/重要なポイント/まだ曖昧な点）の有無 | rule-based |
-| `note_quality_judge` | note_generation | 深さ・忠実性・個別性・実用性を4観点でスコアリング | LLM-as-judge |
+| `note_quality_judge` | note_generation | 深さ・忠実性・個別性・実用性を criterion ごとに二値判定 | LLM-as-judge |
+| `question_quality_judge` | question_generation | 質問の観点重複回避・拡張/補強・受け止めなどを criterion ごとに二値判定 | LLM-as-judge |
 | `feedback_is_actionable` | feedback_generation | improvement_points / strength が1件以上あるか | rule-based |
 | `dialogue_ended_correctly` | response_analysis | 対話終了判定が正しく機能しているか | rule-based |
 | `response_label_match` | response_analysis | LEARNING_END / CONTINUE ラベルの正解一致率 | rule-based |
 
-### `note_quality_judge` の観点（各1〜5点、合計20点満点）
+### LLM-as-judge の判定モデル
 
-| 観点 | 説明 |
-|------|------|
-| `explanatory_depth` | ユーザーの理解がどれだけ深く記録されているか |
-| `protege_alignment` | 実際の対話内容と一致しているか（ハルシネーション検出） |
-| `personalization` | ユーザー固有の表現・誤解が反映されているか |
-| `actionability` | 次回の学習につながる「曖昧な点」が具体的か |
+各 rubric の criterion は `golden/judge.py::judge_criterion` を共用して 1 criterion = 1 回の judge 呼び出しで二値判定（holds: true/false）する。rubric YAML は `criteria` セクションに criterion 名と性質記述を列挙し、`pass_policy: all` で全 criterion が holds=true のときのみ `passed=True`、`score = passed_count / total` となる。
 
-合格閾値: 12点以上（score = 合計 / 20）
+| rubric | criterion |
+|--------|-----------|
+| `note_quality.yaml` | `explanatory_depth` / `protege_alignment` / `personalization` / `actionability` |
+| `question_quality.yaml` | `avoids_repeated_aspects` / `expands_or_reinforces` / `positive_acknowledgment` / `prompts_re_explanation` / `handles_unknown_appropriately` / `single_question` |
 
 ---
 

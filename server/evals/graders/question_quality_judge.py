@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from evals._judge_factory import build_judge_llm
 from evals.graders.base import GraderResult
 
 RUBRIC_PATH = Path(__file__).parent.parent / "rubrics" / "question_quality.yaml"
@@ -82,10 +83,10 @@ async def grade(
     user_message: str,
     ai_question: str,
     topic: str,
-    judge_llm: ChatOpenAI | None = None,
+    judge_llm: BaseChatModel | None = None,
 ) -> GraderResult:
     rubric = _load_rubric()
-    judge = judge_llm or ChatOpenAI(model="gpt-4o", temperature=0)  # type: ignore[call-arg]
+    judge = judge_llm or build_judge_llm()
     structured_judge = judge.with_structured_output(QuestionQualityScore)
 
     user_payload = (

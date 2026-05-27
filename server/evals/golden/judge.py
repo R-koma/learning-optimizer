@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-DEFAULT_JUDGE_MODEL = "gpt-4o"
+from evals._judge_factory import build_judge_llm
 
 _SYSTEM_PROMPT = (
     "あなたは学習対話における AI の出力を評価する厳格な評価者です。\n"
@@ -51,10 +51,10 @@ async def judge_criterion(
     criterion: str,
     output: str,
     context: str,
-    judge_llm: ChatOpenAI | None = None,
+    judge_llm: BaseChatModel | None = None,
 ) -> JudgeOutcome:
     """単一 criterion を judge して成立可否と根拠を返す。"""
-    judge = judge_llm or ChatOpenAI(model=DEFAULT_JUDGE_MODEL, temperature=0)  # type: ignore[call-arg]
+    judge = judge_llm or build_judge_llm()
     structured = judge.with_structured_output(CriterionVerdict)
     result = await structured.ainvoke(
         [

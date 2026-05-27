@@ -20,9 +20,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from evals._judge_factory import build_judge_llm
 from evals.graders import (
     dialogue_ended_correctly,
     feedback_is_actionable,
@@ -204,7 +206,7 @@ async def _grade_note_generation_case(
     case: dict[str, Any],
     *,
     llm_structured: ChatOpenAI,
-    judge_llm: ChatOpenAI | None,
+    judge_llm: BaseChatModel | None,
 ) -> list[GraderResult]:
     note = await _invoke_note_generation(case, llm_structured)
     results = [note_has_sections.grade(note.content)]
@@ -229,7 +231,7 @@ async def _grade_question_generation_case(
     case: dict[str, Any],
     *,
     llm: ChatOpenAI,
-    judge_llm: ChatOpenAI | None,
+    judge_llm: BaseChatModel | None,
 ) -> list[GraderResult]:
     response = await _invoke_question_generation(case, llm)
     is_nonempty = bool(response.strip())
@@ -273,7 +275,7 @@ async def _run_case(
     *,
     llm: ChatOpenAI,
     llm_structured: ChatOpenAI,
-    judge_llm: ChatOpenAI | None,
+    judge_llm: BaseChatModel | None,
 ) -> list[GraderResult]:
     if task == "note_generation":
         return await _grade_note_generation_case(case, llm_structured=llm_structured, judge_llm=judge_llm)
@@ -312,14 +314,14 @@ async def run_eval(
     judge_enabled: bool = False,
     llm: ChatOpenAI | None = None,
     llm_structured: ChatOpenAI | None = None,
-    judge_llm: ChatOpenAI | None = None,
+    judge_llm: BaseChatModel | None = None,
 ) -> EvalReport:
     cases = _load_dataset(task, smoke=smoke)
     effective_llm = llm or default_llm
     effective_structured = llm_structured or default_llm_structured
-    effective_judge: ChatOpenAI | None = None
+    effective_judge: BaseChatModel | None = None
     if judge_enabled and task in ("note_generation", "question_generation"):
-        effective_judge = judge_llm or ChatOpenAI(model="gpt-4o", temperature=0)  # type: ignore[call-arg]
+        effective_judge = judge_llm or build_judge_llm()
 
     case_results: list[CaseResult] = []
     for case in cases:

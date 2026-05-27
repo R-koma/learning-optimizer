@@ -21,6 +21,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
 from evals.golden.adapter import generate_question_output
@@ -73,7 +74,7 @@ async def run_golden(
     smoke: bool = False,
     save_report: bool = True,
     llm: ChatOpenAI | None = None,
-    judge_llm: ChatOpenAI | None = None,
+    judge_llm: BaseChatModel | None = None,
 ) -> GoldenReport:
     records = load_golden_records()
     invariants = load_invariants()

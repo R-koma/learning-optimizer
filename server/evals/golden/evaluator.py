@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models import BaseChatModel
 
 from evals.golden.adapter import recent_system_questions
 from evals.golden.checks import CheckContext, run_check
@@ -76,7 +76,7 @@ async def _evaluate_clause(
     output: str,
     record_input: GoldenInput,
     context_text: str,
-    judge_llm: ChatOpenAI | None,
+    judge_llm: BaseChatModel | None,
 ) -> tuple[bool, str]:
     """clause を評価して (holds, detail) を返す。"""
     if clause.type == "deterministic":
@@ -103,7 +103,7 @@ async def evaluate_record(
     output: str,
     invariants: list[Invariant],
     *,
-    judge_llm: ChatOpenAI | None = None,
+    judge_llm: BaseChatModel | None = None,
 ) -> RecordResult:
     """生成済み output に対して record の assertion と invariant を評価する。"""
     context_text = _build_context_text(record.input)

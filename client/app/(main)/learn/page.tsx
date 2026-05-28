@@ -240,15 +240,17 @@ export default function LearnPage() {
   if (isBootstrapping) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex-1 space-y-4 p-4 overflow-hidden">
-          <div className="flex justify-start">
-            <Skeleton className="h-16 w-2/3 rounded-2xl" />
-          </div>
-          <div className="flex justify-end">
-            <Skeleton className="h-16 w-1/2 rounded-2xl" />
-          </div>
-          <div className="flex justify-start">
-            <Skeleton className="h-16 w-3/5 rounded-2xl" />
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="mx-auto max-w-3xl space-y-4 py-6">
+            <div className="flex justify-start">
+              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+            </div>
+            <div className="flex justify-end">
+              <Skeleton className="h-16 w-full max-w-sm rounded-2xl" />
+            </div>
+            <div className="flex justify-start">
+              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+            </div>
           </div>
         </div>
         <div className="border-t p-4">

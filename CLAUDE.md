@@ -23,8 +23,9 @@ uv run ruff check . --fix && uv run ruff format .             # Lint + フォー
 uv run mypy .                                                 # 型チェック（strict）
 uv run pytest                                                 # テスト全実行
 uv run pytest --cov=. --cov-report=term                      # カバレッジ付き
-uv run python -m evals.runner --task note_generation --smoke  # プロンプト評価ハーネス（詳細は evals/README.md）
 ```
+
+> **Note:** eval ハーネスは再構築中。`evals/` には現在データ資産のみ（`datasets/`・`rubrics/`）が残り、実行コードは未実装。
 
 ### フロントエンド（`client/`）
 ```bash
@@ -67,7 +68,7 @@ server/
 ├── schemas/                   # Pydantic モデル（リクエスト/レスポンス）
 ├── services/review_scheduler.py
 ├── migrations/                # Alembic（env.py, versions/）
-├── evals/                     # プロンプト評価フレームワーク（runner.py, graders/, datasets/）
+├── evals/                     # データ資産のみ（datasets/・rubrics/）。ハーネスは再構築中
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/

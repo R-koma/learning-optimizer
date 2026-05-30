@@ -6,7 +6,6 @@ from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
 TargetDepth = Literal["recognize", "explain", "apply"]
-TARGET_DEPTH_VALUES: tuple[TargetDepth, ...] = ("recognize", "explain", "apply")
 
 
 class LearningState(TypedDict):

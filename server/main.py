@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -12,6 +13,15 @@ from core.database import close_pool, get_pool
 from graph.builder import build_learning_graph
 from graph.checkpointer import get_checkpointer
 from repositories import dialogue_session_repository
+
+# アプリ側ロガー（api.*, graph.* など）の INFO を root ハンドラで表示する。
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+# uvicorn は自前ハンドラでログを出す。root への伝播を切って二重出力を防ぐ
+# （uvicorn.error / uvicorn.access は uvicorn ロガーのハンドラ経由で従来どおり1回出る）。
+logging.getLogger("uvicorn").propagate = False
 
 
 @asynccontextmanager

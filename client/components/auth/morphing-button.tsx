@@ -8,13 +8,14 @@ interface MorphingButtonProps extends React.ComponentProps<"button"> {
 
 export function MorphingButton({
   isLoading,
+  disabled,
   children,
   className,
   ...props
 }: MorphingButtonProps) {
   return (
     <button
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       aria-busy={isLoading}
       className={cn(
         "w-full h-11 rounded-lg px-4",

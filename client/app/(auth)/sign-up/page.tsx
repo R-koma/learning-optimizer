@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,7 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -98,7 +100,11 @@ export default function SignUpPage() {
             </span>
           </div>
         </div>
-        <form id="sign-up-form" onSubmit={form.handleSubmit(handleSignUp)}>
+        <form
+          id="sign-up-form"
+          method="post"
+          onSubmit={form.handleSubmit(handleSignUp)}
+        >
           <FieldGroup className="space-y-3">
             <Controller
               name="name"
@@ -188,6 +194,7 @@ export default function SignUpPage() {
         <MorphingButton
           type="submit"
           form="sign-up-form"
+          disabled={!hydrated}
           isLoading={isLoading}
           className="bg-indigo-600 hover:bg-indigo-700 text-sm text-slate-100"
         >

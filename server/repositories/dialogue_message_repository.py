@@ -31,6 +31,16 @@ async def find_by_session_id(
     return [dict(r) for r in records]
 
 
+async def get_max_message_order(conn: DBConnection, dialogue_session_id: UUID) -> int:
+    query = """--sql
+    SELECT COALESCE(MAX(message_order), 0)
+    FROM dialogue_messages
+    WHERE dialogue_session_id = $1
+    """
+    result = await conn.fetchval(query, str(dialogue_session_id))
+    return int(result)
+
+
 async def delete_last_n(conn: DBConnection, dialogue_session_id: UUID, n: int) -> int:
     query = """--sql
     DELETE FROM dialogue_messages

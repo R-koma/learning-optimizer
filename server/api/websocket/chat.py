@@ -243,11 +243,7 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
     async with deps.pool.acquire() as conn:
         if existing["status"] == "disconnect":
             await dialogue_session_repository.update_status(conn, msg.session_id, "in_progress")
-        last_order = await conn.fetchval(
-            "SELECT COALESCE(MAX(message_order), 0) FROM dialogue_messages WHERE dialogue_session_id = $1",
-            str(msg.session_id),
-        )
-    message_order = int(last_order or 0)
+        last_message_order = await dialogue_message_repository.get_max_message_order(conn, msg.session_id)
 
     await deps.websocket.send_text(
         SessionResumedMessage(
@@ -260,7 +256,7 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
         session_id=msg.session_id,
         config=config,
         session_type=resumed_session_type,
-        message_order=message_order,
+        message_order=last_message_order,
     )
 
 

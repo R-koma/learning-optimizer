@@ -1,10 +1,10 @@
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
-async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[str, Any]]:
+async def find_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status,
            n.aspect_map, n.created_at, n.updated_at,
@@ -19,7 +19,7 @@ async def find_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[s
     return [dict(r) for r in records]
 
 
-async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
+async def find_by_id(conn: DBConnection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
     query = """--sql
     SELECT id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
     FROM notes
@@ -31,7 +31,7 @@ async def find_by_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> d
 
 
 async def insert(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     user_id: str,
     topic: str,
@@ -45,11 +45,12 @@ async def insert(
         RETURNING id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
     """
     record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, aspect_map)
+    assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
 
 async def update_aspect_map(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     aspect_map: str,
 ) -> None:
@@ -62,7 +63,7 @@ async def update_aspect_map(
 
 
 async def update(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     user_id: str,
     topic: str | None = None,
@@ -85,7 +86,7 @@ async def update(
     return dict(record) if record else None
 
 
-async def delete(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> bool:
+async def delete(conn: DBConnection, note_id: UUID, user_id: str) -> bool:
     async with conn.transaction():
         await conn.execute(
             "DELETE FROM feedbacks WHERE note_id = $1",

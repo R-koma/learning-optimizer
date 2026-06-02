@@ -127,6 +127,7 @@ learning_start → learning_dialogue（対話継続中はループ）
 - リポジトリパターン（`repositories/`）: SQL を直接記述、asyncpg で実行
 - 依存性注入: `CurrentUser`（JWT 検証済みユーザー ID）と `DB`（コネクション）を `Depends()` で注入
 - ORM 不使用、`asyncpg.Record` を直接扱う
+- リポジトリ関数の接続引数は `core.database.DBConnection`（`Connection | PoolConnectionProxy`）を使う。`pool.acquire()` が返すのは `Connection` の非サブクラスである `PoolConnectionProxy` のため、両方を受け取れる必要がある（`Pool` を直接渡さず、必ず `acquire()` してから渡す）
 
 ### フロントエンドのパターン
 

@@ -7,6 +7,8 @@ import asyncpg
 import pytest
 import pytest_asyncio
 
+from core.database import DBConnection
+
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql://learning_optimizer:localdev@localhost:5433/learning_optimizer_test",
@@ -65,7 +67,7 @@ async def clean_db(test_pool: asyncpg.Pool) -> AsyncGenerator[None]:
 
 
 @pytest_asyncio.fixture(loop_scope="session")
-async def db_conn(test_pool: asyncpg.Pool) -> AsyncGenerator[asyncpg.Connection]:
+async def db_conn(test_pool: asyncpg.Pool) -> AsyncGenerator[DBConnection]:
     async with test_pool.acquire() as conn:
         yield conn
 

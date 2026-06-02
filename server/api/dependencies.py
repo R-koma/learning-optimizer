@@ -1,12 +1,11 @@
 from collections.abc import AsyncGenerator
 from typing import Annotated
 
-import asyncpg
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.auth import verify_jwt
-from core.database import get_pool
+from core.database import DBConnection, get_pool
 
 security = HTTPBearer()
 BearerCredentials = Annotated[HTTPAuthorizationCredentials, Security(security)]
@@ -28,7 +27,7 @@ async def get_current_user(credentials: BearerCredentials) -> str:
         raise HTTPException(status_code=401, detail=str(e)) from e
 
 
-async def get_db() -> AsyncGenerator[asyncpg.Connection]:
+async def get_db() -> AsyncGenerator[DBConnection]:
     """プールからコネクションを取得してリクエスト単位で管理する"""
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -36,4 +35,4 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection]:
 
 
 CurrentUser = Annotated[str, Depends(get_current_user)]
-DB = Annotated[asyncpg.Connection, Depends(get_db)]
+DB = Annotated[DBConnection, Depends(get_db)]

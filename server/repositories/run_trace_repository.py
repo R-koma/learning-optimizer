@@ -3,11 +3,11 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
 async def insert_trace_event(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     *,
     dialogue_session_id: UUID,
     user_id: str,
@@ -69,7 +69,7 @@ async def insert_trace_event(
 
 
 async def list_by_session(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     dialogue_session_id: UUID,
 ) -> list[dict[str, Any]]:
     query = """--sql
@@ -83,7 +83,7 @@ async def list_by_session(
 
 
 async def summarize_recent(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     since: datetime,
 ) -> dict[str, Any]:
     """直近期間の主要指標を集計する。

@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
 async def insert(
-    conn: asyncpg.Connection, dialogue_session_id: UUID, role: str, content: str, message_order: int
+    conn: DBConnection, dialogue_session_id: UUID, role: str, content: str, message_order: int
 ) -> dict[str, Any]:
     query = """--sql
     INSERT INTO dialogue_messages (id, dialogue_session_id, role, content, message_order)
@@ -13,11 +13,12 @@ async def insert(
     RETURNING *
     """
     record = await conn.fetchrow(query, str(dialogue_session_id), role, content, message_order)
+    assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
 
 async def find_by_session_id(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     dialogue_session_id: UUID,
 ) -> list[dict[str, Any]]:
     query = """--sql
@@ -30,7 +31,7 @@ async def find_by_session_id(
     return [dict(r) for r in records]
 
 
-async def delete_last_n(conn: asyncpg.Connection, dialogue_session_id: UUID, n: int) -> int:
+async def delete_last_n(conn: DBConnection, dialogue_session_id: UUID, n: int) -> int:
     query = """--sql
     DELETE FROM dialogue_messages
     WHERE id IN (

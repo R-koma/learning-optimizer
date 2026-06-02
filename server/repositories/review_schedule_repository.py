@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
-async def find_pending_by_user_id(conn: asyncpg.Connection, user_id: str) -> list[dict[str, Any]]:
+async def find_pending_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
       SELECT rs.id, rs.note_id, rs.review_count,
       rs.next_review_at, rs.last_reviewed_at, rs.status, rs.created_at, rs.updated_at, n.topic AS note_topic,
@@ -23,7 +23,7 @@ async def find_pending_by_user_id(conn: asyncpg.Connection, user_id: str) -> lis
 
 
 async def mark_completed(
-    conn: asyncpg.Connection, schedule_id: UUID, user_id: str, next_review_at: datetime
+    conn: DBConnection, schedule_id: UUID, user_id: str, next_review_at: datetime
 ) -> dict[str, Any] | None:
     query = """--sql
       UPDATE review_schedules
@@ -43,7 +43,7 @@ async def mark_completed(
 
 
 async def insert(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     next_review_at: datetime,
 ) -> dict[str, Any]:
@@ -53,10 +53,11 @@ async def insert(
     RETURNING *
     """
     record = await conn.fetchrow(query, note_id, next_review_at)
+    assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
 
-async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID) -> dict[str, Any] | None:
+async def find_by_note_id(conn: DBConnection, note_id: UUID) -> dict[str, Any] | None:
     """ノートIDから復習スケジュールを取得する。"""
     query = """--sql
     SELECT id, note_id, review_count, next_review_at,
@@ -69,7 +70,7 @@ async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID) -> dict[str, 
 
 
 async def update_schedule(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     review_count: int,
     next_review_at: datetime,

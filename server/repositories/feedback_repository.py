@@ -1,10 +1,10 @@
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
-async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID, user_id: str) -> list[dict[str, Any]]:
+async def find_by_note_id(conn: DBConnection, note_id: UUID, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT f.id, f.note_id, f.dialogue_session_id, f.understanding_level, f.strength, f.improvements, f.created_at
     FROM feedbacks f
@@ -18,7 +18,7 @@ async def find_by_note_id(conn: asyncpg.Connection, note_id: UUID, user_id: str)
 
 
 async def insert(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     dialogue_session_id: UUID,
     understanding_level: str,
@@ -31,11 +31,12 @@ async def insert(
     RETURNING *
     """
     record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
+    assert record is not None  # INSERT/UPSERT ... RETURNING は必ず1行返す
     return dict(record)
 
 
 async def upsert_for_note(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     note_id: UUID,
     dialogue_session_id: UUID,
     understanding_level: str,
@@ -54,4 +55,5 @@ async def upsert_for_note(
     RETURNING *
     """
     record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
+    assert record is not None  # INSERT/UPSERT ... RETURNING は必ず1行返す
     return dict(record)

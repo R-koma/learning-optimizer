@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-import asyncpg
+from core.database import DBConnection
 
 
 async def create(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     session_id: UUID,
     user_id: str,
     session_type: str,
@@ -16,11 +16,12 @@ async def create(
     RETURNING *
     """
     record = await conn.fetchrow(query, str(session_id), user_id, session_type)
+    assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
 
 async def update_note_id(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     session_id: UUID,
     note_id: UUID,
 ) -> dict[str, Any] | None:
@@ -35,7 +36,7 @@ async def update_note_id(
 
 
 async def update_status(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     session_id: UUID,
     status: str,
 ) -> dict[str, Any] | None:
@@ -58,7 +59,7 @@ async def update_status(
 
 
 async def find_by_id(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     session_id: UUID,
     user_id: str,
 ) -> dict[str, Any] | None:
@@ -72,7 +73,7 @@ async def find_by_id(
 
 
 async def find_resumable_by_user(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     user_id: str,
 ) -> dict[str, Any] | None:
     query = """--sql
@@ -103,7 +104,7 @@ async def find_resumable_by_user(
 
 
 async def abandon_by_id(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     session_id: UUID,
     user_id: str,
 ) -> dict[str, Any] | None:
@@ -120,7 +121,7 @@ async def abandon_by_id(
 
 
 async def abandon_active_by_user(
-    conn: asyncpg.Connection,
+    conn: DBConnection,
     user_id: str,
 ) -> int:
     query = """--sql
@@ -133,7 +134,7 @@ async def abandon_active_by_user(
     return int(result.split(" ")[1])
 
 
-async def reset_stuck_generations(conn: asyncpg.Connection) -> int:
+async def reset_stuck_generations(conn: DBConnection) -> int:
     query = """--sql
     UPDATE dialogue_sessions
     SET status = 'failed'

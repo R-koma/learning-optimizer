@@ -27,7 +27,8 @@ logging.getLogger("uvicorn").propagate = False
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     pool = await get_pool()
-    await dialogue_session_repository.reset_stuck_generations(pool)
+    async with pool.acquire() as conn:
+        await dialogue_session_repository.reset_stuck_generations(conn)
 
     async with get_checkpointer() as checkpointer:
         await checkpointer.setup()

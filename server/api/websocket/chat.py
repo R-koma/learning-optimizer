@@ -74,13 +74,15 @@ async def _generate_note_background(
         # learning は generate_note で新規 note_id が state に設定される
         # review は start_review 時点で既存 note_id が state に注入されている
         generated_note_id: UUID | None = result.get("note_id")
-        if generated_note_id is not None:
-            await dialogue_session_repository.update_note_id(pool, session_id, generated_note_id)
-        else:
-            await dialogue_session_repository.update_status(pool, session_id, "completed")
+        async with pool.acquire() as conn:
+            if generated_note_id is not None:
+                await dialogue_session_repository.update_note_id(conn, session_id, generated_note_id)
+            else:
+                await dialogue_session_repository.update_status(conn, session_id, "completed")
     except Exception:
         logger.exception("Background note generation failed for session %s", session_id)
-        await dialogue_session_repository.update_status(pool, session_id, "failed")
+        async with pool.acquire() as conn:
+            await dialogue_session_repository.update_status(conn, session_id, "failed")
 
 
 async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], websocket: WebSocket) -> str:
@@ -103,17 +105,19 @@ async def _start_session(
     first_user_content: str,
 ) -> SessionContext:
     """セッション作成・SessionStarted 送信・初期 user/assistant メッセージ保存までを共通化。"""
-    await dialogue_session_repository.abandon_active_by_user(deps.pool, deps.user_id)
-
     session_id = uuid.uuid4()
     config = {"configurable": {"thread_id": str(session_id)}}
 
-    await dialogue_session_repository.create(
-        conn=deps.pool,
-        session_id=session_id,
-        user_id=deps.user_id,
-        session_type=session_type,
-    )
+    message_order = 1
+    async with deps.pool.acquire() as conn:
+        await dialogue_session_repository.abandon_active_by_user(conn, deps.user_id)
+        await dialogue_session_repository.create(
+            conn=conn,
+            session_id=session_id,
+            user_id=deps.user_id,
+            session_type=session_type,
+        )
+        await dialogue_message_repository.insert(conn, session_id, "user", first_user_content, message_order)
 
     await deps.websocket.send_text(
         SessionStartedMessage(session_id=session_id, session_type=session_type).model_dump_json()
@@ -121,12 +125,10 @@ async def _start_session(
 
     initial_state["dialogue_session_id"] = str(session_id)
 
-    message_order = 1
-    await dialogue_message_repository.insert(deps.pool, session_id, "user", first_user_content, message_order)
-
     ai_msg = await _stream_ai_response(deps.graph, initial_state, config, deps.websocket)
     message_order += 1
-    await dialogue_message_repository.insert(deps.pool, session_id, "assistant", ai_msg, message_order)
+    async with deps.pool.acquire() as conn:
+        await dialogue_message_repository.insert(conn, session_id, "assistant", ai_msg, message_order)
 
     return SessionContext(
         session_id=session_id,
@@ -143,21 +145,22 @@ async def _finalize_session(result: dict[str, Any], ctx: SessionContext, deps: D
     if note_id is None:
         return outgoing
 
-    await dialogue_session_repository.update_note_id(deps.pool, ctx.session_id, note_id)
+    async with deps.pool.acquire() as conn:
+        await dialogue_session_repository.update_note_id(conn, ctx.session_id, note_id)
 
-    if ctx.session_type == "review":
-        feedbacks = await feedback_repository.find_by_note_id(deps.pool, note_id, deps.user_id)
-        if feedbacks:
-            latest = feedbacks[-1]
-            outgoing.append(
-                FeedbackGeneratedMessage(
-                    understanding_level=latest["understanding_level"],
-                    strength=latest["strength"],
-                    improvements=latest["improvements"],
+        if ctx.session_type == "review":
+            feedbacks = await feedback_repository.find_by_note_id(conn, note_id, deps.user_id)
+            if feedbacks:
+                latest = feedbacks[-1]
+                outgoing.append(
+                    FeedbackGeneratedMessage(
+                        understanding_level=latest["understanding_level"],
+                        strength=latest["strength"],
+                        improvements=latest["improvements"],
+                    )
                 )
-            )
 
-    note = await note_repository.find_by_id(deps.pool, note_id, deps.user_id)
+        note = await note_repository.find_by_id(conn, note_id, deps.user_id)
     if note:
         outgoing.append(
             NoteGeneratedMessage(
@@ -195,7 +198,8 @@ async def _handle_start_learning(msg: StartLearningMessage, deps: Deps) -> Sessi
 
 
 async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionContext | None:
-    note = await note_repository.find_by_id(deps.pool, msg.note_id, deps.user_id)
+    async with deps.pool.acquire() as conn:
+        note = await note_repository.find_by_id(conn, msg.note_id, deps.user_id)
     if not note:
         await deps.websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
         return None
@@ -219,7 +223,8 @@ async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionCo
 
 
 async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> SessionContext | None:
-    existing = await dialogue_session_repository.find_by_id(deps.pool, msg.session_id, deps.user_id)
+    async with deps.pool.acquire() as conn:
+        existing = await dialogue_session_repository.find_by_id(conn, msg.session_id, deps.user_id)
     if not existing:
         await deps.websocket.send_text(ErrorMessage(detail="Session not found").model_dump_json())
         return None
@@ -232,16 +237,16 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
         await deps.websocket.send_text(ErrorMessage(detail="Invalid session type").model_dump_json())
         return None
 
-    if existing["status"] == "disconnect":
-        await dialogue_session_repository.update_status(deps.pool, msg.session_id, "in_progress")
-
     resumed_session_type = cast(Literal["learning", "review"], existing["session_type"])
     config = {"configurable": {"thread_id": str(msg.session_id)}}
 
-    last_order = await deps.pool.fetchval(
-        "SELECT COALESCE(MAX(message_order), 0) FROM dialogue_messages WHERE dialogue_session_id = $1",
-        str(msg.session_id),
-    )
+    async with deps.pool.acquire() as conn:
+        if existing["status"] == "disconnect":
+            await dialogue_session_repository.update_status(conn, msg.session_id, "in_progress")
+        last_order = await conn.fetchval(
+            "SELECT COALESCE(MAX(message_order), 0) FROM dialogue_messages WHERE dialogue_session_id = $1",
+            str(msg.session_id),
+        )
     message_order = int(last_order or 0)
 
     await deps.websocket.send_text(
@@ -261,7 +266,8 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
 
 async def _handle_user_message(msg: UserMessage, ctx: SessionContext, deps: Deps) -> SessionContext:
     ctx.message_order += 1
-    await dialogue_message_repository.insert(deps.pool, ctx.session_id, "user", msg.content, ctx.message_order)
+    async with deps.pool.acquire() as conn:
+        await dialogue_message_repository.insert(conn, ctx.session_id, "user", msg.content, ctx.message_order)
 
     await deps.graph.aupdate_state(
         ctx.config,
@@ -270,7 +276,8 @@ async def _handle_user_message(msg: UserMessage, ctx: SessionContext, deps: Deps
 
     ai_msg = await _stream_ai_response(deps.graph, None, ctx.config, deps.websocket)
     ctx.message_order += 1
-    await dialogue_message_repository.insert(deps.pool, ctx.session_id, "assistant", ai_msg, ctx.message_order)
+    async with deps.pool.acquire() as conn:
+        await dialogue_message_repository.insert(conn, ctx.session_id, "assistant", ai_msg, ctx.message_order)
 
     state = await deps.graph.aget_state(ctx.config)
     result = state.values
@@ -283,7 +290,8 @@ async def _handle_user_message(msg: UserMessage, ctx: SessionContext, deps: Deps
         return ctx
 
     ctx.is_session_ended = True
-    await dialogue_session_repository.update_status(deps.pool, ctx.session_id, "completed")
+    async with deps.pool.acquire() as conn:
+        await dialogue_session_repository.update_status(conn, ctx.session_id, "completed")
 
     for payload in await _finalize_session(result, ctx, deps):
         await deps.websocket.send_text(payload.model_dump_json())
@@ -319,7 +327,8 @@ async def _handle_cancel_last_message(ctx: SessionContext, deps: Deps) -> Sessio
         },
     )
 
-    await dialogue_message_repository.delete_last_n(deps.pool, ctx.session_id, 2)
+    async with deps.pool.acquire() as conn:
+        await dialogue_message_repository.delete_last_n(conn, ctx.session_id, 2)
     ctx.message_order -= 2
 
     await deps.websocket.send_text(CancelLastMessageSuccess(cancelled_content=cancelled_content).model_dump_json())
@@ -330,7 +339,8 @@ async def _handle_end_session(ctx: SessionContext | None, deps: Deps) -> None:
     if ctx is not None:
         ctx.is_session_ended = True
         await deps.graph.aupdate_state(ctx.config, {"should_generate_note": True}, as_node="learning_dialogue")
-        await dialogue_session_repository.update_status(deps.pool, ctx.session_id, "generate_note")
+        async with deps.pool.acquire() as conn:
+            await dialogue_session_repository.update_status(conn, ctx.session_id, "generate_note")
         asyncio.create_task(_generate_note_background(deps.pool, deps.graph, ctx.config, ctx.session_id))
 
     await deps.websocket.send_text(SessionEndedMessage(session_id=ctx.session_id if ctx else None).model_dump_json())
@@ -392,12 +402,14 @@ async def websocket_chat(websocket: WebSocket) -> None:
 
     except WebSocketDisconnect:
         if ctx is not None:
-            await dialogue_session_repository.update_status(deps.pool, ctx.session_id, "disconnect")
+            async with deps.pool.acquire() as conn:
+                await dialogue_session_repository.update_status(conn, ctx.session_id, "disconnect")
     except Exception:
         logger.exception(
             "WebSocket handler crashed",
             extra={"session_id": str(ctx.session_id) if ctx else None},
         )
         if ctx is not None:
-            await dialogue_session_repository.update_status(deps.pool, ctx.session_id, "failed")
+            async with deps.pool.acquire() as conn:
+                await dialogue_session_repository.update_status(conn, ctx.session_id, "failed")
         await websocket.send_text(ErrorMessage(detail="Internal error").model_dump_json())

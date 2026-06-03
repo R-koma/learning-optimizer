@@ -19,7 +19,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await request.formData();
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json(
+      { error: "リクエストの解析に失敗しました" },
+      { status: 400 },
+    );
+  }
   const file = formData.get("file");
 
   if (!(file instanceof File)) {
@@ -71,8 +79,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  await mkdir(avatarsDir, { recursive: true });
-  await writeFile(filePath, buffer);
+  try {
+    await mkdir(avatarsDir, { recursive: true });
+    await writeFile(filePath, buffer);
+  } catch (e) {
+    console.error("avatar upload write failed", e);
+    return NextResponse.json(
+      { error: "アップロードに失敗しました" },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ url: `/avatars/${filename}` });
 }

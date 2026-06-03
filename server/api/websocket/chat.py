@@ -12,6 +12,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from api.websocket.auth import authenticate_websocket
 from core.database import get_pool
+from graph.version import GRAPH_VERSION
 from repositories import (
     dialogue_message_repository,
     dialogue_session_repository,
@@ -40,7 +41,7 @@ from schemas.websocket_message import (
 
 logger = logging.getLogger(__name__)
 
-_STREAMING_NODES = {"learning_start", "learning_dialogue"}
+_STREAMING_NODES = {"learning_start", "learning_dialogue", "review_start", "review_dialogue"}
 MIN_TURNS_BEFORE_NOTE = 3
 
 _incoming_adapter: TypeAdapter[IncomingMessage] = TypeAdapter(IncomingMessage)
@@ -116,6 +117,7 @@ async def _start_session(
             session_id=session_id,
             user_id=deps.user_id,
             session_type=session_type,
+            graph_version=GRAPH_VERSION,
         )
         await dialogue_message_repository.insert(conn, session_id, "user", first_user_content, message_order)
 
@@ -237,6 +239,16 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
         await deps.websocket.send_text(ErrorMessage(detail="Invalid session type").model_dump_json())
         return None
 
+    # 別トポロジー世代で保存されたチェックポイントは現グラフと噛み合わず、
+    # 再開すると別パスに化けて破損する。再開を許さず破棄する。
+    if existing["graph_version"] != GRAPH_VERSION:
+        async with deps.pool.acquire() as conn:
+            await dialogue_session_repository.abandon_by_id(conn, msg.session_id, deps.user_id)
+        await deps.websocket.send_text(
+            ErrorMessage(detail="このセッションは更新により再開できません。新しく始めてください").model_dump_json()
+        )
+        return None
+
     resumed_session_type = cast(Literal["learning", "review"], existing["session_type"])
     config = {"configurable": {"thread_id": str(msg.session_id)}}
 
@@ -334,7 +346,10 @@ async def _handle_cancel_last_message(ctx: SessionContext, deps: Deps) -> Sessio
 async def _handle_end_session(ctx: SessionContext | None, deps: Deps) -> None:
     if ctx is not None:
         ctx.is_session_ended = True
-        await deps.graph.aupdate_state(ctx.config, {"should_generate_note": True}, as_node="learning_dialogue")
+        # 終了スイッチは「直前に通った対話ノード」として注入する必要がある。
+        # learning / review でパスが分かれているため session_type で出し分ける。
+        end_node = "review_dialogue" if ctx.session_type == "review" else "learning_dialogue"
+        await deps.graph.aupdate_state(ctx.config, {"should_generate_note": True}, as_node=end_node)
         async with deps.pool.acquire() as conn:
             await dialogue_session_repository.update_status(conn, ctx.session_id, "generate_note")
         asyncio.create_task(_generate_note_background(deps.pool, deps.graph, ctx.config, ctx.session_id))

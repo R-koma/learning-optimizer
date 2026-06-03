@@ -1,4 +1,4 @@
-"""復習セッションのシステムプロンプト（learning_start / learning_dialogue ノード用）。"""
+"""復習セッションのシステムプロンプト（review_start / review_dialogue ノード用）。"""
 
 REVIEW_SYSTEM_PROMPT = """\
 ## 役割

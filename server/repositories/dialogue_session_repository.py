@@ -9,13 +9,14 @@ async def create(
     session_id: UUID,
     user_id: str,
     session_type: str,
+    graph_version: int,
 ) -> dict[str, Any]:
     query = """--sql
-    INSERT INTO dialogue_sessions (id, user_id, session_type, status)
-    VALUES ($1, $2, $3, 'in_progress')
+    INSERT INTO dialogue_sessions (id, user_id, session_type, status, graph_version)
+    VALUES ($1, $2, $3, 'in_progress', $4)
     RETURNING *
     """
-    record = await conn.fetchrow(query, str(session_id), user_id, session_type)
+    record = await conn.fetchrow(query, str(session_id), user_id, session_type, graph_version)
     assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
@@ -64,7 +65,7 @@ async def find_by_id(
     user_id: str,
 ) -> dict[str, Any] | None:
     query = """--sql
-    SELECT id, user_id, session_type, status, note_id, started_at, ended_at
+    SELECT id, user_id, session_type, status, note_id, started_at, ended_at, graph_version
     FROM dialogue_sessions
     WHERE id = $1 AND user_id = $2
     """

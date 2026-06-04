@@ -1,0 +1,374 @@
+import asyncio
+import json
+import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
+from typing import Any, cast
+from uuid import UUID, uuid4
+
+import asyncpg
+import pytest
+from fastapi import FastAPI, WebSocketDisconnect
+from fastapi.testclient import TestClient
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+
+from api.websocket import auth as ws_auth
+from api.websocket import chat
+
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql://learning_optimizer:localdev@localhost:5433/learning_optimizer_test",
+)
+
+
+class FakeGraph:
+    """LangGraph のコンパイル済みグラフを模した最小スタブ。
+
+    LLM / チェックポイントへの実通信を遮断しつつ、chat.py が依存する
+    astream / ainvoke / aget_state / aupdate_state だけを提供する。
+    """
+
+    def __init__(self) -> None:
+        self.stream_chunks: list[tuple[str, str]] = [("こんにちは", "learning_start")]
+        self.state_values: dict[str, Any] = {"should_generate_note": False, "turn_count": 1}
+        self.ainvoke_result: dict[str, Any] = {}
+        self.update_calls: list[tuple[dict[str, Any], str | None]] = []
+
+    async def astream(
+        self, graph_input: Any, config: Any, stream_mode: str = "messages"
+    ) -> AsyncIterator[tuple[AIMessageChunk, dict[str, Any]]]:
+        for content, node in self.stream_chunks:
+            yield AIMessageChunk(content=content), {"langgraph_node": node}
+
+    async def ainvoke(self, graph_input: Any, config: Any = None) -> dict[str, Any]:
+        return self.ainvoke_result
+
+    async def aget_state(self, config: Any) -> SimpleNamespace:
+        return SimpleNamespace(values=self.state_values)
+
+    async def aupdate_state(self, config: Any, values: dict[str, Any], as_node: str | None = None) -> None:
+        self.update_calls.append((dict(values), as_node))
+
+
+class FakeWebSocket:
+    """切断経路を決定的に検証するための WebSocket スタブ。
+
+    inbound を順に返し、尽きたら WebSocketDisconnect を送出する。
+    """
+
+    def __init__(self, graph: FakeGraph, inbound: list[str]) -> None:
+        self.app = SimpleNamespace(state=SimpleNamespace(graph=graph))
+        self._inbound = list(inbound)
+        self.sent: list[str] = []
+
+    async def accept(self) -> None:
+        return None
+
+    async def receive_text(self) -> str:
+        if self._inbound:
+            return self._inbound.pop(0)
+        raise WebSocketDisconnect(code=1005)
+
+    async def send_text(self, data: str) -> None:
+        self.sent.append(data)
+
+    async def close(self, code: int = 1000, reason: str | None = None) -> None:
+        return None
+
+
+# -----------------------------------------------------------
+# DB ヘルパー（TestClient 独自ループと衝突しないよう毎回新規接続）
+# -----------------------------------------------------------
+
+
+def _run(coro: Any) -> Any:
+    return asyncio.run(coro)
+
+
+async def _setup_user(user_id: str) -> None:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        await conn.execute(
+            'INSERT INTO "user" (id, name, email, "emailVerified") '
+            "VALUES ($1, $2, $3, true) ON CONFLICT (id) DO NOTHING",
+            user_id,
+            "WS Test",
+            f"{user_id}@example.com",
+        )
+    finally:
+        await conn.close()
+
+
+async def _truncate() -> None:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        await conn.execute(
+            "TRUNCATE run_traces, feedbacks, review_schedules, dialogue_messages, dialogue_sessions, notes CASCADE"
+        )
+    finally:
+        await conn.close()
+
+
+async def _insert_session(session_id: UUID, user_id: str, graph_version: int) -> None:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        await conn.execute(
+            "INSERT INTO dialogue_sessions (id, user_id, session_type, status, graph_version) "
+            "VALUES ($1, $2, 'learning', 'in_progress', $3)",
+            str(session_id),
+            user_id,
+            graph_version,
+        )
+    finally:
+        await conn.close()
+
+
+async def _fetch_session(session_id: UUID) -> asyncpg.Record | None:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        return await conn.fetchrow("SELECT * FROM dialogue_sessions WHERE id = $1", str(session_id))
+    finally:
+        await conn.close()
+
+
+# -----------------------------------------------------------
+# fixtures
+# -----------------------------------------------------------
+
+
+@pytest.fixture
+def ws_env(_run_migrations: None, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
+    user_id = "ws-test-user"
+    _run(_setup_user(user_id))
+    _run(_truncate())
+
+    holder: dict[str, asyncpg.Pool | None] = {"pool": None}
+
+    async def fake_get_pool() -> asyncpg.Pool:
+        pool = holder["pool"]
+        if pool is None:
+            pool = await asyncpg.create_pool(TEST_DATABASE_URL)
+            holder["pool"] = pool
+        return pool
+
+    monkeypatch.setattr(chat, "get_pool", fake_get_pool)
+    monkeypatch.setattr(ws_auth, "verify_jwt", lambda token: {"sub": user_id})
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        yield
+        if holder["pool"] is not None:
+            await holder["pool"].close()
+
+    app = FastAPI(lifespan=lifespan)
+    app.include_router(chat.router)
+    fake_graph = FakeGraph()
+    app.state.graph = fake_graph
+
+    return SimpleNamespace(app=app, graph=fake_graph, user_id=user_id)
+
+
+# -----------------------------------------------------------
+# WebSocket ヘルパー
+# -----------------------------------------------------------
+
+
+def _authenticate(ws: Any) -> None:
+    ws.send_json({"type": "authenticate", "token": "x"})
+
+
+def _start_learning(ws: Any, topic: str = "二分探索") -> str:
+    """start_learning を送り、session_started〜assistant_message_end を消費して session_id を返す。"""
+    ws.send_json({"type": "start_learning", "topic": topic})
+    started = ws.receive_json()
+    assert started["type"] == "session_started"
+    assert ws.receive_json()["type"] == "assistant_message_chunk"
+    assert ws.receive_json()["type"] == "assistant_message_end"
+    return str(started["session_id"])
+
+
+def _drain_assistant_turn(ws: Any) -> None:
+    assert ws.receive_json()["type"] == "assistant_message_chunk"
+    assert ws.receive_json()["type"] == "assistant_message_end"
+
+
+# -----------------------------------------------------------
+# tests
+# -----------------------------------------------------------
+
+
+def test_start_learning_streams_assistant_message(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "start_learning", "topic": "二分探索"})
+
+        assert ws.receive_json()["type"] == "session_started"
+        chunk = ws.receive_json()
+        assert chunk["type"] == "assistant_message_chunk"
+        assert chunk["content"]
+        assert ws.receive_json()["type"] == "assistant_message_end"
+
+
+def test_start_review_without_note_returns_error(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "start_review", "note_id": str(uuid4())})
+
+        err = ws.receive_json()
+        assert err["type"] == "error"
+        assert "Note not found" in err["detail"]
+
+
+def test_user_message_without_session_returns_error(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "user_message", "content": "こんにちは"})
+
+        err = ws.receive_json()
+        assert err["type"] == "error"
+        assert "Session not started" in err["detail"]
+
+
+def test_user_message_streams_assistant_message(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)
+
+        ws.send_json({"type": "user_message", "content": "二分探索は半分に絞る手法です"})
+        _drain_assistant_turn(ws)
+
+
+def test_session_ends_when_generation_triggered(ws_env: SimpleNamespace) -> None:
+    ws_env.graph.state_values = {"should_generate_note": True, "turn_count": 3, "note_id": None}
+
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)
+
+        ws.send_json({"type": "user_message", "content": "十分に説明できました"})
+        _drain_assistant_turn(ws)
+        assert ws.receive_json()["type"] == "session_ended"
+
+
+def test_cancel_last_message_success(ws_env: SimpleNamespace) -> None:
+    ws_env.graph.state_values = {
+        "should_generate_note": False,
+        "turn_count": 2,
+        "messages": [
+            HumanMessage(content="私の回答", id="h1"),
+            AIMessage(content="AI の応答", id="a1"),
+        ],
+    }
+
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)
+
+        ws.send_json({"type": "user_message", "content": "私の回答"})
+        _drain_assistant_turn(ws)
+
+        ws.send_json({"type": "cancel_last_message"})
+        res = ws.receive_json()
+        assert res["type"] == "cancel_last_message_success"
+        assert res["cancelled_content"] == "私の回答"
+
+
+def test_cancel_without_session_returns_error(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "cancel_last_message"})
+
+        res = ws.receive_json()
+        assert res["type"] == "cancel_last_message_error"
+        assert "Session not started" in res["detail"]
+
+
+def test_cancel_before_first_turn_returns_error(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)  # message_order は 2 のため取り消し不可
+
+        ws.send_json({"type": "cancel_last_message"})
+        res = ws.receive_json()
+        assert res["type"] == "cancel_last_message_error"
+        assert "No cancellable message" in res["detail"]
+
+
+def test_cancel_after_session_ended_returns_error(ws_env: SimpleNamespace) -> None:
+    ws_env.graph.state_values = {"should_generate_note": True, "turn_count": 3, "note_id": None}
+
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)
+
+        ws.send_json({"type": "user_message", "content": "十分に説明できました"})
+        _drain_assistant_turn(ws)
+        assert ws.receive_json()["type"] == "session_ended"
+
+        ws.send_json({"type": "cancel_last_message"})
+        res = ws.receive_json()
+        assert res["type"] == "cancel_last_message_error"
+        assert "already ended" in res["detail"]
+
+
+def test_end_session_returns_session_ended(ws_env: SimpleNamespace) -> None:
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        _start_learning(ws)
+
+        ws.send_json({"type": "end_session"})
+        assert ws.receive_json()["type"] == "session_ended"
+
+
+def test_resume_with_stale_graph_version_is_rejected(ws_env: SimpleNamespace) -> None:
+    session_id = uuid4()
+    _run(_insert_session(session_id, ws_env.user_id, graph_version=1))
+
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "resume_session", "session_id": str(session_id)})
+
+        err = ws.receive_json()
+        assert err["type"] == "error"
+        assert "再開できません" in err["detail"]
+
+    row = _run(_fetch_session(session_id))
+    assert row is not None
+    assert row["status"] == "abandoned"
+
+
+@pytest.mark.asyncio(loop_scope="session")
+async def test_disconnect_marks_session_as_disconnect(
+    test_pool: asyncpg.Pool, test_user: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # TestClient の close 機構は disconnect 経路でサーバタスクを cancel しがちで不安定なため、
+    # フェイク WS を直接ハンドラへ渡し、receive 枯渇で WebSocketDisconnect を決定的に送出する。
+    user_id = test_user["id"]
+
+    async def fake_get_pool() -> asyncpg.Pool:
+        return test_pool
+
+    monkeypatch.setattr(chat, "get_pool", fake_get_pool)
+    monkeypatch.setattr(ws_auth, "verify_jwt", lambda token: {"sub": user_id})
+
+    graph = FakeGraph()
+    inbound = [
+        json.dumps({"type": "authenticate", "token": "x"}),
+        json.dumps({"type": "start_learning", "topic": "二分探索"}),
+    ]
+    ws = FakeWebSocket(graph, inbound)
+
+    await chat.websocket_chat(cast(Any, ws))
+
+    session_id: str | None = None
+    for raw in ws.sent:
+        msg = json.loads(raw)
+        if msg["type"] == "session_started":
+            session_id = msg["session_id"]
+    assert session_id is not None
+
+    async with test_pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT status FROM dialogue_sessions WHERE id = $1", session_id)
+    assert row is not None
+    assert row["status"] == "disconnect"

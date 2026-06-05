@@ -108,7 +108,13 @@ async def get_session_image(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
 
     data = await get_storage().get(image["storage_key"])
-    return Response(content=data, media_type=image["mime_type"])
+    # 保存 mime はクライアント申告由来で実体と一致する保証がないため、ブラウザの
+    # MIME スニッフィングを抑止する（多層防御）。
+    return Response(
+        content=data,
+        media_type=image["mime_type"],
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.get("/{session_id}/note-status", response_model=NoteStatusResponse)

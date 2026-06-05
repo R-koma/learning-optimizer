@@ -1,9 +1,11 @@
 import type { ComponentProps } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import { CodeBlockWithCopy } from "@/components/ui/code-block-with-copy";
 import { cn } from "@/lib/utils";
 
 const articleRehypePlugins = [
@@ -134,10 +136,15 @@ const components: Components = {
   ),
 };
 
+const chatComponents: Components = {
+  ...components,
+  pre: CodeBlockWithCopy,
+};
+
 interface MarkdownProps {
   children: string;
   className?: string;
-  variant?: "default" | "article";
+  variant?: "default" | "article" | "chat";
 }
 
 const articleProseClasses = cn(
@@ -205,6 +212,20 @@ export function Markdown({
               typeof ReactMarkdown
             >["rehypePlugins"]
           }
+        >
+          {children}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+
+  if (variant === "chat") {
+    return (
+      <div className={cn("text-base text-foreground/90", className)}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          rehypePlugins={[rehypeHighlight]}
+          components={chatComponents}
         >
           {children}
         </ReactMarkdown>

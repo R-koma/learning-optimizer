@@ -144,6 +144,7 @@ learning_start → learning_dialogue（対話継続中はループ）
 - `use-chat-websocket.ts`: 接続ライフサイクル・メッセージ型振り分けを一元管理
 - `fetchAPI()`: 全 REST 呼び出しはここを経由（JWT ヘッダー付与、エラーハンドリング）
 - `NavbarSlotContext`: レイアウト内でナビバーに動的コンテンツを挿入するポータルパターン
+- チャットのメッセージ本文は `Markdown` の `variant="chat"`（`remark-breaks` で単一改行を保持・`rehype-highlight` でコードをハイライト・コードブロックにコピーボタン）で描画。ストリーミング中は `closeOpenCodeFence()` で未閉じフェンスを補ってから渡す（`notes`/`review` の `default`/`article` variant とは別系統）
 
 ---
 

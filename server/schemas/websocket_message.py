@@ -3,9 +3,10 @@ import binascii
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from core import config
+from core.image_signature import detect_image_mime
 from graph.state import TargetDepth
 
 
@@ -25,6 +26,14 @@ class ImageAttachment(BaseModel):
         if len(decoded) > config.MAX_IMAGE_BYTES:
             raise ValueError(f"image exceeds {config.MAX_IMAGE_BYTES} bytes")
         return value
+
+    @model_validator(mode="after")
+    def _validate_content_matches_mime(self) -> "ImageAttachment":
+        # 申告 mime はなりすまし得るため、実バイトのシグネチャと一致するか確認する。
+        decoded = base64.b64decode(self.data, validate=True)
+        if detect_image_mime(decoded) != self.mime_type:
+            raise ValueError("image content does not match declared mime_type")
+        return self
 
 
 class StartLearningMessage(BaseModel):

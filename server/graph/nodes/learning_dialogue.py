@@ -1,10 +1,12 @@
 from typing import Any
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
+from graph.multimodal import load_image_blocks
 from graph.nodes._dialogue import invoke_dialogue_llm
 from graph.prompts import build_question_prompt, format_learning_plan_fields
 from graph.state import LearningState
+from storage import get_storage
 
 
 async def learning_dialogue(state: LearningState) -> dict[str, Any]:
@@ -28,9 +30,17 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         plan_fields=plan_fields,
         messages=state["messages"],
     )
+    # 会話履歴はプロンプト本文に文字列で埋め込まれるため、画像は最新メッセージ分のみ
+    # 画像ブロックとして別途 LLM に渡す。
+    llm_messages: list[BaseMessage] = [SystemMessage(content=question_prompt)]
+    if state["messages"]:
+        image_blocks = await load_image_blocks(state["messages"][-1], get_storage())
+        if image_blocks:
+            llm_messages.append(HumanMessage(content=image_blocks))
+
     response = await invoke_dialogue_llm(
         state,
-        [SystemMessage(content=question_prompt)],
+        llm_messages,
         "learning_dialogue",
     )
 

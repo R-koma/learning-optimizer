@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { fetchAPI } from "@/lib/api";
+import type { PreparedImage } from "@/lib/image";
 
 type MessageRole = "user" | "assistant";
 
@@ -10,9 +11,14 @@ const TYPEWRITER_BATCH_SIZE = 1;
 const NOTE_POLL_INTERVAL_MS = 2000;
 const NOTE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
+export interface ChatImage {
+  url: string; // 送信直後は data URL、履歴復元時は配信エンドポイントの object URL
+}
+
 interface ChatMessage {
   role: MessageRole;
   content: string;
+  images?: ChatImage[];
 }
 
 interface ServerMessage {
@@ -77,7 +83,7 @@ interface UseChatWebSocketReturn {
   startLearning: (topic: string, options?: StartLearningOptions) => void;
   startReview: (noteId: string) => void;
   resumeSession: (sessionId: string, initialMessages: ChatMessage[]) => void;
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string, images?: PreparedImage[]) => void;
   endSession: () => void;
   cancelLastMessage: () => void;
   clearEditingMessage: () => void;
@@ -393,13 +399,32 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
     [connect],
   );
 
-  const sendMessage = useCallback((content: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+  const sendMessage = useCallback(
+    (content: string, images?: PreparedImage[]) => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-    wsRef.current.send(JSON.stringify({ type: "user_message", content }));
-    setMessages((prev) => [...prev, { role: "user", content }]);
-    setIsLoading(true);
-  }, []);
+      const payload: {
+        type: "user_message";
+        content: string;
+        images?: PreparedImage[];
+      } = { type: "user_message", content };
+      if (images && images.length > 0) payload.images = images;
+
+      wsRef.current.send(JSON.stringify(payload));
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "user",
+          content,
+          images: images?.map((img) => ({
+            url: `data:${img.mime_type};base64,${img.data}`,
+          })),
+        },
+      ]);
+      setIsLoading(true);
+    },
+    [],
+  );
 
   const endSession = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;

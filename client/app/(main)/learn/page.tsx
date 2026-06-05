@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, fetchImageObjectURL } from "@/lib/api";
+import type { PreparedImage } from "@/lib/image";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -62,10 +63,17 @@ interface ActiveSessionResponse {
   topic: string | null;
 }
 
+interface SessionImageItem {
+  id: string;
+  mime_type: string;
+  image_order: number;
+}
+
 interface SessionMessageItem {
   role: "user" | "assistant";
   content: string;
   message_order: number;
+  images: SessionImageItem[];
 }
 
 interface SessionMessagesResponse {
@@ -126,10 +134,22 @@ export default function LearnPage() {
           if (data.status !== "in_progress" && data.status !== "disconnect") {
             return;
           }
-          const initialMessages = data.messages.map(({ role, content }) => ({
-            role,
-            content,
-          }));
+          const initialMessages = await Promise.all(
+            data.messages.map(async ({ role, content, images }) => ({
+              role,
+              content,
+              images:
+                images.length > 0
+                  ? await Promise.all(
+                      images.map(async (img) => ({
+                        url: await fetchImageObjectURL(
+                          `/api/dialogue-sessions/${sessionParam}/images/${img.id}`,
+                        ),
+                      })),
+                    )
+                  : undefined,
+            })),
+          );
           if (data.session_type === "learning" && initialMessages.length > 0) {
             setTopic(initialMessages[0].content);
           }
@@ -231,9 +251,9 @@ export default function LearnPage() {
     });
   };
 
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
-    sendMessage(content);
+  const handleSendMessage = (content: string, images?: PreparedImage[]) => {
+    if (!content.trim() && (!images || images.length === 0)) return;
+    sendMessage(content, images);
     setInput("");
   };
 
@@ -493,6 +513,19 @@ export default function LearnPage() {
                     msg.role === "user" ? "bg-muted" : ""
                   }`}
                 >
+                  {msg.images && msg.images.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {msg.images.map((image, imageIndex) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={imageIndex}
+                          src={image.url}
+                          alt="添付画像"
+                          className="max-h-64 rounded-lg border object-contain"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {msg.content}
                 </div>
                 {isLastUserMessage && (

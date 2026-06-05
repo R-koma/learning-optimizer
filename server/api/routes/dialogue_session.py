@@ -1,9 +1,11 @@
+from collections import defaultdict
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Response, status
 
 from api.dependencies import DB, CurrentUser
 from repositories import (
+    dialogue_message_image_repository,
     dialogue_message_repository,
     dialogue_session_repository,
     feedback_repository,
@@ -11,11 +13,13 @@ from repositories import (
 )
 from schemas.dialogue_session import (
     ActiveSessionResponse,
+    DialogueImageData,
     DialogueMessageData,
     FeedbackData,
     NoteStatusResponse,
     SessionMessagesResponse,
 )
+from storage import get_storage
 
 router = APIRouter(prefix="/api/dialogue-sessions", tags=["dialogue-sessions"])
 
@@ -63,6 +67,13 @@ async def get_session_messages(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     messages = await dialogue_message_repository.find_by_session_id(db, session_id)
+    images = await dialogue_message_image_repository.find_by_session_id(db, session_id)
+
+    images_by_message: dict[UUID, list[DialogueImageData]] = defaultdict(list)
+    for img in images:
+        images_by_message[img["dialogue_message_id"]].append(
+            DialogueImageData(id=img["id"], mime_type=img["mime_type"], image_order=img["image_order"])
+        )
 
     return SessionMessagesResponse(
         session_id=session["id"],
@@ -74,10 +85,30 @@ async def get_session_messages(
                 role=m["role"],
                 content=m["content"],
                 message_order=m["message_order"],
+                images=images_by_message.get(m["id"], []),
             )
             for m in messages
         ],
     )
+
+
+@router.get("/{session_id}/images/{image_id}")
+async def get_session_image(
+    session_id: UUID,
+    image_id: UUID,
+    current_user_id: CurrentUser,
+    db: DB,
+) -> Response:
+    session = await dialogue_session_repository.find_by_id(db, session_id, current_user_id)
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    image = await dialogue_message_image_repository.find_in_session(db, session_id, image_id)
+    if not image:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+
+    data = await get_storage().get(image["storage_key"])
+    return Response(content=data, media_type=image["mime_type"])
 
 
 @router.get("/{session_id}/note-status", response_model=NoteStatusResponse)

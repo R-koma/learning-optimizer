@@ -44,3 +44,5 @@ htmlcov/
 
 .ruff_cache/
 MYPY_EVALUATION.md
+# ローカルのオブジェクトストレージ（対話画像など）。本番は S3 に置く。
+storage_data/

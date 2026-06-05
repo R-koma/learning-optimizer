@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { fetchAPI } from "@/lib/api";
+import type { PreparedImage } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -117,9 +118,9 @@ export default function ReviewPage({
     startReview(noteId);
   };
 
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
-    sendMessage(content);
+  const handleSendMessage = (content: string, images?: PreparedImage[]) => {
+    if (!content.trim() && (!images || images.length === 0)) return;
+    sendMessage(content, images);
     setInput("");
   };
 
@@ -225,6 +226,19 @@ export default function ReviewPage({
                     msg.role === "user" ? "bg-muted" : ""
                   }`}
                 >
+                  {msg.images && msg.images.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {msg.images.map((image, imageIndex) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={imageIndex}
+                          src={image.url}
+                          alt="添付画像"
+                          className="max-h-64 rounded-lg border object-contain"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {msg.content}
                 </div>
                 {isLastUserMessage && (

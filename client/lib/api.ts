@@ -33,3 +33,17 @@ export async function fetchAPI<T>(
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
+
+// 画像配信エンドポイントは Bearer 認証が必要で <img src> ではヘッダーを付与できない。
+// 認証付きで blob を取得し object URL を返す。呼び出し側は不要になったら revoke する。
+export async function fetchImageObjectURL(
+  path: string,
+  token?: string,
+): Promise<string> {
+  const authToken = token ?? (await getToken());
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return URL.createObjectURL(await res.blob());
+}

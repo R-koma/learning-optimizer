@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeftIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NoteShareButton } from "@/components/notes/note-share-button";
 
 interface NoteHeaderProps {
   id: string;
@@ -10,6 +11,8 @@ interface NoteHeaderProps {
   createdAt: string;
   updatedAt: string;
   reviewCount: number;
+  summary: string;
+  content: string;
 }
 
 function formatDate(dateString: string): string {
@@ -29,6 +32,8 @@ export function NoteHeader({
   createdAt,
   updatedAt,
   reviewCount,
+  summary,
+  content,
 }: NoteHeaderProps) {
   const statusLabel = STATUS_LABELS[status] ?? status;
 
@@ -57,12 +62,15 @@ export function NoteHeader({
             {reviewCount > 0 && <span>復習 {reviewCount} 回</span>}
           </div>
         </div>
-        <Button asChild size="lg" className="gap-2 md:shrink-0">
-          <Link href={`/review/${id}`}>
-            <RotateCcwIcon className="h-4 w-4" />
-            復習する
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-3 md:shrink-0">
+          <NoteShareButton topic={topic} summary={summary} content={content} />
+          <Button asChild size="lg" className="gap-2">
+            <Link href={`/review/${id}`}>
+              <RotateCcwIcon className="h-4 w-4" />
+              復習する
+            </Link>
+          </Button>
+        </div>
       </div>
     </header>
   );

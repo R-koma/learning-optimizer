@@ -92,9 +92,6 @@ export default async function NotePage({
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
             フィードバック
-            {feedbacks.length > 0 && (
-              <span className="ml-1 text-xs">({feedbacks.length})</span>
-            )}
           </a>
         </nav>
 
@@ -139,11 +136,6 @@ export default async function NotePage({
               <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 フィードバック
               </h2>
-              {feedbacks.length > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  ({feedbacks.length})
-                </span>
-              )}
             </div>
             {feedbacks.length === 0 ? (
               <NoteFeedbackEmpty />

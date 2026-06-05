@@ -6,7 +6,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.responses import Response
 
-from api.routes.dialogue_session import get_active_session, get_session_messages
+from api.routes.dialogue_session import get_active_session, get_session_image, get_session_messages
 from schemas.dialogue_session import ActiveSessionResponse, SessionMessagesResponse
 
 _USER_ID = "user-123"
@@ -167,3 +167,49 @@ class TestGetSessionMessages:
             result = await get_session_messages(session_id=session_id, current_user_id=_USER_ID, db=mock_db)
 
         assert result.note_id == note_id
+
+
+class TestGetSessionImage:
+    async def test_sets_nosniff_header_and_content_type(self) -> None:
+        session_id = uuid4()
+        image_id = uuid4()
+        mock_db = MagicMock()
+        fake_storage = MagicMock()
+        fake_storage.get = AsyncMock(return_value=b"image-bytes")
+
+        with (
+            patch(
+                "api.routes.dialogue_session.dialogue_session_repository.find_by_id",
+                new=AsyncMock(return_value=_make_session(session_id=session_id)),
+            ),
+            patch(
+                "api.routes.dialogue_session.dialogue_message_image_repository.find_in_session",
+                new=AsyncMock(return_value={"storage_key": "k", "mime_type": "image/png"}),
+            ),
+            patch("api.routes.dialogue_session.get_storage", return_value=fake_storage),
+        ):
+            result = await get_session_image(
+                session_id=session_id, image_id=image_id, current_user_id=_USER_ID, db=mock_db
+            )
+
+        assert result.headers["x-content-type-options"] == "nosniff"
+        assert result.media_type == "image/png"
+        assert result.body == b"image-bytes"
+
+    async def test_raises_404_when_image_not_found(self) -> None:
+        mock_db = MagicMock()
+
+        with (
+            patch(
+                "api.routes.dialogue_session.dialogue_session_repository.find_by_id",
+                new=AsyncMock(return_value=_make_session()),
+            ),
+            patch(
+                "api.routes.dialogue_session.dialogue_message_image_repository.find_in_session",
+                new=AsyncMock(return_value=None),
+            ),
+            pytest.raises(HTTPException) as exc_info,
+        ):
+            await get_session_image(session_id=uuid4(), image_id=uuid4(), current_user_id=_USER_ID, db=mock_db)
+
+        assert exc_info.value.status_code == 404

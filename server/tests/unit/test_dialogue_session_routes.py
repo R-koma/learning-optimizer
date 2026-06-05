@@ -30,7 +30,7 @@ def _make_session(
 
 
 def _make_message(role: str = "user", content: str = "hello", order: int = 1) -> dict[str, object]:
-    return {"role": role, "content": content, "message_order": order}
+    return {"id": uuid4(), "role": role, "content": content, "message_order": order}
 
 
 class TestGetActiveSession:
@@ -108,6 +108,10 @@ class TestGetSessionMessages:
                 "api.routes.dialogue_session.dialogue_message_repository.find_by_session_id",
                 new=AsyncMock(return_value=messages),
             ),
+            patch(
+                "api.routes.dialogue_session.dialogue_message_image_repository.find_by_session_id",
+                new=AsyncMock(return_value=[]),
+            ),
         ):
             result = await get_session_messages(session_id=session_id, current_user_id=_USER_ID, db=mock_db)
 
@@ -131,6 +135,10 @@ class TestGetSessionMessages:
                 "api.routes.dialogue_session.dialogue_message_repository.find_by_session_id",
                 new=AsyncMock(return_value=[]),
             ),
+            patch(
+                "api.routes.dialogue_session.dialogue_message_image_repository.find_by_session_id",
+                new=AsyncMock(return_value=[]),
+            ),
         ):
             result = await get_session_messages(session_id=session_id, current_user_id=_USER_ID, db=mock_db)
 
@@ -149,6 +157,10 @@ class TestGetSessionMessages:
             ),
             patch(
                 "api.routes.dialogue_session.dialogue_message_repository.find_by_session_id",
+                new=AsyncMock(return_value=[]),
+            ),
+            patch(
+                "api.routes.dialogue_session.dialogue_message_image_repository.find_by_session_id",
                 new=AsyncMock(return_value=[]),
             ),
         ):

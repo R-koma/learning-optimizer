@@ -1,0 +1,37 @@
+import asyncio
+from pathlib import Path
+
+
+class LocalObjectStorage:
+    """ファイルシステムを使う `ObjectStorage` 実装（開発・テスト用）。
+
+    本番では `localhost` のファイルは OpenAI から到達不可だが、画像は base64 で
+    渡すため到達性は不要。永続化と履歴再表示のためにのみ使う。
+    """
+
+    def __init__(self, base_dir: str | Path) -> None:
+        self._base = Path(base_dir).resolve()
+
+    def _resolve(self, key: str) -> Path:
+        # key は外部由来になり得るため、base_dir 配下に閉じ込めてパストラバーサルを防ぐ。
+        target = (self._base / key).resolve()
+        if target != self._base and self._base not in target.parents:
+            raise ValueError("Invalid storage key")
+        return target
+
+    async def put(self, key: str, data: bytes, content_type: str) -> None:
+        path = self._resolve(key)
+        await asyncio.to_thread(self._write, path, data)
+
+    @staticmethod
+    def _write(path: Path, data: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    async def get(self, key: str) -> bytes:
+        path = self._resolve(key)
+        return await asyncio.to_thread(path.read_bytes)
+
+    async def delete(self, key: str) -> None:
+        path = self._resolve(key)
+        await asyncio.to_thread(lambda: path.unlink(missing_ok=True))

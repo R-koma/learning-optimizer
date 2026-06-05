@@ -28,10 +28,17 @@ class ActiveSessionResponse(BaseModel):
     topic: str | None = None
 
 
+class DialogueImageData(BaseModel):
+    id: UUID
+    mime_type: str
+    image_order: int
+
+
 class DialogueMessageData(BaseModel):
     role: Literal["user", "assistant"]
     content: str
     message_order: int
+    images: list[DialogueImageData] = []
 
 
 class SessionMessagesResponse(BaseModel):

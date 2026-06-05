@@ -1,9 +1,30 @@
+import base64
+import binascii
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from core import config
 from graph.state import TargetDepth
+
+
+class ImageAttachment(BaseModel):
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    data: str  # base64（data URL プレフィックスは含めない）
+
+    @field_validator("data")
+    @classmethod
+    def _validate_decoded_size(cls, value: str) -> str:
+        try:
+            decoded = base64.b64decode(value, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ValueError("data must be valid base64") from exc
+        if len(decoded) == 0:
+            raise ValueError("image is empty")
+        if len(decoded) > config.MAX_IMAGE_BYTES:
+            raise ValueError(f"image exceeds {config.MAX_IMAGE_BYTES} bytes")
+        return value
 
 
 class StartLearningMessage(BaseModel):
@@ -27,6 +48,14 @@ class ResumeSessionMessage(BaseModel):
 class UserMessage(BaseModel):
     type: Literal["user_message"]
     content: str
+    images: list[ImageAttachment] | None = None
+
+    @field_validator("images")
+    @classmethod
+    def _validate_image_count(cls, value: list[ImageAttachment] | None) -> list[ImageAttachment] | None:
+        if value and len(value) > config.MAX_IMAGES_PER_MESSAGE:
+            raise ValueError(f"at most {config.MAX_IMAGES_PER_MESSAGE} images per message")
+        return value
 
 
 class CancelLastMessageRequest(BaseModel):

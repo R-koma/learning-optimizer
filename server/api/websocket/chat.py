@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import logging
 import uuid
 from dataclasses import dataclass
@@ -11,9 +12,11 @@ from langchain_core.messages import AIMessageChunk, HumanMessage, RemoveMessage
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from api.websocket.auth import authenticate_websocket
-from core.database import get_pool
+from core.database import DBConnection, get_pool
+from graph.multimodal import image_attachments_kwargs
 from graph.version import GRAPH_VERSION
 from repositories import (
+    dialogue_message_image_repository,
     dialogue_message_repository,
     dialogue_session_repository,
     feedback_repository,
@@ -28,6 +31,7 @@ from schemas.websocket_message import (
     EndSessionMessage,
     ErrorMessage,
     FeedbackGeneratedMessage,
+    ImageAttachment,
     IncomingMessage,
     NoteGeneratedMessage,
     ResumeSessionMessage,
@@ -38,8 +42,11 @@ from schemas.websocket_message import (
     StartReviewMessage,
     UserMessage,
 )
+from storage import get_storage
 
 logger = logging.getLogger(__name__)
+
+_MIME_TO_EXT = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 
 _STREAMING_NODES = {"learning_start", "learning_dialogue", "review_start", "review_dialogue"}
 MIN_TURNS_BEFORE_NOTE = 3
@@ -272,14 +279,39 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
     )
 
 
+async def _persist_message_images(
+    conn: DBConnection,
+    message_id: UUID,
+    session_id: UUID,
+    images: list[ImageAttachment] | None,
+) -> list[dict[str, str]]:
+    """画像バイナリをストレージへ、参照メタを DB へ保存し、state に載せる参照列を返す。"""
+    if not images:
+        return []
+
+    storage = get_storage()
+    stored: list[tuple[str, str]] = []
+    for order, image in enumerate(images):
+        ext = _MIME_TO_EXT[image.mime_type]
+        storage_key = f"dialogue_images/{session_id}/{message_id}/{order}.{ext}"
+        await storage.put(storage_key, base64.b64decode(image.data), image.mime_type)
+        stored.append((storage_key, image.mime_type))
+
+    await dialogue_message_image_repository.insert_many(conn, message_id, stored)
+    return [{"storage_key": key, "mime_type": mime} for key, mime in stored]
+
+
 async def _handle_user_message(msg: UserMessage, ctx: SessionContext, deps: Deps) -> SessionContext:
     ctx.message_order += 1
     async with deps.pool.acquire() as conn:
-        await dialogue_message_repository.insert(conn, ctx.session_id, "user", msg.content, ctx.message_order)
+        inserted = await dialogue_message_repository.insert(
+            conn, ctx.session_id, "user", msg.content, ctx.message_order
+        )
+        attachments = await _persist_message_images(conn, inserted["id"], ctx.session_id, msg.images)
 
     await deps.graph.aupdate_state(
         ctx.config,
-        {"messages": [HumanMessage(content=msg.content)]},
+        {"messages": [HumanMessage(content=msg.content, additional_kwargs=image_attachments_kwargs(attachments))]},
     )
 
     ai_msg = await _stream_ai_response(deps.graph, None, ctx.config, deps.websocket)

@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
+import { Markdown } from "@/components/ui/markdown";
+import { closeOpenCodeFence } from "@/lib/chat-markdown";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRightIcon,
@@ -509,7 +511,7 @@ export default function LearnPage() {
                 className={`group flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 <div
-                  className={`max-w-full rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
+                  className={`max-w-full rounded-2xl px-4 py-3 text-base leading-relaxed ${
                     msg.role === "user" ? "bg-muted" : ""
                   }`}
                 >
@@ -526,7 +528,14 @@ export default function LearnPage() {
                       ))}
                     </div>
                   )}
-                  {msg.content}
+                  {msg.content && (
+                    <Markdown
+                      variant="chat"
+                      className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                    >
+                      {closeOpenCodeFence(msg.content)}
+                    </Markdown>
+                  )}
                 </div>
                 {isLastUserMessage && (
                   <button

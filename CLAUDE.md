@@ -141,7 +141,7 @@ learning_start → learning_dialogue（対話継続中はループ）
 
 | 種別 | 場所 | フレームワーク | カバレッジ目標 |
 |------|------|--------------|--------------|
-| バックエンド unit | `server/tests/unit/` | pytest | 60% |
+| バックエンド unit | `server/tests/unit/` | pytest | 75% |
 | バックエンド integration | `server/tests/integration/` | pytest | - |
 | フロントエンド | `client/__tests__/` | Vitest | - |
 

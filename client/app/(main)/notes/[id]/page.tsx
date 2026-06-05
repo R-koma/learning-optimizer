@@ -59,6 +59,8 @@ export default async function NotePage({
           createdAt={note.created_at}
           updatedAt={note.updated_at}
           reviewCount={note.review_count}
+          summary={note.summary}
+          content={note.content}
         />
 
         <nav

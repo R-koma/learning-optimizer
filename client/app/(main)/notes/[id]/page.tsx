@@ -13,6 +13,10 @@ import {
   type AspectMap,
 } from "@/components/notes/note-aspect-map";
 import { NoteEditForm } from "@/components/notes/note-edit-form";
+import {
+  NoteRevisions,
+  type NoteRevision,
+} from "@/components/notes/note-revisions";
 import { SparklesIcon, FileTextIcon, MessageSquareIcon } from "lucide-react";
 
 interface Note {
@@ -48,10 +52,13 @@ export default async function NotePage({
   const isEditing = edit === "1";
   const cookieHeader = (await headers()).get("cookie") ?? "";
   const token = await getToken(cookieHeader);
-  const [note, { feedbacks }] = await Promise.all([
+  const [note, { feedbacks }, { revisions }] = await Promise.all([
     fetchAPI(`/api/notes/${id}`, { token }) as Promise<Note>,
     fetchAPI(`/api/notes/${id}/feedbacks`, { token }) as Promise<{
       feedbacks: Feedback[];
+    }>,
+    fetchAPI(`/api/notes/${id}/revisions`, { token }) as Promise<{
+      revisions: NoteRevision[];
     }>,
   ]);
 
@@ -94,6 +101,14 @@ export default async function NotePage({
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 観点マップ
+              </a>
+            )}
+            {revisions.length > 0 && (
+              <a
+                href="#revisions"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                復習で深まった点
               </a>
             )}
             <a
@@ -144,6 +159,8 @@ export default async function NotePage({
                 {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
                   <NoteAspectMap aspectMap={note.aspect_map} />
                 )}
+
+                <NoteRevisions revisions={revisions} />
               </>
             )}
           </main>

@@ -15,6 +15,7 @@ from graph.prompts.analysis import ANALYZE_RESPONSE_PROMPT
 from graph.prompts.feedback import GENERATE_FEEDBACK_PROMPT
 from graph.prompts.learning_planner import LEARNING_PLANNER_PROMPT
 from graph.prompts.note import (
+    APPEND_REVIEW_PROMPT,
     GENERATE_ASPECT_MAP_PROMPT,
     GENERATE_CATEGORY_PROMPT,
     GENERATE_NOTE_PROMPT,
@@ -35,6 +36,7 @@ from graph.prompts.review import REVIEW_SYSTEM_PROMPT
 
 __all__ = [
     "ANALYZE_RESPONSE_PROMPT",
+    "APPEND_REVIEW_PROMPT",
     "GENERATE_ASPECT_MAP_PROMPT",
     "GENERATE_CATEGORY_PROMPT",
     "GENERATE_FEEDBACK_PROMPT",

@@ -9,6 +9,13 @@ class NoteContent(BaseModel):
     summary: str = Field(..., description="ノート要約")
 
 
+class ReviewAddendum(BaseModel):
+    content: str = Field(
+        ...,
+        description="復習で新たに深まった/判明した点だけをまとめた追記（Markdown 箇条書き）。既存ノート本文は含めない",
+    )
+
+
 class NoteCategory(BaseModel):
     category: str = Field(
         ...,

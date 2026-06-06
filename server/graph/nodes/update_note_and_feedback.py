@@ -1,20 +1,30 @@
 from typing import Any
+from uuid import UUID
 
 from langchain_core.messages import SystemMessage
 
-from core.database import get_pool
+from core.database import DBConnection, get_pool
 from graph.llm import llm_structured
-from graph.output_schemas import DialogueAnalysis, FeedbackOutput, NoteContent
-from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT, UPDATE_NOTE_PROMPT
+from graph.output_schemas import DialogueAnalysis, FeedbackOutput, NoteContent, ReviewAddendum
+from graph.prompts import (
+    ANALYZE_RESPONSE_PROMPT,
+    APPEND_REVIEW_PROMPT,
+    GENERATE_FEEDBACK_PROMPT,
+    UPDATE_NOTE_PROMPT,
+)
 from graph.state import LearningState
 from observability.llm import measured_ainvoke
-from observability.tracing import build_trace_context
-from repositories import feedback_repository, note_repository, review_schedule_repository
+from observability.tracing import TraceContext, build_trace_context
+from repositories import feedback_repository, note_repository, note_revision_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
 
 async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
-    """復習対話の内容で既存ノートを上書き更新し、フィードバックを UPSERT する"""
+    """復習対話の内容で既存ノートを更新し、フィードバックを UPSERT する。
+
+    手動編集済みノート（manually_edited_at あり）は base 本文を保全し、AI 改訂を note_revisions へ
+    追記する（追記専用）。未編集ノートは従来どおり base 本文をフル改訂で上書きする（ADR-005 / #235）。
+    """
 
     pool = await get_pool()
     note_id = state["note_id"]
@@ -32,81 +42,175 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
 
         topic = existing_note["topic"]
 
-        update_note_prompt = UPDATE_NOTE_PROMPT.format(
-            topic=topic,
-            summary=existing_note["summary"] or "",
-            content=existing_note["content"],
-            conversation_history=conversation_history,
-        )
-        note_structured_llm = llm_structured.with_structured_output(NoteContent)
-        revised_note = await measured_ainvoke(
-            runnable=note_structured_llm,
-            messages=[SystemMessage(content=update_note_prompt)],
-            context=trace_ctx,
-            node_name="update_note_and_feedback",
-        )
-        if not isinstance(revised_note, NoteContent):
-            raise RuntimeError("LLM did not return structured NoteContent output")
-
-        await note_repository.update(
-            conn=conn,
-            note_id=note_id,
-            user_id=user_id,
-            content=revised_note.content,
-            summary=revised_note.summary,
-        )
-
-        analyze_prompt = ANALYZE_RESPONSE_PROMPT.format(
-            topic=topic,
-            conversation_history=conversation_history,
-        )
-        analysis_llm = llm_structured.with_structured_output(DialogueAnalysis)
-        analysis_data = await measured_ainvoke(
-            runnable=analysis_llm,
-            messages=[SystemMessage(content=analyze_prompt)],
-            context=trace_ctx,
-            node_name="update_note_and_feedback",
-        )
-        if not isinstance(analysis_data, DialogueAnalysis):
-            raise RuntimeError("LLM did not return structured DialogueAnalysis")
-        analysis = analysis_data.to_markdown()
-
-        note_text = f"トピック: {topic}\n\n{revised_note.content}"
-        feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
-        feedback_structured_llm = llm_structured.with_structured_output(FeedbackOutput)
-        feedback_data = await measured_ainvoke(
-            runnable=feedback_structured_llm,
-            messages=[
-                SystemMessage(content=feedback_prompt),
-                {"role": "user", "content": note_text},
-            ],
-            context=trace_ctx,
-            node_name="update_note_and_feedback",
-        )
-        if not isinstance(feedback_data, FeedbackOutput):
-            raise RuntimeError("LLM did not return structured FeedbackOutput")
-
-        await feedback_repository.upsert_for_note(
-            conn=conn,
-            note_id=note_id,
-            dialogue_session_id=state["dialogue_session_id"],
-            understanding_level=feedback_data.understanding_level,
-            strength="\n".join(feedback_data.strength),
-            improvements="\n".join(feedback_data.improvement_points),
-        )
-
-        existing_schedule = await review_schedule_repository.find_by_note_id(conn=conn, note_id=note_id)
-        current_review_count: int = existing_schedule["review_count"] if existing_schedule else 0
-        next_review_at = calculate_next_review(current_review_count=current_review_count)
-
-        if existing_schedule:
-            await review_schedule_repository.update_schedule(
+        if existing_note["manually_edited_at"] is not None:
+            feedback_content = await _append_review_revision(
                 conn=conn,
-                note_id=note_id,
-                review_count=current_review_count + 1,
-                next_review_at=next_review_at,
+                state=state,
+                trace_ctx=trace_ctx,
+                topic=topic,
+                base_content=existing_note["content"],
+                conversation_history=conversation_history,
             )
         else:
-            await review_schedule_repository.insert(conn=conn, note_id=note_id, next_review_at=next_review_at)
+            feedback_content = await _regenerate_note(
+                conn=conn,
+                note_id=note_id,
+                user_id=user_id,
+                trace_ctx=trace_ctx,
+                topic=topic,
+                summary=existing_note["summary"] or "",
+                content=existing_note["content"],
+                conversation_history=conversation_history,
+            )
+
+        await _update_feedback(
+            conn=conn,
+            state=state,
+            trace_ctx=trace_ctx,
+            topic=topic,
+            note_content=feedback_content,
+            conversation_history=conversation_history,
+        )
+        await _advance_review_schedule(conn=conn, note_id=note_id)
 
     return {}
+
+
+async def _regenerate_note(
+    conn: DBConnection,
+    note_id: UUID,
+    user_id: str,
+    trace_ctx: TraceContext,
+    topic: str,
+    summary: str,
+    content: str,
+    conversation_history: str,
+) -> str:
+    """未編集ノート: base 本文をフル改訂で上書きし、改訂後の本文を返す。"""
+
+    update_note_prompt = UPDATE_NOTE_PROMPT.format(
+        topic=topic,
+        summary=summary,
+        content=content,
+        conversation_history=conversation_history,
+    )
+    note_structured_llm = llm_structured.with_structured_output(NoteContent)
+    revised_note = await measured_ainvoke(
+        runnable=note_structured_llm,
+        messages=[SystemMessage(content=update_note_prompt)],
+        context=trace_ctx,
+        node_name="update_note_and_feedback",
+    )
+    if not isinstance(revised_note, NoteContent):
+        raise RuntimeError("LLM did not return structured NoteContent output")
+
+    await note_repository.update(
+        conn=conn,
+        note_id=note_id,
+        user_id=user_id,
+        content=revised_note.content,
+        summary=revised_note.summary,
+    )
+    return revised_note.content
+
+
+async def _append_review_revision(
+    conn: DBConnection,
+    state: LearningState,
+    trace_ctx: TraceContext,
+    topic: str,
+    base_content: str,
+    conversation_history: str,
+) -> str:
+    """手動編集済みノート: base 本文を保全し、復習の追記を note_revisions に保存する。
+
+    base 本文は LLM 出力に通さずそのまま残るため byte 単位で保全される。フィードバックは
+    base 本文に対して生成する（追記は base への補足であり、評価対象は手動編集後のノート本体）。
+    """
+
+    append_prompt = APPEND_REVIEW_PROMPT.format(
+        topic=topic,
+        content=base_content,
+        conversation_history=conversation_history,
+    )
+    addendum_llm = llm_structured.with_structured_output(ReviewAddendum)
+    addendum = await measured_ainvoke(
+        runnable=addendum_llm,
+        messages=[SystemMessage(content=append_prompt)],
+        context=trace_ctx,
+        node_name="update_note_and_feedback",
+    )
+    if not isinstance(addendum, ReviewAddendum):
+        raise RuntimeError("LLM did not return structured ReviewAddendum output")
+
+    await note_revision_repository.insert(
+        conn=conn,
+        note_id=state["note_id"],
+        dialogue_session_id=state["dialogue_session_id"],
+        content=addendum.content,
+    )
+    return base_content
+
+
+async def _update_feedback(
+    conn: DBConnection,
+    state: LearningState,
+    trace_ctx: TraceContext,
+    topic: str,
+    note_content: str,
+    conversation_history: str,
+) -> None:
+    analyze_prompt = ANALYZE_RESPONSE_PROMPT.format(
+        topic=topic,
+        conversation_history=conversation_history,
+    )
+    analysis_llm = llm_structured.with_structured_output(DialogueAnalysis)
+    analysis_data = await measured_ainvoke(
+        runnable=analysis_llm,
+        messages=[SystemMessage(content=analyze_prompt)],
+        context=trace_ctx,
+        node_name="update_note_and_feedback",
+    )
+    if not isinstance(analysis_data, DialogueAnalysis):
+        raise RuntimeError("LLM did not return structured DialogueAnalysis")
+    analysis = analysis_data.to_markdown()
+
+    note_text = f"トピック: {topic}\n\n{note_content}"
+    feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
+    feedback_structured_llm = llm_structured.with_structured_output(FeedbackOutput)
+    feedback_data = await measured_ainvoke(
+        runnable=feedback_structured_llm,
+        messages=[
+            SystemMessage(content=feedback_prompt),
+            {"role": "user", "content": note_text},
+        ],
+        context=trace_ctx,
+        node_name="update_note_and_feedback",
+    )
+    if not isinstance(feedback_data, FeedbackOutput):
+        raise RuntimeError("LLM did not return structured FeedbackOutput")
+
+    await feedback_repository.upsert_for_note(
+        conn=conn,
+        note_id=state["note_id"],
+        dialogue_session_id=state["dialogue_session_id"],
+        understanding_level=feedback_data.understanding_level,
+        strength="\n".join(feedback_data.strength),
+        improvements="\n".join(feedback_data.improvement_points),
+    )
+
+
+async def _advance_review_schedule(conn: DBConnection, note_id: UUID) -> None:
+    existing_schedule = await review_schedule_repository.find_by_note_id(conn=conn, note_id=note_id)
+    current_review_count: int = existing_schedule["review_count"] if existing_schedule else 0
+    next_review_at = calculate_next_review(current_review_count=current_review_count)
+
+    if existing_schedule:
+        await review_schedule_repository.update_schedule(
+            conn=conn,
+            note_id=note_id,
+            review_count=current_review_count + 1,
+            next_review_at=next_review_at,
+        )
+    else:
+        await review_schedule_repository.insert(conn=conn, note_id=note_id, next_review_at=next_review_at)

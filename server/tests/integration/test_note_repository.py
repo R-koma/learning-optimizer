@@ -104,6 +104,68 @@ async def test_update_returns_none_for_nonexistent(db_conn: asyncpg.Connection, 
     assert result is None
 
 
+async def test_insert_with_category(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    note_id = uuid4()
+    user_id = test_user["id"]
+
+    created = await note_repository.insert(
+        db_conn, note_id=note_id, user_id=user_id, topic="Python", content="c", summary="s", category="プログラミング"
+    )
+    assert created["category"] == "プログラミング"
+
+    found = await note_repository.find_by_id(db_conn, note_id=note_id, user_id=user_id)
+    assert found is not None
+    assert found["category"] == "プログラミング"
+
+
+async def test_insert_without_category_defaults_none(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    note_id = uuid4()
+    created = await note_repository.insert(
+        db_conn, note_id=note_id, user_id=test_user["id"], topic="T", content="c", summary="s"
+    )
+    assert created["category"] is None
+
+
+async def test_update_category(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    note_id = uuid4()
+    user_id = test_user["id"]
+    await note_repository.insert(
+        db_conn, note_id=note_id, user_id=user_id, topic="T", content="c", summary="s", category="数学"
+    )
+
+    updated = await note_repository.update(db_conn, note_id=note_id, user_id=user_id, category="統計学")
+    assert updated is not None
+    assert updated["category"] == "統計学"
+
+
+async def test_find_categories_by_user_id_returns_distinct_sorted(
+    db_conn: asyncpg.Connection, test_user: dict[str, str]
+) -> None:
+    user_id = test_user["id"]
+    await note_repository.insert(
+        db_conn, note_id=uuid4(), user_id=user_id, topic="A", content="a", summary="s", category="数学"
+    )
+    await note_repository.insert(
+        db_conn, note_id=uuid4(), user_id=user_id, topic="B", content="b", summary="s", category="数学"
+    )
+    await note_repository.insert(
+        db_conn, note_id=uuid4(), user_id=user_id, topic="C", content="c", summary="s", category="英語"
+    )
+    await note_repository.insert(
+        db_conn, note_id=uuid4(), user_id=user_id, topic="D", content="d", summary="s", category=None
+    )
+
+    categories = await note_repository.find_categories_by_user_id(db_conn, user_id=user_id)
+    assert categories == ["数学", "英語"]
+
+
+async def test_find_categories_by_user_id_empty_for_no_categories(
+    db_conn: asyncpg.Connection, test_user: dict[str, str]
+) -> None:
+    categories = await note_repository.find_categories_by_user_id(db_conn, user_id=test_user["id"])
+    assert categories == []
+
+
 async def test_delete(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
     note_id = uuid4()
     user_id = test_user["id"]

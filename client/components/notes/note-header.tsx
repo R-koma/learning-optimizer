@@ -3,11 +3,13 @@ import { ArrowLeftIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NoteShareButton } from "@/components/notes/note-share-button";
+import { NoteCategoryEditor } from "@/components/notes/note-category-editor";
 
 interface NoteHeaderProps {
   id: string;
   topic: string;
   status: string;
+  category: string | null;
   createdAt: string;
   updatedAt: string;
   reviewCount: number;
@@ -29,6 +31,7 @@ export function NoteHeader({
   id,
   topic,
   status,
+  category,
   createdAt,
   updatedAt,
   reviewCount,
@@ -55,6 +58,7 @@ export function NoteHeader({
             <Badge variant="secondary" className="font-normal">
               {statusLabel}
             </Badge>
+            <NoteCategoryEditor noteId={id} category={category} />
             <span>作成 {formatDate(createdAt)}</span>
             {updatedAt !== createdAt && (
               <span>更新 {formatDate(updatedAt)}</span>

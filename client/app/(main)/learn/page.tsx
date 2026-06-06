@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
+import { MessageCopyButton } from "@/components/chat/message-copy-button";
 import { Markdown } from "@/components/ui/markdown";
 import { closeOpenCodeFence } from "@/lib/chat-markdown";
 import type { LucideIcon } from "lucide-react";
@@ -500,7 +501,6 @@ export default function LearnPage() {
             const isLastUserMessage =
               msg.role === "user" &&
               i === messages.length - 2 &&
-              messages.length >= 4 &&
               messages[messages.length - 1].role === "assistant" &&
               !isLoading &&
               !isSessionEnded;
@@ -537,16 +537,19 @@ export default function LearnPage() {
                     </Markdown>
                   )}
                 </div>
-                {isLastUserMessage && (
-                  <button
-                    type="button"
-                    onClick={cancelLastMessage}
-                    className="mt-2 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
-                    title="編集して再送信"
-                  >
-                    <PencilIcon className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                  </button>
-                )}
+                <div className="flex flex-col items-center gap-1">
+                  {msg.content && <MessageCopyButton content={msg.content} />}
+                  {isLastUserMessage && (
+                    <button
+                      type="button"
+                      onClick={cancelLastMessage}
+                      className="mt-2 cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
+                      title="編集して再送信"
+                    >
+                      <PencilIcon className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon, RotateCcwIcon } from "lucide-react";
+import { ArrowLeftIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NoteShareButton } from "@/components/notes/note-share-button";
@@ -15,6 +15,7 @@ interface NoteHeaderProps {
   reviewCount: number;
   summary: string;
   content: string;
+  isEditing?: boolean;
 }
 
 function formatDate(dateString: string): string {
@@ -37,6 +38,7 @@ export function NoteHeader({
   reviewCount,
   summary,
   content,
+  isEditing = false,
 }: NoteHeaderProps) {
   const statusLabel = STATUS_LABELS[status] ?? status;
 
@@ -51,9 +53,11 @@ export function NoteHeader({
       </Link>
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            {topic}
-          </h1>
+          {!isEditing && (
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              {topic}
+            </h1>
+          )}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="font-normal">
               {statusLabel}
@@ -66,15 +70,26 @@ export function NoteHeader({
             {reviewCount > 0 && <span>復習 {reviewCount} 回</span>}
           </div>
         </div>
-        <div className="flex flex-wrap gap-3 md:shrink-0">
-          <NoteShareButton topic={topic} summary={summary} content={content} />
-          <Button asChild size="lg" className="gap-2">
-            <Link href={`/review/${id}`}>
-              <RotateCcwIcon className="h-4 w-4" />
-              復習する
-            </Link>
-          </Button>
-        </div>
+        {!isEditing && (
+          <div className="flex flex-wrap gap-3 md:shrink-0">
+            <Button asChild variant="outline" size="lg" className="gap-2">
+              <Link href={`/notes/${id}?edit=1`} aria-label="編集">
+                <PencilIcon className="h-4 w-4" />
+              </Link>
+            </Button>
+            <NoteShareButton
+              topic={topic}
+              summary={summary}
+              content={content}
+            />
+            <Button asChild size="lg" className="gap-2">
+              <Link href={`/review/${id}`}>
+                <RotateCcwIcon className="h-4 w-4" />
+                復習する
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

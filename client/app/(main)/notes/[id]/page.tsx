@@ -12,6 +12,7 @@ import {
   NoteAspectMap,
   type AspectMap,
 } from "@/components/notes/note-aspect-map";
+import { NoteEditForm } from "@/components/notes/note-edit-form";
 import { SparklesIcon, FileTextIcon, MessageSquareIcon } from "lucide-react";
 
 interface Note {
@@ -37,10 +38,14 @@ interface Feedback {
 
 export default async function NotePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   const { id } = await params;
+  const { edit } = await searchParams;
+  const isEditing = edit === "1";
   const cookieHeader = (await headers()).get("cookie") ?? "";
   const token = await getToken(cookieHeader);
   const [note, { feedbacks }] = await Promise.all([
@@ -63,69 +68,83 @@ export default async function NotePage({
           reviewCount={note.review_count}
           summary={note.summary}
           content={note.content}
+          isEditing={isEditing}
         />
 
-        <nav
-          aria-label="セクション"
-          className="mb-10 flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-sm"
-        >
-          <a
-            href="#summary"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+        {!isEditing && (
+          <nav
+            aria-label="セクション"
+            className="mb-10 flex flex-wrap gap-x-6 gap-y-2 border-b border-border pb-4 text-sm"
           >
-            要約
-          </a>
-          <a
-            href="#content"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            内容
-          </a>
-          {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
             <a
-              href="#aspect-map"
+              href="#summary"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              観点マップ
+              要約
             </a>
-          )}
-          <a
-            href="#feedback"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            フィードバック
-          </a>
-        </nav>
+            <a
+              href="#content"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              内容
+            </a>
+            {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
+              <a
+                href="#aspect-map"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                観点マップ
+              </a>
+            )}
+            <a
+              href="#feedback"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              フィードバック
+            </a>
+          </nav>
+        )}
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-12">
           <main className="min-w-0 space-y-10">
-            <section
-              id="summary"
-              className="scroll-mt-8 border-l-4 border-primary/70 pl-6"
-            >
-              <div className="mb-3 flex items-center gap-1.5">
-                <SparklesIcon className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-medium uppercase tracking-[0.14em] text-primary">
-                  要約
-                </span>
-              </div>
-              <Markdown className="text-lg text-foreground/80 [&_p]:my-3 [&_p]:leading-8">
-                {note.summary}
-              </Markdown>
-            </section>
+            {isEditing ? (
+              <NoteEditForm
+                noteId={note.id}
+                initialTopic={note.topic}
+                initialSummary={note.summary ?? ""}
+                initialContent={note.content}
+              />
+            ) : (
+              <>
+                <section
+                  id="summary"
+                  className="scroll-mt-8 border-l-4 border-primary/70 pl-6"
+                >
+                  <div className="mb-3 flex items-center gap-1.5">
+                    <SparklesIcon className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium uppercase tracking-[0.14em] text-primary">
+                      要約
+                    </span>
+                  </div>
+                  <Markdown className="text-lg text-foreground/80 [&_p]:my-3 [&_p]:leading-8">
+                    {note.summary}
+                  </Markdown>
+                </section>
 
-            <section id="content" className="scroll-mt-8">
-              <div className="mb-4 flex items-center gap-2">
-                <FileTextIcon className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  内容
-                </h2>
-              </div>
-              <Markdown variant="article">{note.content}</Markdown>
-            </section>
+                <section id="content" className="scroll-mt-8">
+                  <div className="mb-4 flex items-center gap-2">
+                    <FileTextIcon className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      内容
+                    </h2>
+                  </div>
+                  <Markdown variant="article">{note.content}</Markdown>
+                </section>
 
-            {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
-              <NoteAspectMap aspectMap={note.aspect_map} />
+                {note.aspect_map && note.aspect_map.aspects?.length > 0 && (
+                  <NoteAspectMap aspectMap={note.aspect_map} />
+                )}
+              </>
             )}
           </main>
 

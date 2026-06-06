@@ -15,6 +15,7 @@ class NoteResponse(BaseModel):
     status: str
     category: str | None = None
     aspect_map: dict[str, Any] | None = None
+    manually_edited_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     review_count: int = 0

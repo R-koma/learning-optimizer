@@ -138,6 +138,59 @@ async def test_update_category(db_conn: asyncpg.Connection, test_user: dict[str,
     assert updated["category"] == "統計学"
 
 
+async def test_insert_leaves_manually_edited_at_none(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    note_id = uuid4()
+    created = await note_repository.insert(
+        db_conn, note_id=note_id, user_id=test_user["id"], topic="T", content="c", summary="s"
+    )
+    assert created["manually_edited_at"] is None
+
+
+async def test_update_with_mark_sets_manually_edited_at(
+    db_conn: asyncpg.Connection, test_user: dict[str, str]
+) -> None:
+    note_id = uuid4()
+    user_id = test_user["id"]
+    await note_repository.insert(db_conn, note_id=note_id, user_id=user_id, topic="T", content="c", summary="s")
+
+    updated = await note_repository.update(
+        db_conn, note_id=note_id, user_id=user_id, content="New", mark_manually_edited=True
+    )
+    assert updated is not None
+    assert updated["manually_edited_at"] is not None
+
+
+async def test_update_without_mark_keeps_manually_edited_at_none(
+    db_conn: asyncpg.Connection, test_user: dict[str, str]
+) -> None:
+    note_id = uuid4()
+    user_id = test_user["id"]
+    await note_repository.insert(db_conn, note_id=note_id, user_id=user_id, topic="T", content="c", summary="s")
+
+    updated = await note_repository.update(db_conn, note_id=note_id, user_id=user_id, content="New")
+    assert updated is not None
+    assert updated["manually_edited_at"] is None
+
+
+async def test_update_without_mark_preserves_existing_manually_edited_at(
+    db_conn: asyncpg.Connection, test_user: dict[str, str]
+) -> None:
+    note_id = uuid4()
+    user_id = test_user["id"]
+    await note_repository.insert(db_conn, note_id=note_id, user_id=user_id, topic="T", content="c", summary="s")
+
+    edited = await note_repository.update(
+        db_conn, note_id=note_id, user_id=user_id, content="Edited", mark_manually_edited=True
+    )
+    assert edited is not None
+    edited_at = edited["manually_edited_at"]
+
+    # 復習再生成パス（mark なし）はフラグを上書きしない
+    regenerated = await note_repository.update(db_conn, note_id=note_id, user_id=user_id, content="Regenerated")
+    assert regenerated is not None
+    assert regenerated["manually_edited_at"] == edited_at
+
+
 async def test_find_categories_by_user_id_returns_distinct_sorted(
     db_conn: asyncpg.Connection, test_user: dict[str, str]
 ) -> None:

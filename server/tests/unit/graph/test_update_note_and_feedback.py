@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from datetime import UTC, datetime
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -57,14 +56,6 @@ def _make_structured_mock() -> MagicMock:
         return AsyncMock(ainvoke=AsyncMock(return_value=FAKE_FEEDBACK_OUTPUT))
 
     return MagicMock(side_effect=_route)
-
-
-@pytest.fixture(autouse=True)
-def _no_trace_persistence() -> Generator[None]:
-    # measured_ainvoke のトレース永続化は実 DB プール（get_pool）に接続する。
-    # ユニットテストでは無効化する（実 DB に触れず、ループ跨ぎの接続リーク/枯渇によるハングを防ぐ）
-    with patch("observability.llm._save_trace_safely", new=AsyncMock()):
-        yield
 
 
 def _make_state(**overrides: object) -> LearningState:

@@ -91,6 +91,30 @@ class TestUpdateNote:
 
         assert exc_info.value.status_code == 404
 
+    async def test_content_edit_marks_manually_edited(self) -> None:
+        note_id = uuid4()
+        record = _make_note_record(note_id=note_id)
+        mock_db = MagicMock()
+        note_data = NoteUpdate(content="新しい本文")
+        update_mock = AsyncMock(return_value=record)
+
+        with patch("api.routes.note.note_repository.update", new=update_mock):
+            await update_note(note_id=note_id, note_data=note_data, current_user_id=_USER_ID, db=mock_db)
+
+        assert update_mock.call_args.kwargs["mark_manually_edited"] is True
+
+    async def test_status_only_change_does_not_mark_manually_edited(self) -> None:
+        note_id = uuid4()
+        record = _make_note_record(note_id=note_id)
+        mock_db = MagicMock()
+        note_data = NoteUpdate(status="archived")
+        update_mock = AsyncMock(return_value=record)
+
+        with patch("api.routes.note.note_repository.update", new=update_mock):
+            await update_note(note_id=note_id, note_data=note_data, current_user_id=_USER_ID, db=mock_db)
+
+        assert update_mock.call_args.kwargs["mark_manually_edited"] is False
+
 
 class TestDeleteNote:
     async def test_delete_success_returns_none(self) -> None:

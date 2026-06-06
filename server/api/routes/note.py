@@ -27,7 +27,12 @@ async def get_note(note_id: UUID, current_user_id: CurrentUser, db: DB) -> NoteR
 @router.patch("/{note_id}", response_model=NoteResponse)
 async def update_note(note_id: UUID, note_data: NoteUpdate, current_user_id: CurrentUser, db: DB) -> NoteResponse:
     update_data = note_data.model_dump(exclude_unset=True)
-    record = await note_repository.update(db, note_id=note_id, user_id=current_user_id, **update_data)
+    # 復習で再生成される領域（topic/summary/content）を編集したときだけ来歴フラグを立てる。
+    # status / category のみの変更は本文保護（#235）の対象外
+    mark_manually_edited = any(field in update_data for field in ("topic", "summary", "content"))
+    record = await note_repository.update(
+        db, note_id=note_id, user_id=current_user_id, mark_manually_edited=mark_manually_edited, **update_data
+    )
 
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")

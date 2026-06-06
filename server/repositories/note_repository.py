@@ -7,7 +7,7 @@ from core.database import DBConnection
 async def find_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status,
-           n.category, n.aspect_map, n.created_at, n.updated_at,
+           n.category, n.aspect_map, n.manually_edited_at, n.created_at, n.updated_at,
     COALESCE(rs.review_count, 0) AS review_count
     From notes n
     LEFT JOIN review_schedules rs ON rs.note_id = n.id
@@ -21,7 +21,8 @@ async def find_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, An
 
 async def find_by_id(conn: DBConnection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
     query = """--sql
-    SELECT id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
+    SELECT id, user_id, topic, content, summary, status, category, aspect_map,
+           manually_edited_at, created_at, updated_at
     FROM notes
     WHERE id = $1 AND user_id = $2
   """
@@ -56,7 +57,8 @@ async def insert(
     query = """--sql
         INSERT INTO notes (id, user_id, topic, content, summary, status, category, aspect_map)
         VALUES ($1, $2, $3, $4, $5, 'active', $6, $7::jsonb)
-        RETURNING id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
+        RETURNING id, user_id, topic, content, summary, status, category, aspect_map,
+                  manually_edited_at, created_at, updated_at
     """
     record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, category, aspect_map)
     assert record is not None  # INSERT ... RETURNING は必ず1行返す
@@ -85,7 +87,10 @@ async def update(
     summary: str | None = None,
     status: str | None = None,
     category: str | None = None,
+    mark_manually_edited: bool = False,
 ) -> dict[str, Any] | None:
+    # mark_manually_edited はユーザーの手動編集パスでのみ True。復習再生成（update_note_and_feedback）は
+    # 既定の False で呼ぶため、来歴フラグを誤って立てない（保護対象の判定は #235）
     query = """--sql
     UPDATE notes
     SET topic = COALESCE($3, topic),
@@ -93,12 +98,16 @@ async def update(
         summary = COALESCE($5, summary),
         status = COALESCE($6, status),
         category = COALESCE($7, category),
+        manually_edited_at = CASE WHEN $8 THEN NOW() ELSE manually_edited_at END,
         updated_at = NOW()
     WHERE id = $1 AND user_id = $2
-    RETURNING id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
+    RETURNING id, user_id, topic, content, summary, status, category, aspect_map,
+              manually_edited_at, created_at, updated_at
   """
 
-    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, status, category)
+    record = await conn.fetchrow(
+        query, note_id, user_id, topic, content, summary, status, category, mark_manually_edited
+    )
     return dict(record) if record else None
 
 

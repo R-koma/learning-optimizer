@@ -20,6 +20,7 @@ interface Note {
   content: string;
   summary: string;
   status: string;
+  category: string | null;
   aspect_map: AspectMap | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +57,7 @@ export default async function NotePage({
           id={note.id}
           topic={note.topic}
           status={note.status}
+          category={note.category}
           createdAt={note.created_at}
           updatedAt={note.updated_at}
           reviewCount={note.review_count}

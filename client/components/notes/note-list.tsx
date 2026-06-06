@@ -30,6 +30,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
+import { groupNotesByCategory } from "@/lib/note-grouping";
 
 interface NoteResponse {
   id: string;
@@ -37,6 +38,7 @@ interface NoteResponse {
   content: string;
   summary: string | null;
   status: string;
+  category: string | null;
   created_at: string;
   updated_at: string;
   review_count: number;
@@ -63,6 +65,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
 
   const filteredNotes =
     filter === "all" ? notes : notes.filter((note) => note.status === filter);
+  const groupedNotes = groupNotesByCategory(filteredNotes);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -73,6 +76,69 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
       setDeletingId(null);
     }
   };
+
+  const renderNoteCard = (note: NoteResponse) => (
+    <div
+      key={note.id}
+      className="group relative rounded-xl border bg-card transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5"
+    >
+      <Link href={`/notes/${note.id}`} className="block p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="truncate font-semibold group-hover:text-primary transition-colors">
+                {note.topic}
+              </span>
+              <Badge
+                variant={note.status === "active" ? "default" : "secondary"}
+                className="shrink-0 "
+              >
+                {note.status === "active" ? "進行中" : "完了"}
+              </Badge>
+            </div>
+            {note.summary && (
+              <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                {note.summary}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {formatDate(note.created_at)}
+          </span>
+          <span className="flex items-center gap-1">
+            <RotateCcwIcon className="h-3.5 w-3.5" />
+            復習回数: {note.review_count}回
+          </span>
+        </div>
+      </Link>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-3 bottom-3 cursor-pointer"
+            disabled={deletingId === note.id}
+          >
+            <EllipsisIcon className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-auto">
+          <DropdownMenuItem
+            variant="destructive"
+            className="gap-2 px-3"
+            onClick={() => setDeleteTargetId(note.id)}
+          >
+            <Trash2Icon className="h-4 w-4" />
+            削除
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 
   return (
     <div>
@@ -100,70 +166,19 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredNotes.map((note) => (
-            <div
-              key={note.id}
-              className="group relative rounded-xl border bg-card transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5"
-            >
-              <Link href={`/notes/${note.id}`} className="block p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="truncate font-semibold group-hover:text-primary transition-colors">
-                        {note.topic}
-                      </span>
-                      <Badge
-                        variant={
-                          note.status === "active" ? "default" : "secondary"
-                        }
-                        className="shrink-0 "
-                      >
-                        {note.status === "active" ? "進行中" : "完了"}
-                      </Badge>
-                    </div>
-                    {note.summary && (
-                      <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {note.summary}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <CalendarIcon className="h-3.5 w-3.5" />
-                    {formatDate(note.created_at)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <RotateCcwIcon className="h-3.5 w-3.5" />
-                    復習回数: {note.review_count}回
-                  </span>
-                </div>
-              </Link>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-3 bottom-3 cursor-pointer"
-                    disabled={deletingId === note.id}
-                  >
-                    <EllipsisIcon className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-auto">
-                  <DropdownMenuItem
-                    variant="destructive"
-                    className="gap-2 px-3"
-                    onClick={() => setDeleteTargetId(note.id)}
-                  >
-                    <Trash2Icon className="h-4 w-4" />
-                    削除
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+        <div className="space-y-8">
+          {groupedNotes.map((group) => (
+            <section key={group.category}>
+              <div className="mb-3 flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-muted-foreground">
+                  {group.category}
+                </h2>
+                <Badge variant="outline" className="shrink-0">
+                  {group.notes.length}
+                </Badge>
+              </div>
+              <div className="space-y-3">{group.notes.map(renderNoteCard)}</div>
+            </section>
           ))}
         </div>
       )}

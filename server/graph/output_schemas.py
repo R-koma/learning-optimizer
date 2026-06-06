@@ -9,6 +9,13 @@ class NoteContent(BaseModel):
     summary: str = Field(..., description="ノート要約")
 
 
+class NoteCategory(BaseModel):
+    category: str = Field(
+        ...,
+        description="ノートを分類するカテゴリー名（短い名詞句）。既存カテゴリーに意味的に合致するものがあればそれを再利用する",
+    )
+
+
 class AspectNode(BaseModel):
     name: str = Field(..., description="観点名（短い名詞句）")
     summary: str = Field(..., description="この観点について対話で扱われた内容の1〜2文要約")

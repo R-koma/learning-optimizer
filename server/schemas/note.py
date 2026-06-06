@@ -13,6 +13,7 @@ class NoteResponse(BaseModel):
     content: str
     summary: str | None
     status: str
+    category: str | None = None
     aspect_map: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
@@ -38,6 +39,7 @@ class NoteUpdate(BaseModel):
     content: str | None = None
     summary: str | None = None
     status: str | None = None
+    category: str | None = None
 
 
 class NoteListResponse(BaseModel):

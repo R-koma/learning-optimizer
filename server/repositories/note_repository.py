@@ -7,7 +7,7 @@ from core.database import DBConnection
 async def find_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, Any]]:
     query = """--sql
     SELECT n.id, n.user_id, n.topic, n.content, n.summary, n.status,
-           n.aspect_map, n.created_at, n.updated_at,
+           n.category, n.aspect_map, n.created_at, n.updated_at,
     COALESCE(rs.review_count, 0) AS review_count
     From notes n
     LEFT JOIN review_schedules rs ON rs.note_id = n.id
@@ -21,13 +21,26 @@ async def find_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, An
 
 async def find_by_id(conn: DBConnection, note_id: UUID, user_id: str) -> dict[str, Any] | None:
     query = """--sql
-    SELECT id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
+    SELECT id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
     FROM notes
     WHERE id = $1 AND user_id = $2
   """
 
     record = await conn.fetchrow(query, note_id, user_id)
     return dict(record) if record else None
+
+
+async def find_categories_by_user_id(conn: DBConnection, user_id: str) -> list[str]:
+    """ユーザーが既に使用しているカテゴリー名の一覧（重複なし）。カテゴリー推定時の寄せ先候補に使う。"""
+    query = """--sql
+    SELECT DISTINCT category
+    FROM notes
+    WHERE user_id = $1 AND category IS NOT NULL
+    ORDER BY category
+  """
+
+    records = await conn.fetch(query, user_id)
+    return [r["category"] for r in records]
 
 
 async def insert(
@@ -37,14 +50,15 @@ async def insert(
     topic: str,
     content: str,
     summary: str,
+    category: str | None = None,
     aspect_map: str | None = None,
 ) -> dict[str, Any]:
     query = """--sql
-        INSERT INTO notes (id, user_id, topic, content, summary, status, aspect_map)
-        VALUES ($1, $2, $3, $4, $5, 'active', $6::jsonb)
-        RETURNING id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
+        INSERT INTO notes (id, user_id, topic, content, summary, status, category, aspect_map)
+        VALUES ($1, $2, $3, $4, $5, 'active', $6, $7::jsonb)
+        RETURNING id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
     """
-    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, aspect_map)
+    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, category, aspect_map)
     assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 
@@ -70,6 +84,7 @@ async def update(
     content: str | None = None,
     summary: str | None = None,
     status: str | None = None,
+    category: str | None = None,
 ) -> dict[str, Any] | None:
     query = """--sql
     UPDATE notes
@@ -77,12 +92,13 @@ async def update(
         content = COALESCE($4, content),
         summary = COALESCE($5, summary),
         status = COALESCE($6, status),
+        category = COALESCE($7, category),
         updated_at = NOW()
     WHERE id = $1 AND user_id = $2
-    RETURNING id, user_id, topic, content, summary, status, aspect_map, created_at, updated_at
+    RETURNING id, user_id, topic, content, summary, status, category, aspect_map, created_at, updated_at
   """
 
-    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, status)
+    record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, status, category)
     return dict(record) if record else None
 
 

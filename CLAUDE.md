@@ -210,3 +210,4 @@ PR マージ前に全通過が必須:
 - **LangGraph 永続化**: チェックポイントは DB に保存されるため、ローカル開発中にスキーマ変更するとチェックポイントとの不整合が起きる場合がある
 - **DB テーブル**: `notes`, `dialogue_sessions`, `dialogue_messages`, `feedbacks`, `review_schedules` が主要テーブル。BetterAuth テーブル（`user`, `account`, `session` 等）も同一 DB に存在し、外部キー制約によるカスケード削除あり
 - **CORS**: `CORS_ORIGINS` 環境変数でカンマ区切りで複数指定可能（デフォルト `http://localhost:3000`）
+- **ユニットテストでのトレース永続化**: `measured_ainvoke` / `measured_node` の `_save_trace_safely` は `core.database.get_pool` のプロセスグローバルなプール（実 DB）に接続する。ユニットテストでこれを実行するとテストごとに別イベントループで接続がリークし、プールサイズ超過で `acquire()` が無限ブロックしスイートがハングする（順序・件数依存で顕在化）。`tests/unit/conftest.py` の autouse フィクスチャ `_stub_trace_persistence` が一律スタブ化して防いでいる。LLM ノードのユニットテストを足すときは実 DB に触れさせない（このフィクスチャ前提で書く）

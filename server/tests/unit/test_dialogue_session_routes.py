@@ -74,6 +74,20 @@ class TestGetActiveSession:
         assert isinstance(result, ActiveSessionResponse)
         assert result.status == "disconnect"
 
+    async def test_returns_note_id_for_review_session(self) -> None:
+        note_id = uuid4()
+        session = _make_session(session_type="review", note_id=note_id)
+        mock_db = MagicMock()
+
+        with patch(
+            "api.routes.dialogue_session.dialogue_session_repository.find_resumable_by_user",
+            new=AsyncMock(return_value=session),
+        ):
+            result = await get_active_session(current_user_id=_USER_ID, db=mock_db)
+
+        assert isinstance(result, ActiveSessionResponse)
+        assert result.note_id == note_id
+
 
 class TestGetSessionMessages:
     async def test_raises_404_when_session_not_found(self) -> None:

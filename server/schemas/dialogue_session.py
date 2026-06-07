@@ -26,6 +26,7 @@ class ActiveSessionResponse(BaseModel):
     status: Literal["in_progress", "disconnect"]
     started_at: datetime
     topic: str | None = None
+    note_id: UUID | None = None
 
 
 class DialogueImageData(BaseModel):

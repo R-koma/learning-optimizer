@@ -111,6 +111,7 @@ async def _start_session(
     deps: Deps,
     initial_state: dict[str, Any],
     first_user_content: str,
+    note_id: UUID | None = None,
 ) -> SessionContext:
     """セッション作成・SessionStarted 送信・初期 user/assistant メッセージ保存までを共通化。"""
     session_id = uuid.uuid4()
@@ -125,6 +126,7 @@ async def _start_session(
             user_id=deps.user_id,
             session_type=session_type,
             graph_version=GRAPH_VERSION,
+            note_id=note_id,
         )
         await dialogue_message_repository.insert(conn, session_id, "user", first_user_content, message_order)
 
@@ -232,6 +234,7 @@ async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionCo
         deps=deps,
         initial_state=initial_state,
         first_user_content=note["topic"],
+        note_id=msg.note_id,
     )
 
 

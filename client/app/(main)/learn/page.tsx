@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
-import { fetchAPI, fetchImageObjectURL } from "@/lib/api";
+import { fetchAPI } from "@/lib/api";
+import { loadResumableMessages, isResumableStatus } from "@/lib/session";
 import type { PreparedImage } from "@/lib/image";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,27 +65,7 @@ interface ActiveSessionResponse {
   status: string;
   started_at: string;
   topic: string | null;
-}
-
-interface SessionImageItem {
-  id: string;
-  mime_type: string;
-  image_order: number;
-}
-
-interface SessionMessageItem {
-  role: "user" | "assistant";
-  content: string;
-  message_order: number;
-  images: SessionImageItem[];
-}
-
-interface SessionMessagesResponse {
-  session_id: string;
-  session_type: "learning" | "review";
-  status: string;
   note_id: string | null;
-  messages: SessionMessageItem[];
 }
 
 export default function LearnPage() {
@@ -131,37 +112,21 @@ export default function LearnPage() {
 
       (async () => {
         try {
-          const data = await fetchAPI<SessionMessagesResponse>(
-            `/api/dialogue-sessions/${sessionParam}/messages`,
-          );
-          if (data.status !== "in_progress" && data.status !== "disconnect") {
+          const { sessionType, status, noteId, messages } =
+            await loadResumableMessages(sessionParam);
+          if (!isResumableStatus(status)) return;
+          // 復習は復習ページ（復習バッジ・ノート更新ボタン）で再開する。learn は learning 専用。
+          if (sessionType === "review") {
+            if (noteId) {
+              router.replace(`/review/${noteId}?session=${sessionParam}`);
+            }
             return;
           }
-          const initialMessages = await Promise.all(
-            data.messages.map(async ({ role, content, images }) => ({
-              role,
-              content,
-              images:
-                images.length > 0
-                  ? await Promise.all(
-                      images.map(async (img) => ({
-                        url: await fetchImageObjectURL(
-                          `/api/dialogue-sessions/${sessionParam}/images/${img.id}`,
-                        ),
-                      })),
-                    )
-                  : undefined,
-            })),
-          );
-          if (data.session_type === "learning" && initialMessages.length > 0) {
-            setTopic(initialMessages[0].content);
+          // 先頭は入力トピック。navbar に表示しチャットからは除外する。
+          if (messages.length > 0) {
+            setTopic(messages[0].content);
           }
-          resumeSession(
-            sessionParam,
-            data.session_type === "learning"
-              ? initialMessages.slice(1)
-              : initialMessages,
-          );
+          resumeSession(sessionParam, messages.slice(1));
         } catch {
           // セッションが無効化 / 404 の場合は新規開始フローに戻す
         } finally {
@@ -193,7 +158,7 @@ export default function LearnPage() {
         // 取得失敗時は再開バナーを出さずに新規学習フォームを表示する
       })
       .finally(() => setIsBootstrapping(false));
-  }, [sessionParam, resumeSession, resetSession]);
+  }, [sessionParam, resumeSession, resetSession, router]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -312,11 +277,20 @@ export default function LearnPage() {
     );
   }
 
+  // 復習は復習ページで再開する。note_id を持たない古い復習セッションは再開先を特定できないため出さない。
+  const resumableHref = resumableSession
+    ? resumableSession.session_type === "review"
+      ? resumableSession.note_id
+        ? `/review/${resumableSession.note_id}?session=${resumableSession.session_id}`
+        : null
+      : `/learn?session=${resumableSession.session_id}`
+    : null;
+
   if (messages.length === 0 && !isConnected) {
     return (
       <div className="flex h-full items-center justify-center overflow-y-auto p-4">
         <div className="w-full max-w-lg my-4 space-y-4">
-          {resumableSession && (
+          {resumableSession && resumableHref && (
             <div className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/8 via-background to-background p-5 shadow-sm transition-all hover:border-blue-500/40 hover:shadow-md">
               <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" />
 
@@ -353,9 +327,7 @@ export default function LearnPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  router.push(`/learn?session=${resumableSession.session_id}`)
-                }
+                onClick={() => router.push(resumableHref)}
                 className="group/btn relative mt-3 flex w-full items-center justify-between gap-4 text-left cursor-pointer"
               >
                 <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">

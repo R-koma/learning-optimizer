@@ -42,6 +42,24 @@ async def find_upcoming_by_user_id(conn: DBConnection, user_id: str) -> list[dic
     return [dict(r) for r in records]
 
 
+async def count_completed_today_by_user_id(conn: DBConnection, user_id: str, timezone: str) -> int:
+    """指定タイムゾーンの暦日で「今日復習を完了した」スケジュール件数を返す。
+    ダッシュボードの当日進捗バーで「完了 / 当日総数」を出すために使う。
+    timestamptz をユーザーのタイムゾーンに変換して暦日比較するため、サーバーの稼働 TZ に依存しない。
+    """
+    query = """--sql
+      SELECT COUNT(*)
+      FROM review_schedules rs
+      JOIN notes n ON n.id = rs.note_id
+      WHERE n.user_id = $1
+        AND rs.last_reviewed_at IS NOT NULL
+        AND (rs.last_reviewed_at AT TIME ZONE $2)::date = (NOW() AT TIME ZONE $2)::date
+    """
+
+    count = await conn.fetchval(query, user_id, timezone)
+    return int(count or 0)
+
+
 async def mark_completed(
     conn: DBConnection, schedule_id: UUID, user_id: str, next_review_at: datetime
 ) -> dict[str, Any] | None:

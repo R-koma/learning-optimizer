@@ -3,8 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from api.dependencies import DB, CurrentUser
+from core.config import REVIEW_TIMEZONE
 from repositories import review_schedule_repository
 from schemas.review_schedule import (
+    PendingReviewListResponse,
     ReviewScheduleListResponse,
     ReviewScheduleResponse,
     ReviewScheduleUpdate,
@@ -15,10 +17,16 @@ from services.review_scheduler import calculate_next_review
 router = APIRouter(prefix="/api/review-schedules", tags=["Review Schedules"])
 
 
-@router.get("", response_model=ReviewScheduleListResponse)
-async def list_pending_reviews(current_user_id: CurrentUser, db: DB) -> ReviewScheduleListResponse:
+@router.get("", response_model=PendingReviewListResponse)
+async def list_pending_reviews(current_user_id: CurrentUser, db: DB) -> PendingReviewListResponse:
     records = await review_schedule_repository.find_pending_by_user_id(db, current_user_id)
-    return ReviewScheduleListResponse(review_schedules=[ReviewScheduleWithNoteResponse(**r) for r in records])
+    completed_today = await review_schedule_repository.count_completed_today_by_user_id(
+        db, current_user_id, REVIEW_TIMEZONE
+    )
+    return PendingReviewListResponse(
+        review_schedules=[ReviewScheduleWithNoteResponse(**r) for r in records],
+        completed_today=completed_today,
+    )
 
 
 @router.get("/upcoming", response_model=ReviewScheduleListResponse)

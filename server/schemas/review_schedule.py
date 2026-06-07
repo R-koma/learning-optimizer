@@ -26,5 +26,11 @@ class ReviewScheduleListResponse(BaseModel):
     review_schedules: list[ReviewScheduleWithNoteResponse]
 
 
+class PendingReviewListResponse(ReviewScheduleListResponse):
+    # 当日（REVIEW_TIMEZONE 基準）に復習を完了した件数。進捗バーの分子に使う。
+    # 完了済みは next_review_at が未来に進み review_schedules からは消えるため、別途数えて返す。
+    completed_today: int
+
+
 class ReviewScheduleUpdate(BaseModel):
     pass

@@ -31,24 +31,38 @@ class TestListPendingReviews:
         records = [_make_schedule_record(), _make_schedule_record()]
         mock_db = MagicMock()
 
-        with patch(
-            "api.routes.review_schedule.review_schedule_repository.find_pending_by_user_id",
-            new=AsyncMock(return_value=records),
+        with (
+            patch(
+                "api.routes.review_schedule.review_schedule_repository.find_pending_by_user_id",
+                new=AsyncMock(return_value=records),
+            ),
+            patch(
+                "api.routes.review_schedule.review_schedule_repository.count_completed_today_by_user_id",
+                new=AsyncMock(return_value=3),
+            ),
         ):
             result = await list_pending_reviews(current_user_id=_USER_ID, db=mock_db)
 
         assert len(result.review_schedules) == 2
+        assert result.completed_today == 3
 
     async def test_returns_empty_list_when_no_pending(self) -> None:
         mock_db = MagicMock()
 
-        with patch(
-            "api.routes.review_schedule.review_schedule_repository.find_pending_by_user_id",
-            new=AsyncMock(return_value=[]),
+        with (
+            patch(
+                "api.routes.review_schedule.review_schedule_repository.find_pending_by_user_id",
+                new=AsyncMock(return_value=[]),
+            ),
+            patch(
+                "api.routes.review_schedule.review_schedule_repository.count_completed_today_by_user_id",
+                new=AsyncMock(return_value=0),
+            ),
         ):
             result = await list_pending_reviews(current_user_id=_USER_ID, db=mock_db)
 
         assert result.review_schedules == []
+        assert result.completed_today == 0
 
 
 class TestListUpcomingReviews:

@@ -100,11 +100,11 @@ export default function DashBoard() {
   if (isPending || isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-6">
+        <div className="mb-6 flex items-start justify-between">
           <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-9 w-44 rounded-lg" />
         </div>
-        <Skeleton className="mb-8 h-24 w-full rounded-xl" />
-        <Skeleton className="mb-8 h-11 w-44 rounded-lg" />
+        <Skeleton className="mb-6 h-24 w-full rounded-xl" />
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="rounded-xl border bg-card p-5 space-y-3">
@@ -144,7 +144,18 @@ export default function DashBoard() {
               : "復習待ちのノートはありません"}
           </p>
         </div>
-        <p className="mt-1 shrink-0 text-sm text-muted-foreground">{today}</p>
+        <div className="flex shrink-0 flex-col items-end gap-3">
+          <p className="text-sm text-muted-foreground">{today}</p>
+          <Button
+            asChild
+            className="gap-2 bg-blue-600 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/30 [a]:hover:bg-blue-500 active:translate-y-0 active:shadow-sm"
+          >
+            <Link href="/learn">
+              <PlusIcon className="h-5 w-5 transition-transform duration-200 group-hover/button:rotate-90" />
+              新規学習
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {totalCount > 0 && (
@@ -170,15 +181,6 @@ export default function DashBoard() {
           )}
         </div>
       )}
-
-      <div className="mb-8">
-        <Button asChild size="lg" className="gap-2">
-          <Link href="/learn">
-            <PlusIcon className="h-5 w-5" />
-            新しい学習を始める
-          </Link>
-        </Button>
-      </div>
 
       <section>
         <div className="mb-4 flex items-center gap-2">

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import HTTPException
 
-from api.routes.review_schedule import complete_review, list_pending_reviews
+from api.routes.review_schedule import complete_review, list_pending_reviews, list_upcoming_reviews
 from schemas.review_schedule import ReviewScheduleUpdate
 
 _USER_ID = "user-123"
@@ -47,6 +47,31 @@ class TestListPendingReviews:
             new=AsyncMock(return_value=[]),
         ):
             result = await list_pending_reviews(current_user_id=_USER_ID, db=mock_db)
+
+        assert result.review_schedules == []
+
+
+class TestListUpcomingReviews:
+    async def test_returns_upcoming_list(self) -> None:
+        records = [_make_schedule_record(), _make_schedule_record()]
+        mock_db = MagicMock()
+
+        with patch(
+            "api.routes.review_schedule.review_schedule_repository.find_upcoming_by_user_id",
+            new=AsyncMock(return_value=records),
+        ):
+            result = await list_upcoming_reviews(current_user_id=_USER_ID, db=mock_db)
+
+        assert len(result.review_schedules) == 2
+
+    async def test_returns_empty_list_when_no_upcoming(self) -> None:
+        mock_db = MagicMock()
+
+        with patch(
+            "api.routes.review_schedule.review_schedule_repository.find_upcoming_by_user_id",
+            new=AsyncMock(return_value=[]),
+        ):
+            result = await list_upcoming_reviews(current_user_id=_USER_ID, db=mock_db)
 
         assert result.review_schedules == []
 

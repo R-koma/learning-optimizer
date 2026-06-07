@@ -22,6 +22,26 @@ async def find_pending_by_user_id(conn: DBConnection, user_id: str) -> list[dict
     return [dict(r) for r in records]
 
 
+async def find_upcoming_by_user_id(conn: DBConnection, user_id: str) -> list[dict[str, Any]]:
+    """next_review_at が未来のスケジュール（＝今後の復習予定）をトピック付きで返す。
+    カレンダーで未来日に復習予定を表示するために使う。期限到来済みは find_pending が担うため除外する。
+    status はフィルタしない（復習完了後も次回予定が未来に再設定されるため、それも予定として含める）。
+    """
+    query = """--sql
+      SELECT rs.id, rs.note_id, rs.review_count,
+      rs.next_review_at, rs.last_reviewed_at, rs.status, rs.created_at, rs.updated_at, n.topic AS note_topic,
+      n.summary AS note_summary
+      FROM review_schedules rs
+      JOIN notes n ON n.id = rs.note_id
+      WHERE n.user_id = $1
+        AND rs.next_review_at > NOW()
+      ORDER BY rs.next_review_at ASC
+    """
+
+    records = await conn.fetch(query, user_id)
+    return [dict(r) for r in records]
+
+
 async def mark_completed(
     conn: DBConnection, schedule_id: UUID, user_id: str, next_review_at: datetime
 ) -> dict[str, Any] | None:

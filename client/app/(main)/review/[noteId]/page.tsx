@@ -10,6 +10,7 @@ import type { PreparedImage } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatInput } from "@/components/chat/chat-input";
+import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Markdown } from "@/components/ui/markdown";
 import {
@@ -254,6 +255,10 @@ export default function ReviewPage({
               </div>
             );
           })}
+
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            <TypingIndicator />
+          )}
 
           {isSessionEnded && !feedback && !isGeneratingNote && (
             <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">

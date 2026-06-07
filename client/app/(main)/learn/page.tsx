@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatInput } from "@/components/chat/chat-input";
 import { MessageCopyButton } from "@/components/chat/message-copy-button";
+import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { Markdown } from "@/components/ui/markdown";
 import { closeOpenCodeFence } from "@/lib/chat-markdown";
 import type { LucideIcon } from "lucide-react";
@@ -260,23 +261,52 @@ export default function LearnPage() {
   };
 
   if (isBootstrapping) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto px-6">
-          <div className="mx-auto max-w-3xl space-y-4 py-6">
-            <div className="flex justify-start">
-              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-16 w-full max-w-sm rounded-2xl" />
-            </div>
-            <div className="flex justify-start">
-              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+    // 再開時はチャット履歴が、新規時は学習フォームが描画されるため骨格を出し分ける
+    if (sessionParam) {
+      return (
+        <div className="flex h-full flex-col">
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="mx-auto max-w-3xl space-y-4 py-6">
+              <div className="flex justify-start">
+                <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-16 w-full max-w-sm rounded-2xl" />
+              </div>
+              <div className="flex justify-start">
+                <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+              </div>
             </div>
           </div>
+          <div className="border-t p-4">
+            <Skeleton className="h-12 w-full rounded-xl" />
+          </div>
         </div>
-        <div className="border-t p-4">
-          <Skeleton className="h-12 w-full rounded-xl" />
+      );
+    }
+
+    return (
+      <div className="flex h-full items-center justify-center overflow-y-auto p-4">
+        <div className="my-4 w-full max-w-lg">
+          <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/8 via-background to-background p-8 shadow-sm">
+            <div className="mb-6 border-l-4 border-blue-500/40 pl-4">
+              <Skeleton className="mb-2 h-3 w-24" />
+              <Skeleton className="h-6 w-28" />
+            </div>
+            <div className="flex flex-col gap-6">
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <div className="grid gap-3">
+                <Skeleton className="h-4 w-28" />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                  ))}
+                </div>
+              </div>
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-2 h-12 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -552,6 +582,10 @@ export default function LearnPage() {
               </div>
             );
           })}
+
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            <TypingIndicator />
+          )}
 
           {isSessionEnded && !generatedNote && !isGeneratingNote && (
             <div className="mx-auto max-w-md rounded-lg border p-4 text-center">

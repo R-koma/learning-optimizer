@@ -4,7 +4,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 from graph.multimodal import load_image_blocks, text_block
 from graph.nodes._dialogue import invoke_dialogue_llm
-from graph.prompts import REVIEW_SYSTEM_PROMPT
+from graph.prompts import REVIEW_SYSTEM_PROMPT, build_focus_section
 from graph.state import LearningState
 from storage import get_storage
 
@@ -22,6 +22,7 @@ async def review_dialogue(state: LearningState) -> dict[str, Any]:
         topic=state["topic"],
         content=state.get("note_content", ""),
         summary=state.get("note_summary", ""),
+        focus_section=build_focus_section(state.get("prior_improvements")),
     )
     history: list[BaseMessage] = list(state["messages"])
     # 最新ユーザーメッセージに画像があれば、その content をテキスト＋画像ブロックへ差し替えて渡す。

@@ -32,7 +32,7 @@ from graph.prompts.question import (
     build_question_prompt,
     classify_user_intent,
 )
-from graph.prompts.review import REVIEW_SYSTEM_PROMPT
+from graph.prompts.review import REVIEW_SYSTEM_PROMPT, build_focus_section
 
 __all__ = [
     "ANALYZE_RESPONSE_PROMPT",
@@ -54,6 +54,7 @@ __all__ = [
     "UNSPECIFIED_PLACEHOLDER",
     "UPDATE_NOTE_PROMPT",
     "UserIntent",
+    "build_focus_section",
     "build_question_prompt",
     "classify_user_intent",
     "format_learning_plan_fields",

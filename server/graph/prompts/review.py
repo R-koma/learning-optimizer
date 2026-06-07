@@ -21,7 +21,7 @@ REVIEW_SYSTEM_PROMPT = """\
 3. 間違いの訂正: ユーザーの回答が {content} の内容と明らかに矛盾する場合、すぐに否定せず、
    {content} に基づいた「ヒント」を提示して軌道修正を促す
 4. 承認と励まし: ユーザーが的確に回答した場合は、まずその理解を端的に褒めてから次の質問に移る
-
+{focus_section}
 ## 「わかりません」への対応
 ユーザーが「忘れた」「わからない」「思い出せない」等と回答した場合:
 - 第一声は必ず安心ワードで始める（「大丈夫ですよ。」「焦らなくて大丈夫です。」など）
@@ -44,3 +44,18 @@ LEARNING_END
 最初の応答は、以下のセリフから始めてください。
 「{topic}について、覚えていることや、特に印象に残っている概念を教えてください！」
 """
+
+
+REVIEW_FOCUS_SECTION = """
+## 重点確認項目（前回の改善点）
+以下は前回の復習でつまずいた点です。対話の序盤は全体の記憶確認に充て、
+後半でこれらを優先的に深掘りしてください。弱点の指摘に偏らず、励まし基調を保つこと:
+{prior_improvements}
+"""
+
+
+def build_focus_section(prior_improvements: str | None) -> str:
+    """前回の改善点があれば重点確認セクションを組み立てる。無ければ空文字列。"""
+    if not prior_improvements or not prior_improvements.strip():
+        return ""
+    return REVIEW_FOCUS_SECTION.format(prior_improvements=prior_improvements.strip())

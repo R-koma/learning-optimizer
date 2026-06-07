@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
+import { ChevronRightIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { noteStatusBadge } from "@/lib/badge";
 import { Button } from "@/components/ui/button";
@@ -40,13 +40,13 @@ export function NoteHeader({
 
   return (
     <header className="mb-12">
-      <Link
-        href="/notes"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        学習履歴に戻る
-      </Link>
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Link href="/notes" className="transition-colors hover:text-foreground">
+          ノート一覧
+        </Link>
+        <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate text-foreground">{topic}</span>
+      </nav>
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0 flex-1">
           {!isEditing && (

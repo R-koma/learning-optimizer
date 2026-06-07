@@ -28,7 +28,6 @@ import {
   FlagIcon,
   PlusIcon,
   RocketIcon,
-  SparklesIcon,
   XIcon,
 } from "lucide-react";
 
@@ -288,12 +287,12 @@ export default function LearnPage() {
       <div className="flex h-full items-center justify-center overflow-y-auto p-4">
         <div className="w-full max-w-lg my-4 space-y-4">
           {resumableSession && (
-            <div className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-liner-to-br from-primary/8 via-background to-background p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
-              <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+            <div className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/8 via-background to-background p-5 shadow-sm transition-all hover:border-blue-500/40 hover:shadow-md">
+              <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" />
 
               <div className="relative flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/15 text-blue-500">
                     <HistoryIcon className="h-3.5 w-3.5" />
                   </div>
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -332,25 +331,28 @@ export default function LearnPage() {
                 <p className="line-clamp-2 text-lg font-semibold leading-snug text-foreground">
                   {resumableSession.topic ?? "（タイトル未設定）"}
                 </p>
-                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-transform group-hover/btn:translate-x-0.5">
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-transform group-hover/btn:translate-x-0.5">
                   続きから再開
                   <ArrowRightIcon className="h-3.5 w-3.5" />
                 </span>
               </button>
             </div>
           )}
-          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/8 via-background to-background p-8 shadow-sm">
-            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl" />
+          <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/8 via-background to-background p-8 shadow-sm">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl" />
 
             <div className="relative">
-              <div className="mb-6 flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary/70 text-primary-foreground shadow-sm shadow-primary/20">
-                  <SparklesIcon className="h-4 w-4" />
-                </div>
+              <div className="mb-6 border-l-4 border-blue-500 pl-4">
+                <p className="mb-1 text-xs font-semibold tracking-widest text-blue-500">
+                  NEW LEARNING
+                </p>
                 <h1 className="text-xl font-bold tracking-tight text-foreground">
                   新規学習
                 </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  学びたいトピックを入力して対話で深めましょう
+                </p>
               </div>
 
               <form
@@ -367,7 +369,7 @@ export default function LearnPage() {
                       placeholder="学びたいトピックを入力"
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
-                      className="h-12 rounded-xl border-input/60 bg-background/60 text-base shadow-sm backdrop-blur transition-colors focus-visible:border-primary/60"
+                      className="h-12 rounded-xl border-input/60 bg-background/60 text-base shadow-sm backdrop-blur transition-colors focus-visible:border-blue-500/60"
                       required
                     />
                   </div>
@@ -392,27 +394,29 @@ export default function LearnPage() {
                             onClick={() =>
                               setTargetDepth(isSelected ? null : option.value)
                             }
-                            className={`group/opt relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 text-left transition-all focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none ${
+                            className={`group/opt relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:outline-none ${
                               isSelected
-                                ? "border-primary/60 bg-primary/10 shadow-sm ring-1 ring-primary/15"
-                                : "border-input/60 bg-background/45 hover:border-primary/30 hover:bg-background/80 hover:shadow-sm"
+                                ? "border-blue-500/60 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/15"
+                                : "border-input/60 bg-background/45 hover:-translate-y-0.5 hover:border-blue-500/30 hover:bg-background/80 hover:shadow-md"
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              <Icon
-                                className={`h-3.5 w-3.5 shrink-0 transition-colors ${
+                              <span
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
                                   isSelected
-                                    ? "text-primary"
-                                    : "text-muted-foreground group-hover/opt:text-primary"
+                                    ? "bg-blue-500/15 text-blue-500"
+                                    : "bg-muted text-muted-foreground group-hover/opt:bg-blue-500/10 group-hover/opt:text-blue-500"
                                 }`}
-                              />
+                              >
+                                <Icon className="h-3.5 w-3.5" />
+                              </span>
                               <span className="flex-1 text-sm font-semibold tracking-tight text-foreground">
                                 {option.label}
                               </span>
                               <span
                                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
                                   isSelected
-                                    ? "border-primary bg-primary text-primary-foreground"
+                                    ? "border-blue-500 bg-blue-500 text-white"
                                     : "border-input/80 bg-background/80"
                                 }`}
                               >
@@ -475,7 +479,7 @@ export default function LearnPage() {
                   <button
                     type="submit"
                     disabled={!topic.trim()}
-                    className="group/cta mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-medium text-primary-foreground shadow-sm transition-all cursor-pointer hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    className="group/cta mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-base font-medium text-white shadow-sm transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/30 active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-blue-600 disabled:hover:shadow-sm"
                   >
                     学習を開始する
                     <ArrowRightIcon className="h-4 w-4 transition-transform group-hover/cta:translate-x-0.5" />

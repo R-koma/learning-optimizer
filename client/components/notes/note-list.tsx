@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { noteStatusBadge } from "@/lib/badge";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -90,10 +91,13 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
                 {note.topic}
               </span>
               <Badge
-                variant={note.status === "active" ? "default" : "secondary"}
-                className="shrink-0 "
+                variant={noteStatusBadge(note.status).variant}
+                className="shrink-0 gap-1"
               >
-                {note.status === "active" ? "進行中" : "完了"}
+                {note.status === "active" && (
+                  <span className="size-1.5 rounded-full bg-current animate-pulse" />
+                )}
+                {noteStatusBadge(note.status).label}
               </Badge>
             </div>
             {note.summary && (

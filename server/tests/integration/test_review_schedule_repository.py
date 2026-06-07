@@ -114,6 +114,36 @@ async def test_find_pending_returns_note_topic_and_summary(
 
 
 # -----------------------------------------------------------
+# find_upcoming_by_user_id - 未来予定（カレンダー用）
+# -----------------------------------------------------------
+
+
+async def test_find_upcoming_includes_future_schedule(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    """next_review_at が未来のスケジュールは一覧に含まれる（NOW() は DB 時刻のため遠い未来を使用）"""
+    note = await _create_test_note(db_conn, test_user["id"])
+    future_review = datetime(2099, 12, 31, 0, 0, 0, tzinfo=UTC)
+
+    await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=future_review)
+
+    results = await review_schedule_repository.find_upcoming_by_user_id(db_conn, user_id=test_user["id"])
+    matched = [r for r in results if r["note_id"] == note["id"]]
+    assert len(matched) == 1
+    assert matched[0]["note_topic"] == "テストトピック"
+
+
+async def test_find_upcoming_excludes_past_schedule(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
+    """next_review_at が過去のスケジュールは含まれない（期限到来済みは find_pending が担う）"""
+    note = await _create_test_note(db_conn, test_user["id"])
+    past_review = datetime(2000, 1, 1, 0, 0, 0, tzinfo=UTC)
+
+    await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=past_review)
+
+    results = await review_schedule_repository.find_upcoming_by_user_id(db_conn, user_id=test_user["id"])
+    note_ids = [r["note_id"] for r in results]
+    assert note["id"] not in note_ids
+
+
+# -----------------------------------------------------------
 # mark_completed
 # -----------------------------------------------------------
 

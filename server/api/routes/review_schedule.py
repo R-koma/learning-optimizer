@@ -21,6 +21,12 @@ async def list_pending_reviews(current_user_id: CurrentUser, db: DB) -> ReviewSc
     return ReviewScheduleListResponse(review_schedules=[ReviewScheduleWithNoteResponse(**r) for r in records])
 
 
+@router.get("/upcoming", response_model=ReviewScheduleListResponse)
+async def list_upcoming_reviews(current_user_id: CurrentUser, db: DB) -> ReviewScheduleListResponse:
+    records = await review_schedule_repository.find_upcoming_by_user_id(db, current_user_id)
+    return ReviewScheduleListResponse(review_schedules=[ReviewScheduleWithNoteResponse(**r) for r in records])
+
+
 @router.patch("/{schedule_id}", response_model=ReviewScheduleResponse)
 async def complete_review(
     schedule_id: UUID, update_data: ReviewScheduleUpdate, current_user_id: CurrentUser, db: DB

@@ -19,6 +19,7 @@ class LearningState(TypedDict):
     session_type: str
     note_content: NotRequired[str]
     note_summary: NotRequired[str]
+    prior_improvements: NotRequired[str]
     learning_goal: NotRequired[str]
     target_depth: NotRequired[TargetDepth]
     focus_aspects: NotRequired[list[str]]

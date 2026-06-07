@@ -72,3 +72,24 @@ class TestReviewDialogue:
             result = await review_dialogue(_make_state())
 
         assert result["should_generate_note"] is False
+
+    async def test_prior_improvements_injected_into_prompt(self) -> None:
+        mock_llm = AsyncMock(return_value=AIMessage(content="続けましょう"))
+        with patch("graph.nodes.review_dialogue.invoke_dialogue_llm", mock_llm):
+            from graph.nodes.review_dialogue import review_dialogue
+
+            await review_dialogue(_make_state(prior_improvements="計算量の見積もりが曖昧でした"))
+
+        _state, messages, _node_name = mock_llm.call_args.args
+        assert "重点確認項目" in messages[0].content
+        assert "計算量の見積もりが曖昧でした" in messages[0].content
+
+    async def test_no_prior_improvements_omits_focus_section(self) -> None:
+        mock_llm = AsyncMock(return_value=AIMessage(content="続けましょう"))
+        with patch("graph.nodes.review_dialogue.invoke_dialogue_llm", mock_llm):
+            from graph.nodes.review_dialogue import review_dialogue
+
+            await review_dialogue(_make_state())
+
+        _state, messages, _node_name = mock_llm.call_args.args
+        assert "重点確認項目" not in messages[0].content

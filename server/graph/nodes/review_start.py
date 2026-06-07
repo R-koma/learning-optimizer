@@ -3,7 +3,7 @@ from typing import Any
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from graph.nodes._dialogue import invoke_dialogue_llm
-from graph.prompts import REVIEW_SYSTEM_PROMPT
+from graph.prompts import REVIEW_SYSTEM_PROMPT, build_focus_section
 from graph.state import LearningState
 
 
@@ -13,6 +13,7 @@ async def review_start(state: LearningState) -> dict[str, Any]:
         topic=state["topic"],
         content=state["note_content"],
         summary=state["note_summary"],
+        focus_section=build_focus_section(state.get("prior_improvements")),
     )
 
     user_message = HumanMessage(content=state["topic"])

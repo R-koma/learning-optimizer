@@ -209,9 +209,10 @@ async def _handle_start_learning(msg: StartLearningMessage, deps: Deps) -> Sessi
 async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionContext | None:
     async with deps.pool.acquire() as conn:
         note = await note_repository.find_by_id(conn, msg.note_id, deps.user_id)
-    if not note:
-        await deps.websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
-        return None
+        if not note:
+            await deps.websocket.send_text(ErrorMessage(detail="Note not found").model_dump_json())
+            return None
+        feedbacks = await feedback_repository.find_by_note_id(conn, msg.note_id, deps.user_id)
 
     initial_state: dict[str, Any] = {
         "user_id": deps.user_id,
@@ -223,6 +224,9 @@ async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionCo
         "should_generate_note": False,
         "session_type": "review",
     }
+    # 前回フィードバックの改善点を復習プロンプトの重点項目に注入する（初回・空は省略）。
+    if feedbacks and feedbacks[-1]["improvements"].strip():
+        initial_state["prior_improvements"] = feedbacks[-1]["improvements"]
     return await _start_session(
         session_type="review",
         deps=deps,

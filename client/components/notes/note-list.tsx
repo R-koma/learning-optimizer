@@ -29,6 +29,10 @@ import {
   CalendarIcon,
   EllipsisIcon,
   Trash2Icon,
+  LayersIcon,
+  CheckCircle2Icon,
+  ActivityIcon,
+  TrendingUpIcon,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
 import { groupNotesByCategory } from "@/lib/note-grouping";
@@ -144,8 +148,60 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
     </div>
   );
 
+  const totalNotes = notes.length;
+  const activeNotes = notes.filter((n) => n.status === "active").length;
+  const archivedNotes = notes.filter((n) => n.status === "archived").length;
+  const totalReviews = notes.reduce((sum, n) => sum + n.review_count, 0);
+
+  const stats = [
+    {
+      label: "ノート総数",
+      value: totalNotes,
+      icon: LayersIcon,
+      colorClass: "text-blue-500",
+      bgClass: "bg-blue-500/10",
+    },
+    {
+      label: "進行中",
+      value: activeNotes,
+      icon: ActivityIcon,
+      colorClass: "text-orange-500",
+      bgClass: "bg-orange-500/10",
+    },
+    {
+      label: "完了済み",
+      value: archivedNotes,
+      icon: CheckCircle2Icon,
+      colorClass: "text-emerald-500",
+      bgClass: "bg-emerald-500/10",
+    },
+    {
+      label: "累計復習回数",
+      value: totalReviews,
+      icon: TrendingUpIcon,
+      colorClass: "text-purple-500",
+      bgClass: "bg-purple-500/10",
+    },
+  ];
+
   return (
     <div>
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`rounded-md p-1.5 ${stat.bgClass}`}>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.colorClass}`} />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {stat.label}
+              </span>
+            </div>
+            <p className="text-2xl font-bold">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="mb-6 inline-flex rounded-lg border bg-muted p-1">
         {FILTERS.map((f) => (
           <button

@@ -10,13 +10,16 @@ async def create(
     user_id: str,
     session_type: str,
     graph_version: int,
+    note_id: UUID | None = None,
 ) -> dict[str, Any]:
     query = """--sql
-    INSERT INTO dialogue_sessions (id, user_id, session_type, status, graph_version)
-    VALUES ($1, $2, $3, 'in_progress', $4)
+    INSERT INTO dialogue_sessions (id, user_id, session_type, status, graph_version, note_id)
+    VALUES ($1, $2, $3, 'in_progress', $4, $5)
     RETURNING *
     """
-    record = await conn.fetchrow(query, str(session_id), user_id, session_type, graph_version)
+    record = await conn.fetchrow(
+        query, str(session_id), user_id, session_type, graph_version, str(note_id) if note_id else None
+    )
     assert record is not None  # INSERT ... RETURNING は必ず1行返す
     return dict(record)
 

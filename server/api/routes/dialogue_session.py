@@ -39,6 +39,7 @@ async def get_active_session(
         status=session["status"],
         started_at=session["started_at"],
         topic=session.get("topic"),
+        note_id=session.get("note_id"),
     )
 
 

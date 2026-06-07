@@ -15,7 +15,7 @@ export interface ChatImage {
   url: string; // 送信直後は data URL、履歴復元時は配信エンドポイントの object URL
 }
 
-interface ChatMessage {
+export interface ChatMessage {
   role: MessageRole;
   content: string;
   images?: ChatImage[];

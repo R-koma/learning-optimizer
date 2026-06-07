@@ -2,10 +2,11 @@
 
 import { useRef, useEffect, useState, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { useNavbarSlot } from "@/context/navbar-slot-context";
 import { fetchAPI } from "@/lib/api";
+import { loadResumableMessages, isResumableStatus } from "@/lib/session";
 import type { PreparedImage } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,11 +36,16 @@ export default function ReviewPage({
   params: Promise<{ noteId: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
   const { noteId } = use(params);
   const [note, setNote] = useState<Note | null>(null);
   const [input, setInput] = useState("");
   const [isReviewStarted, setIsReviewStarted] = useState(false);
+  // session 付きで開いた場合は再開フローに入るため、開始画面のチラつきを避けて最初から再開中にする。
+  const [isBootstrapping, setIsBootstrapping] = useState(Boolean(sessionParam));
   const [loadError, setLoadError] = useState<string | null>(null);
+  const restoredSessionRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { setNavbarCenter } = useNavbarSlot();
 
@@ -52,6 +58,7 @@ export default function ReviewPage({
     error,
     editingMessage,
     startReview,
+    resumeSession,
     sendMessage,
     endSession,
     cancelLastMessage,
@@ -63,6 +70,31 @@ export default function ReviewPage({
       .then(setNote)
       .catch((e) => setLoadError(e.message));
   }, [noteId]);
+
+  useEffect(() => {
+    if (!sessionParam) return;
+    if (restoredSessionRef.current === sessionParam) return;
+    restoredSessionRef.current = sessionParam;
+    setIsBootstrapping(true);
+
+    (async () => {
+      try {
+        const { sessionType, status, messages } =
+          await loadResumableMessages(sessionParam);
+        if (sessionType !== "review" || !isResumableStatus(status)) {
+          router.replace(`/review/${noteId}`);
+          return;
+        }
+        // 先頭はノートのトピック。ヘッダに表示済みのためチャットからは除外する（learning と対称）。
+        resumeSession(sessionParam, messages.slice(1));
+        setIsReviewStarted(true);
+      } catch {
+        router.replace(`/review/${noteId}`);
+      } finally {
+        setIsBootstrapping(false);
+      }
+    })();
+  }, [sessionParam, noteId, resumeSession, router]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -129,6 +161,29 @@ export default function ReviewPage({
     return (
       <div className="flex h-full items-center justify-center">
         <p className="text-sm text-destructive">{loadError}</p>
+      </div>
+    );
+  }
+
+  if (isBootstrapping) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="mx-auto max-w-3xl space-y-4 py-6">
+            <div className="flex justify-start">
+              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+            </div>
+            <div className="flex justify-end">
+              <Skeleton className="h-16 w-full max-w-sm rounded-2xl" />
+            </div>
+            <div className="flex justify-start">
+              <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+            </div>
+          </div>
+        </div>
+        <div className="border-t p-4">
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
       </div>
     );
   }

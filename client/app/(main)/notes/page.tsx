@@ -28,11 +28,6 @@ export default async function NotesPage() {
           HISTORY
         </p>
         <h1 className="text-2xl font-bold">学習履歴</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {notes.length > 0
-            ? `${notes.length} 件のノートが保存されています`
-            : "まだノートがありません"}
-        </p>
       </div>
       <NoteList notes={notes} />
     </div>

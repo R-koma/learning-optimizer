@@ -20,9 +20,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BookOpenIcon,
   RotateCcwIcon,
@@ -33,9 +39,10 @@ import {
   CheckCircle2Icon,
   ActivityIcon,
   TrendingUpIcon,
+  TagIcon,
 } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
-import { groupNotesByCategory } from "@/lib/note-grouping";
+import { getCategoryOptions, UNCATEGORIZED_LABEL } from "@/lib/note-grouping";
 
 interface NoteResponse {
   id: string;
@@ -62,15 +69,26 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "active", label: "進行中" },
 ];
 
+const ALL_CATEGORIES = "all";
+
 export function NoteList({ notes }: { notes: NoteResponse[] }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
+  const [category, setCategory] = useState<string>(ALL_CATEGORIES);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  const filteredNotes =
-    filter === "all" ? notes : notes.filter((note) => note.status === filter);
-  const groupedNotes = groupNotesByCategory(filteredNotes);
+  // 選択肢は全ノート基準で算出し、ステータス絞り込みで候補が消えないようにする
+  const categoryOptions = getCategoryOptions(notes);
+
+  const visibleNotes = [...notes]
+    .filter((note) => filter === "all" || note.status === filter)
+    .filter((note) => {
+      if (category === ALL_CATEGORIES) return true;
+      const noteCategory = note.category?.trim() || UNCATEGORIZED_LABEL;
+      return noteCategory === category;
+    })
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -202,23 +220,42 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
         ))}
       </div>
 
-      <div className="mb-6 inline-flex rounded-lg border bg-muted p-1">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-150 cursor-pointer ${
-              filter === f.value
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex rounded-lg border bg-muted p-1">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-150 cursor-pointer ${
+                filter === f.value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {categoryOptions.length > 0 && (
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="h-9 w-44 cursor-pointer gap-2 rounded-lg border-transparent bg-muted px-4 font-medium shadow-none transition-colors hover:bg-muted/70 data-[state=open]:bg-muted/70">
+              <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value={ALL_CATEGORIES}>すべて</SelectItem>
+              {categoryOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {filteredNotes.length === 0 ? (
+      {visibleNotes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookOpenIcon className="mb-4 h-10 w-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
@@ -226,21 +263,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {groupedNotes.map((group) => (
-            <section key={group.category}>
-              <div className="mb-3 flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-muted-foreground">
-                  {group.category}
-                </h2>
-                <Badge variant="outline" className="shrink-0">
-                  {group.notes.length}
-                </Badge>
-              </div>
-              <div className="space-y-3">{group.notes.map(renderNoteCard)}</div>
-            </section>
-          ))}
-        </div>
+        <div className="space-y-3">{visibleNotes.map(renderNoteCard)}</div>
       )}
 
       <AlertDialog

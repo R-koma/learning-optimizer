@@ -1,41 +1,28 @@
 export const UNCATEGORIZED_LABEL = "未分類";
 
-export interface NoteCategoryGroup<T> {
-  category: string;
-  notes: T[];
-}
-
 /**
- * ノートをカテゴリー単位にまとめる。`category` 未設定（null / 空文字）のノートは
- * 「未分類」グループへ集約する。グループの並びは最初に各カテゴリーが現れた順を保ち、
- * 「未分類」は常に末尾に置く。各グループ内のノートの並びは入力順を維持する。
+ * ノートから重複なしのカテゴリー一覧を、最初に現れた順で返す。カテゴリー未設定
+ * （null / 空文字）のノートが 1 件でもあれば、末尾に「未分類」を付与する。
+ * カテゴリー Select の選択肢として使う。
  */
-export function groupNotesByCategory<T extends { category?: string | null }>(
-  notes: readonly T[],
-): NoteCategoryGroup<T>[] {
-  const groups = new Map<string, T[]>();
+export function getCategoryOptions(
+  notes: readonly { category?: string | null }[],
+): string[] {
+  const categories = new Set<string>();
+  let hasUncategorized = false;
 
   for (const note of notes) {
-    const category = note.category?.trim()
-      ? note.category.trim()
-      : UNCATEGORIZED_LABEL;
-    const existing = groups.get(category);
-    if (existing) {
-      existing.push(note);
+    const category = note.category?.trim();
+    if (category) {
+      categories.add(category);
     } else {
-      groups.set(category, [note]);
+      hasUncategorized = true;
     }
   }
 
-  const result: NoteCategoryGroup<T>[] = [];
-  for (const [category, groupedNotes] of groups) {
-    if (category === UNCATEGORIZED_LABEL) continue;
-    result.push({ category, notes: groupedNotes });
-  }
-
-  const uncategorized = groups.get(UNCATEGORIZED_LABEL);
-  if (uncategorized) {
-    result.push({ category: UNCATEGORIZED_LABEL, notes: uncategorized });
+  const result = [...categories];
+  if (hasUncategorized) {
+    result.push(UNCATEGORIZED_LABEL);
   }
 
   return result;

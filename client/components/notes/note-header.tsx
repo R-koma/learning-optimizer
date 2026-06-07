@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { noteStatusBadge } from "@/lib/badge";
 import { Button } from "@/components/ui/button";
 import { NoteShareButton } from "@/components/notes/note-share-button";
 import { NoteCategoryEditor } from "@/components/notes/note-category-editor";
@@ -23,11 +24,6 @@ function formatDate(dateString: string): string {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  active: "進行中",
-  archived: "完了",
-};
-
 export function NoteHeader({
   id,
   topic,
@@ -40,7 +36,7 @@ export function NoteHeader({
   content,
   isEditing = false,
 }: NoteHeaderProps) {
-  const statusLabel = STATUS_LABELS[status] ?? status;
+  const statusBadge = noteStatusBadge(status);
 
   return (
     <header className="mb-12">
@@ -59,8 +55,11 @@ export function NoteHeader({
             </h1>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <Badge variant="secondary" className="font-normal">
-              {statusLabel}
+            <Badge variant={statusBadge.variant} className="gap-1 font-normal">
+              {status === "active" && (
+                <span className="size-1.5 rounded-full bg-current animate-pulse" />
+              )}
+              {statusBadge.label}
             </Badge>
             <NoteCategoryEditor noteId={id} category={category} />
             <span>作成 {formatDate(createdAt)}</span>

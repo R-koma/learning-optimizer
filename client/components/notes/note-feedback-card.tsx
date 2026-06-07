@@ -1,5 +1,6 @@
 import { AlertCircleIcon, CheckCircleIcon, TrendingUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { understandingBadge } from "@/lib/badge";
 
 interface Feedback {
   id: string;
@@ -66,12 +67,13 @@ function FeedbackSection({ label, items, tone }: FeedbackSectionProps) {
 export function NoteFeedbackCard({ feedback }: { feedback: Feedback }) {
   const strengths = splitItems(feedback.strength);
   const improvements = splitItems(feedback.improvements);
+  const understanding = understandingBadge(feedback.understanding_level);
 
   return (
     <article className="rounded-lg border bg-card p-4">
-      <Badge variant="secondary" className="gap-1 font-normal">
+      <Badge variant={understanding.variant} className="gap-1 font-normal">
         <TrendingUpIcon className="h-3.5 w-3.5" />
-        理解度: {feedback.understanding_level}
+        理解度: {understanding.label}
       </Badge>
       <div className="mt-4 space-y-4">
         {strengths.length > 0 && (

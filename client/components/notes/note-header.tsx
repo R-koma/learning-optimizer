@@ -2,7 +2,13 @@ import Link from "next/link";
 import { ChevronRightIcon, PencilIcon, RotateCcwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { noteStatusBadge } from "@/lib/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { NoteShareButton } from "@/components/notes/note-share-button";
 import { NoteCategoryEditor } from "@/components/notes/note-category-editor";
 
@@ -71,11 +77,23 @@ export function NoteHeader({
         </div>
         {!isEditing && (
           <div className="flex flex-wrap gap-3 md:shrink-0">
-            <Button asChild variant="outline" size="lg" className="gap-2">
-              <Link href={`/notes/${id}?edit=1`} aria-label="編集">
-                <PencilIcon className="h-4 w-4" />
-              </Link>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={`/notes/${id}?edit=1`}
+                    aria-label="ノートを編集"
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "icon-lg",
+                    })}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>ノートを編集</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <NoteShareButton
               topic={topic}
               summary={summary}

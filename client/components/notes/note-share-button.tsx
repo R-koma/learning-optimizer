@@ -4,6 +4,12 @@ import { useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { buildNoteMarkdown } from "@/lib/note-markdown";
 
 interface NoteShareButtonProps {
@@ -33,22 +39,26 @@ export function NoteShareButton({
     }
   }
 
-  const label = "Markdown としてコピー";
-
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon-lg"
-      onClick={handleCopy}
-      title={label}
-      aria-label={label}
-    >
-      {copied ? (
-        <CheckIcon className="h-4 w-4" />
-      ) : (
-        <CopyIcon className="h-4 w-4" />
-      )}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-lg"
+            onClick={handleCopy}
+            aria-label="ノートをコピー"
+          >
+            {copied ? (
+              <CheckIcon className="h-4 w-4" />
+            ) : (
+              <CopyIcon className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>ノートをコピー</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

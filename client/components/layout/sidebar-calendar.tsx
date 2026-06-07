@@ -146,7 +146,37 @@ export function SidebarCalendar() {
   );
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return (
+      <div className="mx-auto w-full max-w-[280px]">
+        <div className="mb-3 flex items-center justify-between gap-1 px-1">
+          <Skeleton className="size-7 rounded-full" />
+          <div className="flex flex-col items-center gap-1">
+            <Skeleton className="h-4 w-24 rounded" />
+            <Skeleton className="h-0.5 w-24 rounded-full" />
+          </div>
+          <Skeleton className="size-7 rounded-full" />
+        </div>
+
+        <div className="grid grid-cols-7 pb-1.5">
+          {WEEKDAYS.map((w) => (
+            <Skeleton key={w} className="mx-auto h-3 w-4 rounded" />
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Skeleton className="h-6 w-full rounded-md" />
+          <Skeleton className="h-6 w-[90%] rounded-md" />
+          <Skeleton className="h-6 w-[95%] rounded-md" />
+          <Skeleton className="h-6 w-full rounded-md" />
+          <Skeleton className="h-6 w-[88%] rounded-md" />
+        </div>
+
+        <div className="mt-2 flex items-center justify-center gap-3">
+          <Skeleton className="h-3 w-10 rounded" />
+          <Skeleton className="h-3 w-14 rounded" />
+        </div>
+      </div>
+    );
   }
 
   return (

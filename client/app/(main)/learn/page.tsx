@@ -350,9 +350,6 @@ export default function LearnPage() {
                 <h1 className="text-xl font-bold tracking-tight text-foreground">
                   新規学習
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  学びたいトピックを入力して対話で深めましょう
-                </p>
               </div>
 
               <form
@@ -401,16 +398,14 @@ export default function LearnPage() {
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              <span
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                              <Icon
+                                className={`h-4 w-4 shrink-0 transition-colors ${
                                   isSelected
-                                    ? "bg-blue-500/15 text-blue-500"
-                                    : "bg-muted text-muted-foreground group-hover/opt:bg-blue-500/10 group-hover/opt:text-blue-500"
+                                    ? "text-blue-500"
+                                    : "text-muted-foreground group-hover/opt:text-blue-500"
                                 }`}
-                              >
-                                <Icon className="h-3.5 w-3.5" />
-                              </span>
-                              <span className="flex-1 text-sm font-semibold tracking-tight text-foreground">
+                              />
+                              <span className="flex-1 text-sm font-semibold tracking-tight whitespace-nowrap text-foreground">
                                 {option.label}
                               </span>
                               <span

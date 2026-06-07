@@ -138,11 +138,6 @@ export default function DashBoard() {
             DAILY REVIEW
           </p>
           <h1 className="text-2xl font-bold">今日の復習</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {pendingCount > 0
-              ? `${pendingCount} 件のノートが復習待ちです`
-              : "復習待ちのノートはありません"}
-          </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-3">
           <p className="text-sm text-muted-foreground">{today}</p>

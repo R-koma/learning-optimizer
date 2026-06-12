@@ -1,0 +1,8 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+preDeployCommand = "uv run alembic upgrade head"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

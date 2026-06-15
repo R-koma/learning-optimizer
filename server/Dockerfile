@@ -21,4 +21,6 @@ COPY --from=builder --chown=appuser:appuser /app /app
 EXPOSE 8000
 USER appuser
 ENV UV_CACHE_DIR=/tmp/uv-cache
-CMD ["sh", "-c", "uv run fastapi run main.py --host 0.0.0.0 --port ${PORT:-8000}"]
+# --no-sync: 起動時に uv が .venv を作り直さない（appuser はルート所有の /app に書けず権限エラーになるため）。
+# ビルド時に同期済みの .venv をそのまま使う。
+CMD ["sh", "-c", "uv run --no-sync fastapi run main.py --host 0.0.0.0 --port ${PORT:-8000}"]

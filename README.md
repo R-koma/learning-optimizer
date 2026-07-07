@@ -184,6 +184,16 @@ make dev-client  # フロントエンド（別ターミナル）
 
 > **マイグレーション順序の注意**: `alembic upgrade head` の前に `client/better-auth_migrations/*.sql` を適用する必要があります（外部キー制約）。`make setup` はこの順序を自動で行います。
 
+> **BetterAuth スキーマの再生成**: `client/better-auth_migrations/*.sql` は静的スナップショットで、`client/lib/auth.ts` のプラグイン構成とは自動同期しません。プラグインを追加・変更したとき（例: `jwt()` は `jwks` テーブルを要求）は `cd client && npx @better-auth/cli generate --config lib/auth.ts` で再生成してコミットしてください。漏れると新環境のセットアップ時に `relation "jwks"/"user" does not exist` で認証が失敗します。
+
+### トラブルシューティング
+
+| 症状 | 原因 | 対処 |
+|------|------|------|
+| `relation "user" does not exist`（`alembic upgrade head` 時） | BetterAuth の認証SQL未適用 | `client/better-auth_migrations/*.sql` を先に適用（`make setup` が自動実行） |
+| `relation "jwks" does not exist`（認証時） | 認証SQLが古く `jwks` を含まない | `cd client && npx @better-auth/cli migrate --config lib/auth.ts` で不足テーブルを追加し、SQLを再生成してコミット |
+| `role "..." does not exist`（psql/接続時） | `.env` の `POSTGRES_USER` と接続先ユーザーの不一致 | DBコンテナの実値（`docker compose exec db printenv POSTGRES_USER`）に合わせる |
+
 ---
 
 ## テスト

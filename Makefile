@@ -9,9 +9,11 @@ setup-server:
 	make dev-db
 	@echo "Waiting for DB to be ready..."
 	@sleep 2
-	@for f in client/better-auth_migrations/*.sql; do \
+	@user=$$(docker compose exec -T db printenv POSTGRES_USER); \
+	db=$$(docker compose exec -T db printenv POSTGRES_DB); \
+	for f in client/better-auth_migrations/*.sql; do \
 		echo "Applying $$f..."; \
-		docker compose exec -T db psql -U learning_optimizer -d learning_optimizer -f - < "$$f"; \
+		docker compose exec -T db psql -U "$$user" -d "$$db" -f - < "$$f"; \
 	done
 	cd server && uv run alembic upgrade head
 	cd server && uv run pre-commit install

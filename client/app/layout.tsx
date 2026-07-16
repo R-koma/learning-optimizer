@@ -15,7 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Learning Optimizer",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  ),
+  title: {
+    default: "Learning Optimizer",
+    template: "%s | Learning Optimizer",
+  },
   description: "AI学習アプリケーション - プロテジェ効果で学ぶ",
 };
 
@@ -25,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -1,5 +1,6 @@
 from langchain_core.messages import AIMessage, HumanMessage
 
+from graph.output_schemas import DialogueTurnAnalysis
 from graph.prompts.question import (
     MODE_DIALOGUE,
     MODE_HINT,
@@ -9,6 +10,7 @@ from graph.prompts.question import (
     build_question_prompt,
     classify_user_intent,
 )
+from graph.state import CoveredAspect
 
 _PLAN_FIELDS = {
     "learning_goal": "未指定",
@@ -71,7 +73,7 @@ class TestBuildQuestionPrompt:
     def test_dialogue_includes_dialogue_section(self) -> None:
         prompt, intent = self._build([HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")])
         assert intent == "dialogue"
-        assert "応答モード（この順で判断する）" in prompt
+        assert "応答モードの判定原則（最初にこれで分岐する）" in prompt
         assert MODE_DIALOGUE.splitlines()[0] in prompt
 
     def test_unknown_a_section(self) -> None:
@@ -115,3 +117,89 @@ class TestBuildQuestionPrompt:
         prompt, _ = self._build([HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")])
         assert "自分の言葉で説明できるレベル" in prompt
         assert "ReAct" in prompt
+
+
+_DIALOGUE_MESSAGES = [HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")]
+
+
+def _build_with(**kwargs: object) -> tuple[str, str]:
+    prompt, intent = build_question_prompt(
+        topic="ReAct",
+        recent_messages="ユーザー: ReAct は…",
+        plan_fields=_PLAN_FIELDS,
+        messages=_DIALOGUE_MESSAGES,
+        **kwargs,  # type: ignore[arg-type]
+    )
+    return prompt, intent
+
+
+class TestCoverageSection:
+    def test_covered_aspects_are_rendered(self) -> None:
+        covered: list[CoveredAspect] = [{"aspect": "推論と行動の交互実行", "reached_depth": "defined"}]
+        prompt, _ = _build_with(covered_aspects=covered)
+        assert "## カバー済み観点と到達度（過去ターン累積）" in prompt
+        assert "- 推論と行動の交互実行: defined（定義済み）" in prompt
+
+    def test_empty_coverage_omits_section(self) -> None:
+        prompt, _ = _build_with(covered_aspects=[])
+        assert "## カバー済み観点と到達度" not in prompt
+
+    def test_default_is_omitted(self) -> None:
+        prompt, _ = _build_with()
+        assert "## カバー済み観点と到達度" not in prompt
+
+
+class TestPredecidedMode:
+    def _analysis(self, mode: str, error_summary: str = "") -> DialogueTurnAnalysis:
+        return DialogueTurnAnalysis(
+            observations=[],
+            response_mode=mode,  # type: ignore[arg-type]
+            selected_aspect="ツール呼び出し",
+            error_summary=error_summary,
+        )
+
+    def test_no_analysis_falls_back_to_self_judged_dialogue(self) -> None:
+        prompt, intent = _build_with()
+        assert intent == "dialogue"
+        assert "応答モードの判定原則（最初にこれで分岐する）" in prompt
+
+    def test_expand_includes_mode_b_and_c_without_decision_principle(self) -> None:
+        prompt, _ = _build_with(turn_analysis=self._analysis("expand"))
+        assert "## 応答モード（事前分析による決定）" in prompt
+        assert "「展開（モード B）」で行うと決定済み" in prompt
+        assert "焦点を当てる観点: ツール呼び出し" in prompt
+        assert "### モード B: 展開" in prompt
+        assert "### モード C: 深掘り / 具体化" in prompt
+        assert "### モード A: 誤りの訂正" not in prompt
+        assert "応答モードの判定原則" not in prompt
+
+    def test_reinforce_includes_only_mode_a_with_error_summary(self) -> None:
+        analysis = self._analysis("reinforce", "レイテンシとレスポンスタイムを混同している")
+        prompt, _ = _build_with(turn_analysis=analysis)
+        assert "「誤りの訂正（モード A）」で行うと決定済み" in prompt
+        assert "検出された誤り: レイテンシとレスポンスタイムを混同している" in prompt
+        assert "### モード A: 誤りの訂正" in prompt
+        assert "### モード B: 展開" not in prompt
+
+    def test_deepen_includes_only_mode_c(self) -> None:
+        prompt, _ = _build_with(turn_analysis=self._analysis("deepen"))
+        assert "### モード C: 深掘り / 具体化" in prompt
+        assert "### モード A: 誤りの訂正" not in prompt
+        assert "### モード B: 展開" not in prompt
+
+    def test_shared_rules_always_present(self) -> None:
+        for mode in ("reinforce", "expand", "deepen"):
+            prompt, _ = _build_with(turn_analysis=self._analysis(mode))
+            assert "## 既出観点の取り扱い（最重要）" in prompt
+            assert "## メニュー化の禁止（最重要）" in prompt
+
+    def test_analysis_ignored_for_non_dialogue_intent(self) -> None:
+        prompt, intent = build_question_prompt(
+            topic="ReAct",
+            recent_messages="ユーザー: わかりません",
+            plan_fields=_PLAN_FIELDS,
+            messages=[HumanMessage(content="わかりません")],
+            turn_analysis=self._analysis("expand"),
+        )
+        assert intent == "unknown_a"
+        assert "事前分析による決定" not in prompt

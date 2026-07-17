@@ -33,6 +33,7 @@ from graph.prompts.question import (
     classify_user_intent,
 )
 from graph.prompts.review import REVIEW_SYSTEM_PROMPT, build_focus_section
+from graph.prompts.turn_analysis import TURN_ANALYSIS_PROMPT, build_turn_analysis_prompt
 
 __all__ = [
     "ANALYZE_RESPONSE_PROMPT",
@@ -51,11 +52,13 @@ __all__ = [
     "QUESTION_PROMPT_BASE",
     "REVIEW_SYSTEM_PROMPT",
     "TARGET_DEPTH_LABELS",
+    "TURN_ANALYSIS_PROMPT",
     "UNSPECIFIED_PLACEHOLDER",
     "UPDATE_NOTE_PROMPT",
     "UserIntent",
     "build_focus_section",
     "build_question_prompt",
+    "build_turn_analysis_prompt",
     "classify_user_intent",
     "format_learning_plan_fields",
     "inject_charter",

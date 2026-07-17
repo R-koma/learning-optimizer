@@ -41,6 +41,7 @@ async def measured_ainvoke(
     context: TraceContext,
     node_name: str,
     model_name: str = "gpt-4.1-nano",
+    metadata: dict[str, Any] | None = None,
 ) -> Any:
     """LLM (もしくは structured output runnable) の `ainvoke` を計測ラッパーで包む。
 
@@ -48,7 +49,7 @@ async def measured_ainvoke(
     - token usage が取れる場合のみ記録、取れない場合は None
     - 例外発生時は failed trace を保存して例外を再 raise（伝播は変えない）
     - DB 書き込み失敗は warning ログのみ
-    - メッセージ本文・プロンプト本文は metadata に保存しない
+    - メッセージ本文・プロンプト本文は metadata に保存しない（intent・応答モード等の判定結果のみ）
     """
     span_id = uuid.uuid4()
     started_at = datetime.now(UTC)
@@ -76,7 +77,7 @@ async def measured_ainvoke(
             dialogue_turn_count=context.dialogue_turn_count,
             error_type=type(exc).__name__,
             error_message=str(exc),
-            metadata={},
+            metadata=metadata or {},
         )
         raise
 
@@ -102,6 +103,6 @@ async def measured_ainvoke(
         dialogue_turn_count=context.dialogue_turn_count,
         error_type=None,
         error_message=None,
-        metadata={},
+        metadata=metadata or {},
     )
     return response

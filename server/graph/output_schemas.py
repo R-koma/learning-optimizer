@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+ResponseMode = Literal["reinforce", "expand", "deepen"]
+
 
 class NoteContent(BaseModel):
     topic: str = Field(..., description="学習トピック")
@@ -49,6 +51,39 @@ class FeedbackOutput(BaseModel):
     understanding_level: Literal["low", "medium", "high"] = Field(..., description="ユーザーの回答から理解度を算出")
     strength: list[str] = Field(..., description="良かった点")
     improvement_points: list[str] = Field(..., description="改善点")
+
+
+class AspectObservation(BaseModel):
+    aspect: str = Field(
+        ...,
+        description="観点名（短い名詞句）。カバー済み観点一覧に同じ観点があれば同じ表記を再利用する（表記ゆれで別観点にしない）",
+    )
+    reached_depth: Literal["mentioned", "defined", "exemplified", "applied"] = Field(
+        ...,
+        description="直近のユーザー発言でこの観点が到達した深さ。mentioned=名前を挙げただけ / "
+        "defined=定義を自分の言葉で述べた / exemplified=具体例または動作原理まで述べた / "
+        "applied=応用場面・他概念との関係・トレードオフまで述べた",
+    )
+
+
+class DialogueTurnAnalysis(BaseModel):
+    """学習対話 1 ターンの事前分析（learning_dialogue の応答生成前に生成される構造化データ）。"""
+
+    observations: list[AspectObservation] = Field(
+        default_factory=list,
+        description="直近のユーザー発言で言及・説明された観点と到達度。ユーザーが実際に発言した内容のみから判定する",
+    )
+    response_mode: ResponseMode = Field(
+        ...,
+        description="次の AI 応答のモード。reinforce=明確な誤り・重大な混同の訂正 / "
+        "deepen=誤りはないが単一観点の説明が目標レベルに未達なので深掘り / "
+        "expand=誤りがなく直近の説明が十分なので別観点へ展開または選んだ観点を深める",
+    )
+    selected_aspect: str = Field(..., description="次の応答で焦点を当てる観点を1つ")
+    error_summary: str = Field(
+        "",
+        description="response_mode が reinforce の場合のみ、誤りの内容を1文で。それ以外は空文字",
+    )
 
 
 class DialogueAnalysis(BaseModel):

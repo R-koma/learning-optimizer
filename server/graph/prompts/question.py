@@ -5,12 +5,21 @@
 セクションだけを `build_question_prompt` が結合して返す。
 
 これにより lost-in-the-middle 問題を緩和し、各モードの指示濃度を上げる。
+
+dialogue intent はさらに、事前分析（turn_analysis）の結果があれば
+応答モード（reinforce / expand / deepen）該当セクションだけを載せる。
+事前分析が無い・失敗した場合は判定原則込みの結合セクションに
+フォールバックし、モード判断を生成 LLM 自身に委ねる。
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Any, Literal
+
+from graph.coverage import format_covered_aspects
+from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
+from graph.state import CoveredAspect
 
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
 
@@ -52,7 +61,7 @@ QUESTION_PROMPT_BASE = """\
  トピック一般の常識的な学習プランを暗黙に仮定して構いませんが、過度な決めつけは避けてください。
  「到達したいレベル」は常に確定値が入っており、未指定にはなりません）
 
-## 対話履歴（直近のみ）
+{coverage_section}## 対話履歴（直近のみ）
 {recent_messages}
 
 ## 基本方針
@@ -79,7 +88,7 @@ QUESTION_PROMPT_BASE = """\
   踏み込むことと、ユーザーの topic pivot を尊重することで実現する（基本方針参照）
 """
 
-MODE_DIALOGUE = """\
+_DIALOGUE_RULES_COVERED = """\
 ## 既出観点の取り扱い（最重要）
 ユーザーが直近または過去の発言で既に言及・説明した観点を、再度質問しない。
 
@@ -88,28 +97,29 @@ MODE_DIALOGUE = """\
 - 要約復唱は「複数観点が一度に列挙された場合」のみ行う。
   - 複数観点（2つ以上）が一度に出た場合: 短く要約復唱してから別の観点へ展開する
   - 単一観点のみの場合: 復唱なしで自然に次の質問へ進む
+"""
 
-## 応答モード（この順で判断する）
+_DIALOGUE_DECISION_PRINCIPLE = """\
+## 応答モードの判定原則（最初にこれで分岐する）
+1. ユーザーの説明に「明確な誤り・重大な混同」があるか？ → ある場合のみモード A
+2. 誤りがない場合はモード B（展開）またはモード C（深掘り / 具体化）
+   - 深さが target_depth に足りないだけの正確な説明を、モード A で扱わない
+   - 不足分（具体例・応用場面・因果）は AI が解説で補うのではなく、質問してユーザー自身に説明させる。
+     正確な説明に AI が解説を被せると、ユーザーが自分の言葉で深める機会（教えることで学ぶ）を奪う
+"""
 
-### モード A: 補強と再説明促し（説明が target_depth に対して不十分な時）
-発動条件: ユーザーが説明しているが、明確な誤りがある、または target_depth に対して不十分。
-- target_depth = recognize: 不十分判定はしない（簡潔な補足のみ）
-- target_depth = explain: 「定義」のみで「具体例」「動作原理の概略」が出ていない → 不十分
-- target_depth = apply: 「定義 + 具体例」があっても「応用場面」「他概念との関係」「トレードオフ」のいずれにも
-  触れていない → 不十分
-
+_MODE_REINFORCE_SECTION = """\
+### モード A: 誤りの訂正（明確な誤り・重大な混同がある場合のみ）
 手順:
-1. ポジティブな受け止め（1〜2 文）
-2. 誤りがあれば優しく訂正（「○○については正確には〜です」）
-3. ユーザーが挙げた観点それぞれに対して、target_depth に応じた濃さで補強
-   - recognize: 各観点 1〜2 文の簡潔な定義
-   - explain: 「正確な定義」+ 「具体例 2〜3 個」
-   - apply: 「正確な定義」+ 「具体例」+ 「応用場面・他概念との関係」
-4. 1 つの観点に絞って再説明を促す（全部を一度に再説明させない）
+1. ポジティブな受け止め（1 文）
+2. 誤りの箇所だけを優しく訂正（「○○については正確には〜です」）。誤りのない観点には解説を加えない
+3. 訂正した観点に絞って再説明を促す（全部を一度に再説明させない）
 
-応答長の目安: 各観点ごとに「定義 1 文 + 具体例 2〜3 行」+ 再説明促しの問いかけ 1 文。
+応答長の目安: 受け止め 1 文 + 訂正 2〜4 行 + 再説明促しの問いかけ 1 文。
+"""
 
-### モード B: 展開（直近で十分説明できている時）
+_MODE_EXPAND_SECTION = """\
+### モード B: 展開（誤りがなく、直近で実質的な説明ができている時）
 判断基準: 1 つの観点について「定義」+「具体例または動作の概略」両方、
 または 200 文字程度の説明、または複数観点が一度に列挙され各観点に最低限の定義あり。
 
@@ -119,24 +129,36 @@ MODE_DIALOGUE = """\
 - 「未カバー観点・対比・トレードオフ」への展開は、いずれか **1 つだけ** 選ぶ
   （複数を並列に提示しない）
 
+応答長の目安: 受け止め 1 文 + 質問 1 文の合計 2 文。
+"""
+
+_DIALOGUE_RULES_NO_MENU = """\
 ## メニュー化の禁止（最重要）
 - 「もし A について〜なら / もし B について〜なら教えてください」のように
   **条件付きオファーを複数並べることを禁止**する。
   ユーザーに次の方針を選ばせず、AI が 1 つに絞って踏み込む
 - 質問は 1 つだけ。条件付きオファー（「〜なら教えてください」「〜が気になる場合は」）も
   実質的な質問にカウントする
-- 観点を1つ選ぶ判断基準: 学習プランの優先度 > target_depth に対する不足度合い >
-  既出順（最初に挙がったもの）
+- 観点を1つ選ぶ判断基準: 学習プランの優先度（重視する観点の未カバー項目）>
+  到達度が target_depth に最も届いていない観点 > 既出順（最初に挙がったもの）。
+  「カバー済み観点と到達度」の一覧がある場合はそれを参照する
+"""
 
-応答長の目安: 受け止め 1 文 + 質問 1 文の合計 2 文。
+_MODE_DEEPEN_SECTION = """\
+### モード C: 深掘り / 具体化（誤りはないが、単一観点の説明が target_depth に届かない時）
+target_depth に対する不足の判定と、それに応じた質問:
+- target_depth = recognize: 定義が出ていれば十分。深掘りせずモード B で展開する
+- target_depth = explain: 定義のみで「具体例」「動作原理の概略」が出ていない
+  → 「○○について具体例を挙げてもらえますか？」
+- target_depth = apply: 「定義 + 具体例」があっても「応用場面」「他概念との関係」「トレードオフ」の
+  いずれにも触れていない → 「それは例えばどのような場面で使われますか？」
 
-### モード C: 深掘り / 具体化（単一観点が target_depth に届かない時）
-- target_depth = recognize: 定義が出ていれば十分。深掘りしない
-- target_depth = explain: 定義のみで具体例なし → 「○○についてもう少し詳しく教えてもらえますか？」
-- target_depth = apply: 具体例まで出ていない or 応用場面なし → 「それは例えばどのような場面で使われますか？」
+モード B で観点を 1 つ選んだ後、その観点への深掘り質問の深さもこの基準で決める。
 
 応答長の目安: 2〜3 文。
+"""
 
+_DIALOGUE_EXAMPLES = """\
 ❌ 悪い例（既出観点の再質問）:
 ユーザー: 「信頼性・スケーラビリティ・メンテナンス性の 3 つがある。信頼性は…、スケーラビリティは…、メンテナンス性は…」
 AI: 「次に、スケーラビリティについて考えてみませんか？」
@@ -144,7 +166,30 @@ AI: 「次に、スケーラビリティについて考えてみませんか？�
 ✅ 良い例（1観点に絞った深掘り）:
 AI: 「3 つの観点を端的に整理されましたね。最初の『信頼性』── 『障害が生じても正しく動作する』
 とのことですが、ここで言う『障害』とは具体的にどのようなものを想定していますか？」
+
+❌ 悪い例（誤りのない複数観点説明への過剰解説）:
+ユーザー: 「スループットとは 1 秒あたりに処理できるレコード数のこと。レイテンシとはリクエストが
+処理を待っている期間のこと。レスポンスタイムはクライアントから見た値で、サービスタイムに
+ネットワークやキューイングの遅延が加わったもの」（3 観点とも定義は正確）
+AI: 3 観点それぞれに「正確な定義 + 具体例 2〜3 個」を長文で補強してから再説明を促す
+
+✅ 良い例（復唱 1 文 + 1 観点への深掘り質問 1 つ）:
+AI: 「スループット・レイテンシ・レスポンスタイムを、サービスタイムとの関係まで正確に区別できていますね。
+では『レスポンスタイム』に一歩踏み込みます──同じリクエストを何度も送ると、レスポンスタイムは
+毎回同じにならず大きくばらつきます。このばらつきはどこから生まれると思いますか？」
 """
+
+MODE_DIALOGUE = "\n".join(
+    [
+        _DIALOGUE_RULES_COVERED,
+        _DIALOGUE_DECISION_PRINCIPLE,
+        _MODE_REINFORCE_SECTION,
+        _MODE_EXPAND_SECTION,
+        _DIALOGUE_RULES_NO_MENU,
+        _MODE_DEEPEN_SECTION,
+        _DIALOGUE_EXAMPLES,
+    ]
+)
 
 MODE_HINT = """\
 ## 応答モード: ヒント提供（説明限界に達している時）
@@ -249,6 +294,50 @@ _MODE_SECTIONS: dict[UserIntent, str] = {
     "unknown_c": MODE_UNKNOWN_C,
 }
 
+_PREDECIDED_MODE_LABELS: dict[ResponseMode, str] = {
+    "reinforce": "誤りの訂正（モード A）",
+    "expand": "展開（モード B）",
+    "deepen": "深掘り / 具体化（モード C）",
+}
+
+# expand にモード C も載せるのは、選んだ観点への質問の深さを C の基準で決めるため
+_PREDECIDED_MODE_BODIES: dict[ResponseMode, tuple[str, ...]] = {
+    "reinforce": (_MODE_REINFORCE_SECTION,),
+    "expand": (_MODE_EXPAND_SECTION, _MODE_DEEPEN_SECTION),
+    "deepen": (_MODE_DEEPEN_SECTION,),
+}
+
+
+def _build_predecided_section(analysis: DialogueTurnAnalysis) -> str:
+    header_lines = [
+        "## 応答モード（事前分析による決定）",
+        f"この応答は「{_PREDECIDED_MODE_LABELS[analysis.response_mode]}」で行うと決定済み。モードの自己判定は不要。",
+        f"焦点を当てる観点: {analysis.selected_aspect}",
+    ]
+    if analysis.response_mode == "reinforce" and analysis.error_summary:
+        header_lines.append(f"検出された誤り: {analysis.error_summary}")
+    header = "\n".join(header_lines) + "\n"
+    return "\n".join(
+        [
+            _DIALOGUE_RULES_COVERED,
+            header,
+            *_PREDECIDED_MODE_BODIES[analysis.response_mode],
+            _DIALOGUE_RULES_NO_MENU,
+            _DIALOGUE_EXAMPLES,
+        ]
+    )
+
+
+def _build_coverage_section(covered_aspects: Sequence[CoveredAspect] | None) -> str:
+    lines = format_covered_aspects(covered_aspects or [])
+    if not lines:
+        return ""
+    return (
+        "## カバー済み観点と到達度（過去ターン累積）\n"
+        f"{lines}\n"
+        "上記の観点は記載の到達度まで説明済みとして扱い、同じ深さの質問を繰り返さない。\n\n"
+    )
+
 
 def _text_of(message: Any) -> str:
     content = getattr(message, "content", "")
@@ -302,18 +391,29 @@ def build_question_prompt(
     recent_messages: str,
     plan_fields: dict[str, str],
     messages: Sequence[Any],
+    covered_aspects: Sequence[CoveredAspect] | None = None,
+    turn_analysis: DialogueTurnAnalysis | None = None,
 ) -> tuple[str, UserIntent]:
     """ユーザー状態に応じた質問生成プロンプトを構築する。
+
+    `turn_analysis` は dialogue intent のときのみ使われ、事前決定された
+    応答モードのセクションだけを載せる。None の場合（事前分析なし・失敗）は
+    判定原則込みの MODE_DIALOGUE にフォールバックする。
 
     Returns:
         (prompt, intent): 整形済みプロンプトと検出された intent。
         intent はトレース・eval のために返す。
     """
     intent = classify_user_intent(messages)
-    template = QUESTION_PROMPT_BASE + "\n" + _MODE_SECTIONS[intent]
+    if intent == "dialogue" and turn_analysis is not None:
+        mode_section = _build_predecided_section(turn_analysis)
+    else:
+        mode_section = _MODE_SECTIONS[intent]
+    template = QUESTION_PROMPT_BASE + "\n" + mode_section
     prompt = template.format(
         topic=topic,
         recent_messages=recent_messages,
+        coverage_section=_build_coverage_section(covered_aspects),
         **plan_fields,
     )
     return prompt, intent

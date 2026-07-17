@@ -5,6 +5,8 @@ learning / review の対話ノードは「どのプロンプト・どのメッ�
 集約し、各ノードはポリシーのみを持つようにする。
 """
 
+from typing import Any
+
 from langchain_core.messages import BaseMessage
 
 from graph.llm import llm
@@ -17,11 +19,13 @@ async def invoke_dialogue_llm(
     state: LearningState,
     messages: list[BaseMessage],
     node_name: str,
+    trace_metadata: dict[str, Any] | None = None,
 ) -> BaseMessage:
     response: BaseMessage = await measured_ainvoke(
         runnable=llm,
         messages=messages,
         context=build_trace_context(state),
         node_name=node_name,
+        metadata=trace_metadata,
     )
     return response

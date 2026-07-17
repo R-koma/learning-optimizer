@@ -4,12 +4,14 @@ from uuid import UUID
 
 from langchain_core.messages import AIMessage, HumanMessage
 
+from graph.output_schemas import AspectObservation, DialogueTurnAnalysis
 from graph.state import LearningState
 
 SESSION_ID = UUID("00000000-0000-0000-0000-000000000002")
 NOTE_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 _FAKE_PROMPT = MagicMock(return_value=("QUESTION_PROMPT", "dialogue"))
+_NO_ANALYSIS = AsyncMock(return_value=None)
 
 
 def _make_state(messages: list[Any], **overrides: object) -> LearningState:
@@ -35,6 +37,7 @@ class TestLearningDialogue:
                 AsyncMock(return_value=AIMessage(content="質問です")),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
         ):
             from graph.nodes.learning_dialogue import learning_dialogue
 
@@ -49,6 +52,7 @@ class TestLearningDialogue:
                 AsyncMock(return_value=AIMessage(content="質問です")),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
         ):
             from graph.nodes.learning_dialogue import learning_dialogue
 
@@ -61,6 +65,7 @@ class TestLearningDialogue:
         with (
             patch("graph.nodes.learning_dialogue.invoke_dialogue_llm", AsyncMock(return_value=response)),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
         ):
             from graph.nodes.learning_dialogue import learning_dialogue
 
@@ -77,6 +82,7 @@ class TestLearningDialogue:
                 AsyncMock(return_value=AIMessage(content="質問です")),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
         ):
             from graph.nodes.learning_dialogue import learning_dialogue
 
@@ -85,3 +91,86 @@ class TestLearningDialogue:
         recent = mock_build.call_args.kwargs["recent_messages"]
         assert "m2" in recent and "m7" in recent  # 直近6件は含む
         assert "m0" not in recent and "m1" not in recent  # それより前は含まない
+
+
+class TestLearningDialogueCoverage:
+    _ANALYSIS = DialogueTurnAnalysis(
+        observations=[AspectObservation(aspect="計算量", reached_depth="defined")],
+        response_mode="expand",
+        selected_aspect="計算量",
+    )
+
+    async def test_merges_analysis_observations_into_covered_aspects(self) -> None:
+        mock_build = MagicMock(return_value=("QUESTION_PROMPT", "dialogue"))
+        state = _make_state(
+            [HumanMessage(content="二分探索の計算量は O(log n) です")],
+            covered_aspects=[{"aspect": "前提条件", "reached_depth": "exemplified"}],
+        )
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
+                AsyncMock(return_value=AIMessage(content="質問です")),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=self._ANALYSIS)),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(state)
+
+        assert result["covered_aspects"] == [
+            {"aspect": "前提条件", "reached_depth": "exemplified"},
+            {"aspect": "計算量", "reached_depth": "defined"},
+        ]
+        assert mock_build.call_args.kwargs["turn_analysis"] is self._ANALYSIS
+        assert mock_build.call_args.kwargs["covered_aspects"] == result["covered_aspects"]
+
+    async def test_missing_covered_aspects_in_state_does_not_crash(self) -> None:
+        """旧チェックポイント（covered_aspects 欠損）からの再開でも落ちない。"""
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
+                AsyncMock(return_value=AIMessage(content="質問です")),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(_make_state([HumanMessage(content="hi")]))
+
+        assert result["covered_aspects"] == []
+
+    async def test_analysis_failure_falls_back_without_coverage_change(self) -> None:
+        mock_build = MagicMock(return_value=("QUESTION_PROMPT", "dialogue"))
+        existing = [{"aspect": "前提条件", "reached_depth": "defined"}]
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
+                AsyncMock(return_value=AIMessage(content="質問です")),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=None)),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(_make_state([HumanMessage(content="hi")], covered_aspects=list(existing)))
+
+        assert result["covered_aspects"] == existing
+        assert mock_build.call_args.kwargs["turn_analysis"] is None
+
+    async def test_skips_analysis_for_non_dialogue_intent(self) -> None:
+        mock_analyze = AsyncMock(return_value=None)
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
+                AsyncMock(return_value=AIMessage(content="大丈夫ですよ")),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", mock_analyze),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            await learning_dialogue(_make_state([HumanMessage(content="わかりません")]))
+
+        mock_analyze.assert_not_awaited()

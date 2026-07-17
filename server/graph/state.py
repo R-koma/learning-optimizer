@@ -7,6 +7,16 @@ from typing_extensions import TypedDict
 
 TargetDepth = Literal["recognize", "explain", "apply"]
 
+# DialogueAnalysis.depth_level（surface / principle / applied）との対応:
+# surface ≒ mentioned〜defined / principle ≒ exemplified / applied ≒ applied。
+# こちらは観点単位の到達度なので、発話から判定しやすい4段階（言及→定義→具体例→応用）を使う。
+ReachedDepth = Literal["mentioned", "defined", "exemplified", "applied"]
+
+
+class CoveredAspect(TypedDict):
+    aspect: str
+    reached_depth: ReachedDepth
+
 
 class LearningState(TypedDict):
     user_id: str
@@ -23,3 +33,5 @@ class LearningState(TypedDict):
     learning_goal: NotRequired[str]
     target_depth: NotRequired[TargetDepth]
     focus_aspects: NotRequired[list[str]]
+    # 旧チェックポイントには存在しないため NotRequired。読む側は state.get() で欠損許容する
+    covered_aspects: NotRequired[list[CoveredAspect]]

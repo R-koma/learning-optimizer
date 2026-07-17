@@ -13,6 +13,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from api.websocket.auth import authenticate_websocket
 from core.database import DBConnection, get_pool
+from graph.llm import INTERNAL_LLM_TAG
 from graph.multimodal import image_attachments_kwargs
 from graph.version import GRAPH_VERSION
 from repositories import (
@@ -97,6 +98,9 @@ async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], we
     ai_content = ""
     async for msg, metadata in graph.astream(input, config, stream_mode="messages"):
         node = metadata.get("langgraph_node", "")
+        # 内部 LLM 呼び出し（ノード内の structured output 等）の出力をユーザーへ流さない
+        if INTERNAL_LLM_TAG in (metadata.get("tags") or []):
+            continue
         if isinstance(msg, AIMessageChunk) and node in _STREAMING_NODES and msg.content:
             chunk = str(msg.content)
             ai_content += chunk

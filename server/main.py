@@ -14,6 +14,7 @@ from core.database import close_pool, get_pool
 from graph.builder import build_learning_graph
 from graph.checkpointer import get_checkpointer
 from observability.langfuse_tracing import init_tracing, shutdown_tracing
+from observability.langfuse_tracing import is_enabled as is_tracing_enabled
 from repositories import dialogue_session_repository
 
 # アプリ側ロガー（api.*, graph.* など）の INFO を root ハンドラで表示する。
@@ -76,12 +77,19 @@ app.include_router(chat.router)
 
 @app.get("/api/health")
 async def health_check() -> dict[str, Any]:
+    """DB 到達性と Langfuse 送出の有無を返す。
+
+    `tracing` は status に影響させない。キー未設定でもアプリは正常に動作するため、
+    観測が無いことでヘルスチェックを落とすとデプロイやオートスケールを壊す。
+    「本番なのに送出が無い」ことに気づくための可視化であり、可否判定ではない。
+    """
+    tracing = is_tracing_enabled()
     try:
         pool = await get_pool()
         row = await pool.fetchrow("SELECT 1 as check")
     except Exception as exc:  # noqa: BLE001 - DB 障害はステータスで表現し、例外で 500 にしない
         logger.warning("health check failed: %s", exc)
-        return {"status": "error", "db": False}
+        return {"status": "error", "db": False, "tracing": tracing}
     if row is None:
-        return {"status": "error", "db": False}
-    return {"status": "ok", "db": row["check"] == 1}
+        return {"status": "error", "db": False, "tracing": tracing}
+    return {"status": "ok", "db": row["check"] == 1, "tracing": tracing}

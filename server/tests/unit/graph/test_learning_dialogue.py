@@ -174,3 +174,70 @@ class TestLearningDialogueCoverage:
             await learning_dialogue(_make_state([HumanMessage(content="わかりません")]))
 
         mock_analyze.assert_not_awaited()
+
+
+class TestLearningDialogueTurnAnalysisRecord:
+    """事前分析の決定内容を state に残す（eval の regression 再現に必要）。"""
+
+    _ANALYSIS = DialogueTurnAnalysis(
+        observations=[AspectObservation(aspect="計算量", reached_depth="defined")],
+        response_mode="reinforce",
+        selected_aspect="計算量",
+        error_summary="O(n) と混同している",
+    )
+
+    async def test_persists_decided_mode_and_aspect(self) -> None:
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=self._ANALYSIS)),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(_make_state([HumanMessage(content="計算量は O(n) です")]))
+
+        assert result["turn_analysis"] == {
+            "response_mode": "reinforce",
+            "selected_aspect": "計算量",
+            "error_summary": "O(n) と混同している",
+        }
+
+    async def test_observations_are_not_duplicated_into_the_record(self) -> None:
+        """observations は covered_aspects 側に持つので record には含めない。"""
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=self._ANALYSIS)),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(_make_state([HumanMessage(content="計算量は O(n) です")]))
+
+        assert "observations" not in result["turn_analysis"]
+
+    async def test_writes_none_when_analysis_did_not_run(self) -> None:
+        """前ターンの決定内容が残ると、チェックポイント履歴を辿る側が取り違えるため。"""
+        stale: dict[str, object] = {
+            "response_mode": "expand",
+            "selected_aspect": "前提条件",
+            "error_summary": "",
+        }
+        with (
+            patch(
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="大丈夫ですよ"))),
+            ),
+            patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
+            patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
+        ):
+            from graph.nodes.learning_dialogue import learning_dialogue
+
+            result = await learning_dialogue(_make_state([HumanMessage(content="わかりません")], turn_analysis=stale))
+
+        assert result["turn_analysis"] is None

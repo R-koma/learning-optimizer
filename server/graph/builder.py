@@ -10,7 +10,6 @@ from graph.nodes.review_dialogue import review_dialogue
 from graph.nodes.review_start import review_start
 from graph.nodes.update_note_and_feedback import update_note_and_feedback
 from graph.state import LearningState
-from observability.tracing import measured_node
 
 
 def route_entry(state: LearningState) -> str:
@@ -41,19 +40,13 @@ def build_learning_graph(checkpointer: Any) -> Any:
     """
     graph = StateGraph(LearningState)
 
-    # NOTE: measured_node が返す Callable は LangGraph の _Node 型と構造的に
-    # 互換だが、Coroutine の戻り値を含む Callable のままだと overload にマッチ
-    # しないため arg-type を抑制する。
-    graph.add_node("learning_start", measured_node("learning_start", learning_start))  # type: ignore[call-overload]
-    graph.add_node("learning_dialogue", measured_node("learning_dialogue", learning_dialogue))  # type: ignore[call-overload]
-    graph.add_node("review_start", measured_node("review_start", review_start))  # type: ignore[call-overload]
-    graph.add_node("review_dialogue", measured_node("review_dialogue", review_dialogue))  # type: ignore[call-overload]
-    graph.add_node("generate_note", measured_node("generate_note", generate_note))  # type: ignore[call-overload]
-    graph.add_node("generate_feedback", measured_node("generate_feedback", generate_feedback))  # type: ignore[call-overload]
-    graph.add_node(
-        "update_note_and_feedback",
-        measured_node("update_note_and_feedback", update_note_and_feedback),  # type: ignore[call-overload]
-    )
+    graph.add_node("learning_start", learning_start)
+    graph.add_node("learning_dialogue", learning_dialogue)
+    graph.add_node("review_start", review_start)
+    graph.add_node("review_dialogue", review_dialogue)
+    graph.add_node("generate_note", generate_note)
+    graph.add_node("generate_feedback", generate_feedback)
+    graph.add_node("update_note_and_feedback", update_note_and_feedback)
 
     graph.set_conditional_entry_point(
         route_entry,

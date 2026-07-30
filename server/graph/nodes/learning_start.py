@@ -2,7 +2,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from graph.nodes._dialogue import invoke_dialogue_llm
+from graph.llm import llm
 from graph.prompts import LEARNING_PLANNER_PROMPT, format_learning_plan_fields
 from graph.state import LearningState
 
@@ -18,11 +18,7 @@ async def learning_start(state: LearningState) -> dict[str, Any]:
     prompt = LEARNING_PLANNER_PROMPT.format(topic=topic, **plan_fields)
 
     user_message = HumanMessage(content=topic)
-    response = await invoke_dialogue_llm(
-        state,
-        [SystemMessage(content=prompt), user_message],
-        "learning_start",
-    )
+    response = await llm.ainvoke([SystemMessage(content=prompt), user_message])
 
     return {
         "messages": [user_message, response],

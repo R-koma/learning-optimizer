@@ -1,5 +1,5 @@
 from typing import cast
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 from graph.nodes._turn_analysis import analyze_dialogue_turn
@@ -28,7 +28,10 @@ _PLAN_FIELDS = {
 
 
 async def _run(mock_invoke: AsyncMock) -> DialogueTurnAnalysis | None:
-    with patch("graph.nodes._turn_analysis.measured_ainvoke", mock_invoke):
+    mock_runnable = MagicMock(ainvoke=mock_invoke)
+    mock_llm_structured = MagicMock()
+    mock_llm_structured.with_structured_output.return_value.with_config.return_value = mock_runnable
+    with patch("graph.nodes._turn_analysis.llm_structured", mock_llm_structured):
         return await analyze_dialogue_turn(
             _STATE,
             recent_messages="ユーザー: 二分探索は…",
@@ -59,7 +62,7 @@ class TestAnalyzeDialogueTurn:
         analysis = DialogueTurnAnalysis(observations=[], response_mode="expand", selected_aspect="計算量")
         mock_invoke = AsyncMock(return_value=analysis)
         await _run(mock_invoke)
-        prompt = mock_invoke.call_args.kwargs["messages"][0].content
+        prompt = mock_invoke.call_args.args[0][0].content
         assert "二分探索" in prompt
         assert "- 前提条件: defined（定義済み）" in prompt
-        assert mock_invoke.call_args.kwargs["node_name"] == "turn_analysis"
+        assert mock_invoke.call_args.kwargs["config"]["run_name"] == "turn-analysis"

@@ -33,8 +33,8 @@ class TestLearningDialogue:
     async def test_increments_turn_count(self) -> None:
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
@@ -48,8 +48,8 @@ class TestLearningDialogue:
     async def test_should_generate_note_is_always_false(self) -> None:
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
@@ -63,7 +63,7 @@ class TestLearningDialogue:
     async def test_appends_response_message(self) -> None:
         response = AIMessage(content="次はどう考えますか？")
         with (
-            patch("graph.nodes.learning_dialogue.invoke_dialogue_llm", AsyncMock(return_value=response)),
+            patch("graph.nodes.learning_dialogue.llm", MagicMock(ainvoke=AsyncMock(return_value=response))),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
         ):
@@ -78,8 +78,8 @@ class TestLearningDialogue:
         mock_build = MagicMock(return_value=("QUESTION_PROMPT", "dialogue"))
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
@@ -108,8 +108,8 @@ class TestLearningDialogueCoverage:
         )
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=self._ANALYSIS)),
@@ -129,8 +129,8 @@ class TestLearningDialogueCoverage:
         """旧チェックポイント（covered_aspects 欠損）からの再開でも落ちない。"""
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", _NO_ANALYSIS),
@@ -146,8 +146,8 @@ class TestLearningDialogueCoverage:
         existing = [{"aspect": "前提条件", "reached_depth": "defined"}]
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="質問です")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="質問です"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", mock_build),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", AsyncMock(return_value=None)),
@@ -163,8 +163,8 @@ class TestLearningDialogueCoverage:
         mock_analyze = AsyncMock(return_value=None)
         with (
             patch(
-                "graph.nodes.learning_dialogue.invoke_dialogue_llm",
-                AsyncMock(return_value=AIMessage(content="大丈夫ですよ")),
+                "graph.nodes.learning_dialogue.llm",
+                MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="大丈夫ですよ"))),
             ),
             patch("graph.nodes.learning_dialogue.build_question_prompt", _FAKE_PROMPT),
             patch("graph.nodes.learning_dialogue.analyze_dialogue_turn", mock_analyze),

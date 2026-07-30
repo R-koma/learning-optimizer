@@ -2,7 +2,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from graph.nodes._dialogue import invoke_dialogue_llm
+from graph.llm import llm
 from graph.prompts import REVIEW_SYSTEM_PROMPT, build_focus_section
 from graph.state import LearningState
 
@@ -17,11 +17,7 @@ async def review_start(state: LearningState) -> dict[str, Any]:
     )
 
     user_message = HumanMessage(content=state["topic"])
-    response = await invoke_dialogue_llm(
-        state,
-        [SystemMessage(content=prompt), user_message],
-        "review_start",
-    )
+    response = await llm.ainvoke([SystemMessage(content=prompt), user_message])
 
     return {
         "messages": [user_message, response],

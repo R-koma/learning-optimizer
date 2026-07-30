@@ -2,8 +2,8 @@ from typing import Any
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
+from graph.llm import llm
 from graph.multimodal import load_image_blocks, text_block
-from graph.nodes._dialogue import invoke_dialogue_llm
 from graph.prompts import REVIEW_SYSTEM_PROMPT, build_focus_section
 from graph.state import LearningState
 from storage import get_storage
@@ -34,7 +34,7 @@ async def review_dialogue(state: LearningState) -> dict[str, Any]:
             history[-1] = HumanMessage(content=[text_block(text), *image_blocks])
 
     messages = [SystemMessage(content=prompt), *history]
-    response = await invoke_dialogue_llm(state, messages, "review_dialogue")
+    response = await llm.ainvoke(messages)
 
     content = response.content
     should_generate_note = isinstance(content, str) and content.strip() == REVIEW_END_SIGNAL

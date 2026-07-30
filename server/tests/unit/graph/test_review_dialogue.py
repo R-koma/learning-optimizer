@@ -1,5 +1,5 @@
 from typing import cast
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -29,21 +29,20 @@ def _make_state(**overrides: object) -> LearningState:
 
 class TestReviewDialogue:
     async def test_uses_review_system_prompt(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="続けましょう"))
-        with patch("graph.nodes.review_dialogue.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="続けましょう")))
+        with patch("graph.nodes.review_dialogue.llm", mock_llm):
             from graph.nodes.review_dialogue import review_dialogue
 
             await review_dialogue(_make_state())
 
-        _state, messages, node_name = mock_llm.call_args.args
-        assert node_name == "review_dialogue"
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert isinstance(messages[0], SystemMessage)
         assert "復習パートナー" in messages[0].content
 
     async def test_increments_turn_count(self) -> None:
         with patch(
-            "graph.nodes.review_dialogue.invoke_dialogue_llm",
-            AsyncMock(return_value=AIMessage(content="続けましょう")),
+            "graph.nodes.review_dialogue.llm",
+            MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="続けましょう"))),
         ):
             from graph.nodes.review_dialogue import review_dialogue
 
@@ -53,8 +52,8 @@ class TestReviewDialogue:
 
     async def test_end_signal_sets_should_generate_note_true(self) -> None:
         with patch(
-            "graph.nodes.review_dialogue.invoke_dialogue_llm",
-            AsyncMock(return_value=AIMessage(content="LEARNING_END")),
+            "graph.nodes.review_dialogue.llm",
+            MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="LEARNING_END"))),
         ):
             from graph.nodes.review_dialogue import review_dialogue
 
@@ -64,8 +63,8 @@ class TestReviewDialogue:
 
     async def test_normal_text_sets_should_generate_note_false(self) -> None:
         with patch(
-            "graph.nodes.review_dialogue.invoke_dialogue_llm",
-            AsyncMock(return_value=AIMessage(content="もう少し説明してください")),
+            "graph.nodes.review_dialogue.llm",
+            MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="もう少し説明してください"))),
         ):
             from graph.nodes.review_dialogue import review_dialogue
 
@@ -74,22 +73,22 @@ class TestReviewDialogue:
         assert result["should_generate_note"] is False
 
     async def test_prior_improvements_injected_into_prompt(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="続けましょう"))
-        with patch("graph.nodes.review_dialogue.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="続けましょう")))
+        with patch("graph.nodes.review_dialogue.llm", mock_llm):
             from graph.nodes.review_dialogue import review_dialogue
 
             await review_dialogue(_make_state(prior_improvements="計算量の見積もりが曖昧でした"))
 
-        _state, messages, _node_name = mock_llm.call_args.args
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert "重点確認項目" in messages[0].content
         assert "計算量の見積もりが曖昧でした" in messages[0].content
 
     async def test_no_prior_improvements_omits_focus_section(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="続けましょう"))
-        with patch("graph.nodes.review_dialogue.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="続けましょう")))
+        with patch("graph.nodes.review_dialogue.llm", mock_llm):
             from graph.nodes.review_dialogue import review_dialogue
 
             await review_dialogue(_make_state())
 
-        _state, messages, _node_name = mock_llm.call_args.args
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert "重点確認項目" not in messages[0].content

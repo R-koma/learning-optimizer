@@ -1,5 +1,5 @@
 from typing import cast
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 from langchain_core.messages import AIMessage, SystemMessage
@@ -43,34 +43,33 @@ class TestBuildFocusSection:
 
 class TestReviewStart:
     async def test_uses_review_system_prompt(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="覚えていることを教えてください"))
-        with patch("graph.nodes.review_start.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="覚えていることを教えてください")))
+        with patch("graph.nodes.review_start.llm", mock_llm):
             from graph.nodes.review_start import review_start
 
             await review_start(_make_state())
 
-        _state, messages, node_name = mock_llm.call_args.args
-        assert node_name == "review_start"
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert isinstance(messages[0], SystemMessage)
         assert "復習パートナー" in messages[0].content
 
     async def test_prior_improvements_injected_into_prompt(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="覚えていることを教えてください"))
-        with patch("graph.nodes.review_start.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="覚えていることを教えてください")))
+        with patch("graph.nodes.review_start.llm", mock_llm):
             from graph.nodes.review_start import review_start
 
             await review_start(_make_state(prior_improvements="計算量の見積もりが曖昧でした"))
 
-        _state, messages, _node_name = mock_llm.call_args.args
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert "重点確認項目" in messages[0].content
         assert "計算量の見積もりが曖昧でした" in messages[0].content
 
     async def test_no_prior_improvements_omits_focus_section(self) -> None:
-        mock_llm = AsyncMock(return_value=AIMessage(content="覚えていることを教えてください"))
-        with patch("graph.nodes.review_start.invoke_dialogue_llm", mock_llm):
+        mock_llm = MagicMock(ainvoke=AsyncMock(return_value=AIMessage(content="覚えていることを教えてください")))
+        with patch("graph.nodes.review_start.llm", mock_llm):
             from graph.nodes.review_start import review_start
 
             await review_start(_make_state())
 
-        _state, messages, _node_name = mock_llm.call_args.args
+        (messages,) = mock_llm.ainvoke.call_args.args
         assert "重点確認項目" not in messages[0].content

@@ -7,8 +7,6 @@ from graph.llm import llm_structured
 from graph.output_schemas import DialogueAnalysis, FeedbackOutput
 from graph.prompts import ANALYZE_RESPONSE_PROMPT, GENERATE_FEEDBACK_PROMPT
 from graph.state import LearningState
-from observability.llm import measured_ainvoke
-from observability.tracing import build_trace_context
 from repositories import feedback_repository, note_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
@@ -18,7 +16,6 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
 
     pool = await get_pool()
     topic = state["topic"]
-    trace_ctx = build_trace_context(state)
 
     conversation_history = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"]
@@ -28,11 +25,9 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
         conversation_history=conversation_history,
     )
     analysis_llm = llm_structured.with_structured_output(DialogueAnalysis)
-    analysis_data = await measured_ainvoke(
-        runnable=analysis_llm,
-        messages=[SystemMessage(content=analyze_prompt)],
-        context=trace_ctx,
-        node_name="generate_feedback",
+    analysis_data = await analysis_llm.ainvoke(
+        [SystemMessage(content=analyze_prompt)],
+        config={"run_name": "analyze-dialogue"},
     )
     if not isinstance(analysis_data, DialogueAnalysis):
         raise RuntimeError("LLM did not return structured DialogueAnalysis")
@@ -49,14 +44,12 @@ async def generate_feedback(state: LearningState) -> dict[str, Any]:
             raise RuntimeError(f"Note {note_id} not found")
         note_text = f"トピック: {note['topic']}\n\n{note['content']}"
 
-        feedback_data = await measured_ainvoke(
-            runnable=structured_llm,
-            messages=[
+        feedback_data = await structured_llm.ainvoke(
+            [
                 SystemMessage(content=feedback_prompt),
                 {"role": "user", "content": note_text},
             ],
-            context=trace_ctx,
-            node_name="generate_feedback",
+            config={"run_name": "generate-feedback-scores"},
         )
 
         if not isinstance(feedback_data, FeedbackOutput):

@@ -103,9 +103,7 @@ async def _setup_user(user_id: str) -> None:
 async def _truncate() -> None:
     conn = await asyncpg.connect(TEST_DATABASE_URL)
     try:
-        await conn.execute(
-            "TRUNCATE run_traces, feedbacks, review_schedules, dialogue_messages, dialogue_sessions, notes CASCADE"
-        )
+        await conn.execute("TRUNCATE feedbacks, review_schedules, dialogue_messages, dialogue_sessions, notes CASCADE")
     finally:
         await conn.close()
 

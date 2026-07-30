@@ -16,6 +16,7 @@ from core.database import DBConnection, get_pool
 from graph.llm import INTERNAL_LLM_TAG
 from graph.multimodal import image_attachments_kwargs
 from graph.version import GRAPH_VERSION
+from observability.langfuse_tracing import build_graph_config, traced_graph_run
 from repositories import (
     dialogue_message_image_repository,
     dialogue_message_repository,
@@ -77,9 +78,17 @@ async def _generate_note_background(
     graph: Any,
     config: dict[str, Any],
     session_id: UUID,
+    run_name: str,
 ) -> None:
     try:
-        result = await graph.ainvoke(None, config=config)
+        async with traced_graph_run(
+            config,
+            name=run_name,
+            input={"dialogue_session_id": str(session_id)},
+            as_type="chain",
+        ) as run:
+            result = await graph.ainvoke(None, config=run.config)
+            run.set_output({"note_id": str(result.get("note_id")), "topic": result.get("topic")})
         # learning は generate_note で新規 note_id が state に設定される
         # review は start_review 時点で既存 note_id が state に注入されている
         generated_note_id: UUID | None = result.get("note_id")
@@ -119,7 +128,7 @@ async def _start_session(
 ) -> SessionContext:
     """セッション作成・SessionStarted 送信・初期 user/assistant メッセージ保存までを共通化。"""
     session_id = uuid.uuid4()
-    config = {"configurable": {"thread_id": str(session_id)}}
+    config = build_graph_config(session_id=session_id, user_id=deps.user_id, session_type=session_type)
 
     message_order = 1
     async with deps.pool.acquire() as conn:
@@ -140,7 +149,10 @@ async def _start_session(
 
     initial_state["dialogue_session_id"] = str(session_id)
 
-    ai_msg = await _stream_ai_response(deps.graph, initial_state, config, deps.websocket)
+    async with traced_graph_run(config, name=f"start-{session_type}-session", input=first_user_content) as run:
+        ai_msg = await _stream_ai_response(deps.graph, initial_state, run.config, deps.websocket)
+        run.set_output(ai_msg)
+
     message_order += 1
     async with deps.pool.acquire() as conn:
         await dialogue_message_repository.insert(conn, session_id, "assistant", ai_msg, message_order)
@@ -268,7 +280,7 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
         return None
 
     resumed_session_type = cast(Literal["learning", "review"], existing["session_type"])
-    config = {"configurable": {"thread_id": str(msg.session_id)}}
+    config = build_graph_config(session_id=msg.session_id, user_id=deps.user_id, session_type=resumed_session_type)
 
     async with deps.pool.acquire() as conn:
         if existing["status"] == "disconnect":
@@ -325,7 +337,10 @@ async def _handle_user_message(msg: UserMessage, ctx: SessionContext, deps: Deps
         {"messages": [HumanMessage(content=msg.content, additional_kwargs=image_attachments_kwargs(attachments))]},
     )
 
-    ai_msg = await _stream_ai_response(deps.graph, None, ctx.config, deps.websocket)
+    async with traced_graph_run(ctx.config, name="respond-to-user", input=msg.content) as run:
+        ai_msg = await _stream_ai_response(deps.graph, None, run.config, deps.websocket)
+        run.set_output(ai_msg)
+
     ctx.message_order += 1
     async with deps.pool.acquire() as conn:
         await dialogue_message_repository.insert(conn, ctx.session_id, "assistant", ai_msg, ctx.message_order)
@@ -393,9 +408,10 @@ async def _handle_end_session(ctx: SessionContext | None, deps: Deps) -> None:
         # learning / review でパスが分かれているため session_type で出し分ける。
         end_node = "review_dialogue" if ctx.session_type == "review" else "learning_dialogue"
         await deps.graph.aupdate_state(ctx.config, {"should_generate_note": True}, as_node=end_node)
+        run_name = "update-review-note" if ctx.session_type == "review" else "generate-learning-note"
         async with deps.pool.acquire() as conn:
             await dialogue_session_repository.update_status(conn, ctx.session_id, "generate_note")
-        asyncio.create_task(_generate_note_background(deps.pool, deps.graph, ctx.config, ctx.session_id))
+        asyncio.create_task(_generate_note_background(deps.pool, deps.graph, ctx.config, ctx.session_id, run_name))
 
     await deps.websocket.send_text(SessionEndedMessage(session_id=ctx.session_id if ctx else None).model_dump_json())
 

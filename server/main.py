@@ -13,6 +13,7 @@ from api.websocket import chat
 from core.database import close_pool, get_pool
 from graph.builder import build_learning_graph
 from graph.checkpointer import get_checkpointer
+from observability.langfuse_tracing import init_tracing, shutdown_tracing
 from repositories import dialogue_session_repository
 
 # アプリ側ロガー（api.*, graph.* など）の INFO を root ハンドラで表示する。
@@ -38,6 +39,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    init_tracing()
+
     pool = await get_pool()
     async with pool.acquire() as conn:
         await dialogue_session_repository.reset_stuck_generations(conn)
@@ -47,6 +50,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.graph = build_learning_graph(checkpointer)
         yield
 
+    shutdown_tracing()
     await close_pool()
 
 

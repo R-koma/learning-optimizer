@@ -13,8 +13,6 @@ from graph.prompts import (
     UPDATE_NOTE_PROMPT,
 )
 from graph.state import LearningState
-from observability.llm import measured_ainvoke
-from observability.tracing import TraceContext, build_trace_context
 from repositories import feedback_repository, note_repository, note_revision_repository, review_schedule_repository
 from services.review_scheduler import calculate_next_review
 
@@ -29,7 +27,6 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
     pool = await get_pool()
     note_id = state["note_id"]
     user_id = state["user_id"]
-    trace_ctx = build_trace_context(state)
 
     conversation_history = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"]
@@ -46,7 +43,6 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
             feedback_content = await _append_review_revision(
                 conn=conn,
                 state=state,
-                trace_ctx=trace_ctx,
                 topic=topic,
                 base_content=existing_note["content"],
                 conversation_history=conversation_history,
@@ -56,7 +52,6 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
                 conn=conn,
                 note_id=note_id,
                 user_id=user_id,
-                trace_ctx=trace_ctx,
                 topic=topic,
                 summary=existing_note["summary"] or "",
                 content=existing_note["content"],
@@ -66,7 +61,6 @@ async def update_note_and_feedback(state: LearningState) -> dict[str, Any]:
         await _update_feedback(
             conn=conn,
             state=state,
-            trace_ctx=trace_ctx,
             topic=topic,
             note_content=feedback_content,
             conversation_history=conversation_history,
@@ -80,7 +74,6 @@ async def _regenerate_note(
     conn: DBConnection,
     note_id: UUID,
     user_id: str,
-    trace_ctx: TraceContext,
     topic: str,
     summary: str,
     content: str,
@@ -95,11 +88,9 @@ async def _regenerate_note(
         conversation_history=conversation_history,
     )
     note_structured_llm = llm_structured.with_structured_output(NoteContent)
-    revised_note = await measured_ainvoke(
-        runnable=note_structured_llm,
-        messages=[SystemMessage(content=update_note_prompt)],
-        context=trace_ctx,
-        node_name="update_note_and_feedback",
+    revised_note = await note_structured_llm.ainvoke(
+        [SystemMessage(content=update_note_prompt)],
+        config={"run_name": "revise-note"},
     )
     if not isinstance(revised_note, NoteContent):
         raise RuntimeError("LLM did not return structured NoteContent output")
@@ -117,7 +108,6 @@ async def _regenerate_note(
 async def _append_review_revision(
     conn: DBConnection,
     state: LearningState,
-    trace_ctx: TraceContext,
     topic: str,
     base_content: str,
     conversation_history: str,
@@ -134,11 +124,9 @@ async def _append_review_revision(
         conversation_history=conversation_history,
     )
     addendum_llm = llm_structured.with_structured_output(ReviewAddendum)
-    addendum = await measured_ainvoke(
-        runnable=addendum_llm,
-        messages=[SystemMessage(content=append_prompt)],
-        context=trace_ctx,
-        node_name="update_note_and_feedback",
+    addendum = await addendum_llm.ainvoke(
+        [SystemMessage(content=append_prompt)],
+        config={"run_name": "append-review-addendum"},
     )
     if not isinstance(addendum, ReviewAddendum):
         raise RuntimeError("LLM did not return structured ReviewAddendum output")
@@ -155,7 +143,6 @@ async def _append_review_revision(
 async def _update_feedback(
     conn: DBConnection,
     state: LearningState,
-    trace_ctx: TraceContext,
     topic: str,
     note_content: str,
     conversation_history: str,
@@ -165,11 +152,9 @@ async def _update_feedback(
         conversation_history=conversation_history,
     )
     analysis_llm = llm_structured.with_structured_output(DialogueAnalysis)
-    analysis_data = await measured_ainvoke(
-        runnable=analysis_llm,
-        messages=[SystemMessage(content=analyze_prompt)],
-        context=trace_ctx,
-        node_name="update_note_and_feedback",
+    analysis_data = await analysis_llm.ainvoke(
+        [SystemMessage(content=analyze_prompt)],
+        config={"run_name": "analyze-dialogue"},
     )
     if not isinstance(analysis_data, DialogueAnalysis):
         raise RuntimeError("LLM did not return structured DialogueAnalysis")
@@ -178,14 +163,12 @@ async def _update_feedback(
     note_text = f"トピック: {topic}\n\n{note_content}"
     feedback_prompt = GENERATE_FEEDBACK_PROMPT.format(topic=topic, analysis=analysis)
     feedback_structured_llm = llm_structured.with_structured_output(FeedbackOutput)
-    feedback_data = await measured_ainvoke(
-        runnable=feedback_structured_llm,
-        messages=[
+    feedback_data = await feedback_structured_llm.ainvoke(
+        [
             SystemMessage(content=feedback_prompt),
             {"role": "user", "content": note_text},
         ],
-        context=trace_ctx,
-        node_name="update_note_and_feedback",
+        config={"run_name": "generate-feedback-scores"},
     )
     if not isinstance(feedback_data, FeedbackOutput):
         raise RuntimeError("LLM did not return structured FeedbackOutput")

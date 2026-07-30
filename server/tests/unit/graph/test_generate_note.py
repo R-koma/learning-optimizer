@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -11,11 +11,6 @@ SESSION_ID = UUID("00000000-0000-0000-0000-000000000002")
 USER_ID = "user-abc"
 
 FAKE_NOTE_CONTENT = NoteContent(topic="Pythonの基礎", content="本文", summary="要約")
-
-
-async def _fake_measured(*, runnable: Any, messages: Any, **_kwargs: Any) -> Any:
-    """observability/DB を経由する measured_ainvoke の代わりに runnable を直接呼ぶ"""
-    return await runnable.ainvoke(messages)
 
 
 def _make_structured_mock(category_result: object) -> MagicMock:
@@ -59,7 +54,6 @@ class TestGenerateNoteCategory:
 
         with (
             patch("graph.nodes.generate_note.get_pool", AsyncMock(return_value=pool)),
-            patch("graph.nodes.generate_note.measured_ainvoke", _fake_measured),
             patch("graph.nodes.generate_note.llm_structured") as mock_llm,
             patch(
                 "graph.nodes.generate_note.note_repository.find_categories_by_user_id",
@@ -88,7 +82,6 @@ class TestGenerateNoteCategory:
 
         with (
             patch("graph.nodes.generate_note.get_pool", AsyncMock(return_value=pool)),
-            patch("graph.nodes.generate_note.measured_ainvoke", _fake_measured),
             patch("graph.nodes.generate_note.llm_structured") as mock_llm,
             patch(
                 "graph.nodes.generate_note.note_repository.find_categories_by_user_id",
@@ -112,7 +105,6 @@ class TestGenerateNoteCategory:
 
         with (
             patch("graph.nodes.generate_note.get_pool", AsyncMock(return_value=pool)),
-            patch("graph.nodes.generate_note.measured_ainvoke", _fake_measured),
             patch("graph.nodes.generate_note.llm_structured") as mock_llm,
             patch(
                 "graph.nodes.generate_note.note_repository.find_categories_by_user_id",

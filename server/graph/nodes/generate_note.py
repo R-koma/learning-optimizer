@@ -11,8 +11,6 @@ from graph.llm import llm_structured
 from graph.output_schemas import AspectMap, NoteCategory, NoteContent
 from graph.prompts import GENERATE_ASPECT_MAP_PROMPT, GENERATE_CATEGORY_PROMPT, GENERATE_NOTE_PROMPT
 from graph.state import LearningState
-from observability.llm import measured_ainvoke
-from observability.tracing import TraceContext, build_trace_context
 from repositories import note_repository
 
 logger = logging.getLogger(__name__)
@@ -22,7 +20,6 @@ async def _estimate_category(
     conn: DBConnection,
     user_id: str,
     conversation_text: str,
-    trace_context: TraceContext,
 ) -> str | None:
     """対話内容からカテゴリーを推定する。既存カテゴリーへ寄せて乱立を防ぐ。
 
@@ -34,14 +31,12 @@ async def _estimate_category(
 
     category_llm = llm_structured.with_structured_output(NoteCategory)
     try:
-        result: Any = await measured_ainvoke(
-            runnable=category_llm,
-            messages=[
+        result: Any = await category_llm.ainvoke(
+            [
                 SystemMessage(content=prompt),
                 {"role": "user", "content": conversation_text},
             ],
-            context=trace_context,
-            node_name="generate_category",
+            config={"run_name": "estimate-category"},
         )
     except Exception:
         logger.warning("category estimation failed for user %s", user_id, exc_info=True)
@@ -58,18 +53,15 @@ async def _estimate_category(
 async def _generate_aspect_map_background(
     note_id: UUID,
     conversation_text: str,
-    trace_context: TraceContext,
 ) -> None:
     aspect_llm = llm_structured.with_structured_output(AspectMap)
     try:
-        aspect_result: Any = await measured_ainvoke(
-            runnable=aspect_llm,
-            messages=[
+        aspect_result: Any = await aspect_llm.ainvoke(
+            [
                 SystemMessage(content=GENERATE_ASPECT_MAP_PROMPT),
                 {"role": "user", "content": conversation_text},
             ],
-            context=trace_context,
-            node_name="generate_aspect_map",
+            config={"run_name": "generate-aspect-map"},
         )
     except Exception:
         logger.warning("aspect map generation failed for note %s", note_id, exc_info=True)
@@ -92,17 +84,13 @@ async def generate_note(state: LearningState) -> dict[str, Any]:
         role = "ユーザー" if msg.type == "human" else "アシスタント"
         conversation_text += f"{role}: {msg.content}\n"
 
-    trace_context = build_trace_context(state)
-
     note_llm = llm_structured.with_structured_output(NoteContent)
-    note_result: Any = await measured_ainvoke(
-        runnable=note_llm,
-        messages=[
+    note_result: Any = await note_llm.ainvoke(
+        [
             SystemMessage(content=GENERATE_NOTE_PROMPT),
             {"role": "user", "content": conversation_text},
         ],
-        context=trace_context,
-        node_name="generate_note",
+        config={"run_name": "generate-note-content"},
     )
     if not isinstance(note_result, NoteContent):
         raise RuntimeError("LLM did not return structured NoteContent output")
@@ -111,7 +99,7 @@ async def generate_note(state: LearningState) -> dict[str, Any]:
     pool = await get_pool()
 
     async with pool.acquire() as conn:
-        category = await _estimate_category(conn, state["user_id"], conversation_text, trace_context)
+        category = await _estimate_category(conn, state["user_id"], conversation_text)
         await note_repository.insert(
             conn=conn,
             note_id=note_id,
@@ -123,7 +111,7 @@ async def generate_note(state: LearningState) -> dict[str, Any]:
             aspect_map=None,
         )
 
-    asyncio.create_task(_generate_aspect_map_background(note_id, conversation_text, trace_context))
+    asyncio.create_task(_generate_aspect_map_background(note_id, conversation_text))
 
     return {
         "note_id": note_id,

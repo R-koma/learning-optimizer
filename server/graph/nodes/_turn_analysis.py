@@ -13,8 +13,6 @@ from graph.llm import INTERNAL_LLM_TAG, llm_structured
 from graph.output_schemas import DialogueTurnAnalysis
 from graph.prompts.turn_analysis import build_turn_analysis_prompt
 from graph.state import CoveredAspect, LearningState
-from observability.llm import measured_ainvoke
-from observability.tracing import build_trace_context
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +32,9 @@ async def analyze_dialogue_turn(
     )
     runnable = llm_structured.with_structured_output(DialogueTurnAnalysis).with_config(tags=[INTERNAL_LLM_TAG])
     try:
-        result = await measured_ainvoke(
-            runnable=runnable,
-            messages=[SystemMessage(content=prompt)],
-            context=build_trace_context(state),
-            node_name="turn_analysis",
-            model_name="gpt-5-nano",
+        result = await runnable.ainvoke(
+            [SystemMessage(content=prompt)],
+            config={"run_name": "turn-analysis"},
         )
     except Exception:
         logger.warning("turn analysis failed; falling back to self-judged dialogue mode", exc_info=True)

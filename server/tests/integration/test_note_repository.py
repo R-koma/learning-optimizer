@@ -261,7 +261,6 @@ async def test_delete_cascades_related_records(db_conn: asyncpg.Connection, test
     deleted = await note_repository.delete(db_conn, note_id=note_id, user_id=user_id)
     assert deleted is True
 
-    # 関連レコードも削除されていることを確認
     feedback_count = await db_conn.fetchval("SELECT COUNT(*) FROM feedbacks WHERE note_id = $1", note_id)
     assert feedback_count == 0
     schedule_count = await db_conn.fetchval("SELECT COUNT(*) FROM review_schedules WHERE note_id = $1", note_id)

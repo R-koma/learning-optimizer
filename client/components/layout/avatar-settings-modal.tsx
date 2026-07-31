@@ -121,7 +121,6 @@ export function AvatarSettingsModal({
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 px-6 py-6">
-          {/* Clickable avatar with camera overlay */}
           <button
             type="button"
             onClick={() => !isBusy && fileInputRef.current?.click()}

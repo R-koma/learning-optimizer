@@ -50,7 +50,6 @@ def test_accepts_matching_signature(mime_type: str, data: bytes) -> None:
 
 
 def test_rejects_mime_mismatch() -> None:
-    # 申告は PNG だが実体は JPEG
     with pytest.raises(ValidationError, match="does not match"):
         ImageAttachment(mime_type="image/png", data=_b64(_JPEG_BYTES))
 

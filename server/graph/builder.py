@@ -13,31 +13,25 @@ from graph.state import LearningState
 
 
 def route_entry(state: LearningState) -> str:
-    """session_type で learning / review の入口を振り分ける"""
     if state.get("session_type") == "review":
         return "review_start"
     return "learning_start"
 
 
 def route_after_learning_dialogue(state: LearningState) -> str:
-    """学習対話後: 終了スイッチが立つまでループ、立てばノート生成へ"""
     if not state["should_generate_note"]:
         return "learning_dialogue"
     return "generate_note"
 
 
 def route_after_review_dialogue(state: LearningState) -> str:
-    """復習対話後: 終了スイッチが立つまでループ、立てば復習更新へ"""
     if not state["should_generate_note"]:
         return "review_dialogue"
     return "update_note_and_feedback"
 
 
 def build_learning_graph(checkpointer: Any) -> Any:
-    """LangGraphのStateGraphを構築してコンパイルする。
-
-    session_type で learning / review を入口から完全に別パスへ分岐させる。
-    """
+    """session_type で learning / review を入口から完全に別パスへ分岐させる。"""
     graph = StateGraph(LearningState)
 
     graph.add_node("learning_start", learning_start)

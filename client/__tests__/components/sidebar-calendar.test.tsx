@@ -125,7 +125,6 @@ describe("SidebarCalendar", () => {
     const user = userEvent.setup();
     render(<SidebarCalendar />);
 
-    // 当月では 今日 ボタンは出ない
     expect(
       screen.queryByRole("button", { name: "今日" }),
     ).not.toBeInTheDocument();

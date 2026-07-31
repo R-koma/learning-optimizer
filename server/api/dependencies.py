@@ -12,7 +12,6 @@ BearerCredentials = Annotated[HTTPAuthorizationCredentials, Security(security)]
 
 
 async def get_current_user(credentials: BearerCredentials) -> str:
-    """Authorizationヘッダー (Bearerトークン) からJWTを取得し、検証する"""
     token = credentials.credentials
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -28,7 +27,6 @@ async def get_current_user(credentials: BearerCredentials) -> str:
 
 
 async def get_db() -> AsyncGenerator[DBConnection]:
-    """プールからコネクションを取得してリクエスト単位で管理する"""
     pool = await get_pool()
     async with pool.acquire() as conn:
         yield conn

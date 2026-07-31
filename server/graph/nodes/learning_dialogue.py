@@ -8,6 +8,7 @@ from graph.multimodal import load_image_blocks
 from graph.nodes._turn_analysis import analyze_dialogue_turn
 from graph.output_schemas import DialogueTurnAnalysis
 from graph.prompts import build_question_prompt, classify_user_intent, format_learning_plan_fields
+from graph.prompts.question import PROMPT_VERSION
 from graph.state import CoveredAspect, LearningState, TurnAnalysisRecord
 from storage import get_storage
 
@@ -78,6 +79,7 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         llm_messages,
         config={
             "metadata": {
+                "prompt_version": PROMPT_VERSION,
                 "intent": intent,
                 "response_mode": turn_analysis.response_mode if turn_analysis else None,
                 "selected_aspect": turn_analysis.selected_aspect if turn_analysis else None,

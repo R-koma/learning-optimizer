@@ -21,6 +21,10 @@ from graph.coverage import format_covered_aspects
 from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
 from graph.state import CoveredAspect
 
+# eval レコードの `meta.prompt_version` と突き合わせるための版。本文または
+# `build_question_prompt` の組み立てを意味的に変えたら上げる（表記は既存 jsonl に合わせる）。
+PROMPT_VERSION = "generate_question@v2"
+
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
 
 _UNKNOWN_KEYWORDS: tuple[str, ...] = (

@@ -159,7 +159,6 @@ class TestGenerateFeedback:
             patch("graph.nodes.generate_feedback.note_repository.find_by_id", AsyncMock(return_value=FAKE_NOTE)),
             patch("graph.nodes.generate_feedback.feedback_repository.insert", AsyncMock()),
         ):
-            # FeedbackOutput の代わりに dict を返す
             mock_llm.with_structured_output = _make_structured_mock({"wrong": "type"})
 
             from graph.nodes.generate_feedback import generate_feedback

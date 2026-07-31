@@ -143,25 +143,19 @@ interface MarkdownProps {
 
 const articleProseClasses = cn(
   "prose prose-neutral dark:prose-invert max-w-[68ch] text-[17px]",
-  // headings
   "prose-headings:font-semibold prose-headings:tracking-tight prose-headings:scroll-mt-24",
   "prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-h4:text-lg",
   "prose-h2:mt-12 prose-h2:mb-4 prose-h3:mt-10 prose-h3:mb-3",
-  // paragraphs
   "prose-p:leading-[1.85] prose-p:my-5",
   "[&>p:first-child]:text-lg [&>p:first-child]:text-foreground/80",
-  // lists
   "prose-ul:my-5 prose-ol:my-5 prose-ul:pl-5 prose-ol:pl-5",
   "prose-li:leading-[1.85] prose-li:my-1",
   "prose-ul:marker:text-primary/60 prose-ol:marker:text-primary/60",
   "[&_li>input]:mr-2 [&_li>input]:translate-y-[1px]",
-  // emphasis
   "prose-strong:text-foreground prose-strong:font-semibold",
-  // inline code
   "prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5",
   "prose-code:font-mono prose-code:text-[0.9em] prose-code:text-primary",
   "prose-code:before:content-none prose-code:after:content-none",
-  // code block
   "prose-pre:rounded-lg prose-pre:bg-muted prose-pre:border prose-pre:border-border",
   "prose-pre:p-4 prose-pre:text-[0.9em] prose-pre:leading-relaxed",
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground",
@@ -172,17 +166,14 @@ const articleProseClasses = cn(
   "prose-blockquote:px-5 prose-blockquote:py-3",
   "prose-blockquote:text-foreground/80 prose-blockquote:not-italic",
   "[&_blockquote_p]:before:content-none [&_blockquote_p]:after:content-none",
-  // links
   "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
   '[&_a[href^="http"]]:after:content-["_↗"] [&_a[href^="http"]]:after:text-xs',
-  // tables
   "prose-table:border-collapse",
   "prose-thead:border-b prose-thead:border-border",
   "prose-th:py-2.5 prose-td:py-2.5 prose-th:px-3 prose-td:px-3",
   "prose-th:text-left prose-th:font-semibold",
   "[&_tbody_tr]:border-b [&_tbody_tr]:border-border/60",
   "[&_tbody_tr:nth-child(even)]:bg-muted/30",
-  // hr
   "prose-hr:my-12 prose-hr:border-border/60",
   // heading anchor (rehype-autolink-headings)
   "[&_.heading-anchor]:ml-2 [&_.heading-anchor]:text-muted-foreground/40",

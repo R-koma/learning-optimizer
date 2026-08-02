@@ -3,7 +3,7 @@ id: premature_definition__ddia-ch1__001
 schema_version: 1
 source_trace_id: 2026-06-13-ddia-ch1__t3
 source: synthetic                            # 推奨：synthetic / real
-status: active                               # 任意：active / draft / deprecated
+status: draft                               # 任意：active / draft / deprecated
 
 # ---- 失敗モード分類（error analysis 由来）----
 failure_mode: premature_definition           # taxonomy のカテゴリ
@@ -25,6 +25,9 @@ input:
 observed_output: |                            # ラベルした出力（judge検証の対象）
   素晴らしい整理ですね。信頼性については、正確には「...能力」と言えます。
   例えば...どのような場面で特に重要だと感じますか？
+
+# ---- 人間ラベル（レコード全体）----
+pass: false                                   # observed_output 全体の合否。assertion 別は human_verdict
 
 # ---- assertion（runner が検証する契約）----
 assertions:

@@ -28,6 +28,9 @@ observed_output: |
 
   この観点から、プロセスの動作の仕組みや、その管理方法について、さらに詳しく説明してみてください。
 
+# ---- 人間ラベル（レコード全体）----
+pass: false
+
 assertions:
   - id: a1
     type: judge
@@ -63,7 +66,7 @@ assertions:
     polarity: must
     criterion: >
       主導的な質問が1つだけである。
-    human_verdict: pass
+    human_verdict: fail
 
 rationale: |
   ユーザーは単一観点（プロセスの定義）を自分の言葉で述べた段階。ここで AI は

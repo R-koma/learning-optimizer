@@ -1,7 +1,7 @@
 id: accurate_multi_concept_overexplain__ddia-ch1__001
 schema_version: 1
 source_trace_id: 2026-07-08-ddia-ch1-perf__t3
-source: synthetic
+source: real
 status: draft
 
 failure_mode: accurate_multi_concept_overexplain
@@ -33,6 +33,9 @@ observed_output: |
   ネットワーク遅延やキューイング遅延が含まれます。例えばWebアプリでは、DBの処理が速くても
   ネットワークが遅いとレスポンスタイムは悪化します。
   それでは、まずスループットについて、もう一度自分の言葉で説明してみてもらえますか？
+
+# ---- 人間ラベル（レコード全体）----
+pass: false
 
 assertions:
   - id: a1
@@ -66,7 +69,7 @@ assertions:
     polarity: must
     criterion: >
       主導的な質問が1つだけである。
-    human_verdict: pass
+    human_verdict: fail
 
 rationale: |
   3観点（スループット / レイテンシ / レスポンスタイム）の定義はすべて正確で、訂正すべき

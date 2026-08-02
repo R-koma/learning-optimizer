@@ -23,7 +23,7 @@ from graph.state import CoveredAspect
 
 # eval レコードの `meta.prompt_version` と突き合わせるため。
 # 本文または`build_question_prompt` の組み立てを意味的に変えたら上げる（表記は既存 jsonl に合わせる）。
-PROMPT_VERSION = "generate_question@v2"
+PROMPT_VERSION = "generate_question@v1"
 
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
 

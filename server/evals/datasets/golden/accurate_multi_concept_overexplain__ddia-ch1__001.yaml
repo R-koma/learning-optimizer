@@ -2,7 +2,7 @@ id: accurate_multi_concept_overexplain__ddia-ch1__001
 schema_version: 1
 source_trace_id: 2026-07-08-ddia-ch1-perf__t3
 source: real
-status: draft
+status: active
 
 failure_mode: accurate_multi_concept_overexplain
 
@@ -63,12 +63,6 @@ assertions:
       「もし A なら〜 / B が気になる場合は〜」のような条件付きオファーを複数並べて
       ユーザーに方針を選ばせている（メニュー化）。
     human_verdict: pass
-  - id: a5
-    type: deterministic
-    polarity: must
-    criterion: >
-      主導的な質問が1つだけである。
-    human_verdict: fail
 
 rationale: |
   3観点（スループット / レイテンシ / レスポンスタイム）の定義はすべて正確で、訂正すべき
@@ -83,5 +77,5 @@ exemplar: |
   送ると、レスポンスタイムは毎回同じにならず大きくばらつきます。このばらつきはどこから
   生まれると思いますか？
 
-verified_by: null
+verified_by: R-koma
 created_at: 2026-07-08

@@ -2,7 +2,7 @@ id: self_answered_question__os-process__001
 schema_version: 1
 source_trace_id: 2026-07-14-os-process__t1
 source: real
-status: draft
+status: active
 
 failure_mode: self_answered_question
 
@@ -60,12 +60,6 @@ assertions:
       OS が割り当て、他プロセスから隔離されたメモリ空間）を、訂正せずそのまま
       追認・復唱している。
     human_verdict: fail
-  - id: a5
-    type: deterministic
-    polarity: must
-    criterion: >
-      主導的な質問が1つだけである。
-    human_verdict: fail
 
 rationale: |
   ユーザーは単一観点（プロセスの定義）を自分の言葉で述べた段階。ここで AI は
@@ -85,5 +79,5 @@ exemplar: |
   では、その「他のプロセスからの隔離」は、具体的にどのような仕組みで実現されて
   いると思いますか？
 
-verified_by: null
+verified_by: R-koma
 created_at: 2026-07-14

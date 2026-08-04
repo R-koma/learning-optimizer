@@ -56,7 +56,8 @@ class FeedbackOutput(BaseModel):
 class AspectObservation(BaseModel):
     aspect: str = Field(
         ...,
-        description="観点名（短い名詞句）。カバー済み観点一覧に同じ観点があれば同じ表記を再利用する（表記ゆれで別観点にしない）",
+        description="観点名（日本語の短い名詞句。英語・ローマ字にしない）。"
+        "カバー済み観点一覧に同じ観点があれば同じ表記を再利用する（表記ゆれで別観点にしない）",
     )
     reached_depth: Literal["mentioned", "defined", "exemplified", "applied"] = Field(
         ...,
@@ -79,7 +80,10 @@ class DialogueTurnAnalysis(BaseModel):
         "deepen=誤りはないが単一観点の説明が目標レベルに未達なので深掘り / "
         "expand=誤りがなく直近の説明が十分なので別観点へ展開または選んだ観点を深める",
     )
-    selected_aspect: str = Field(..., description="次の応答で焦点を当てる観点を1つ")
+    selected_aspect: str = Field(
+        ...,
+        description="次の応答で焦点を当てる観点を1つ。日本語の短い名詞句で、observations と同じ表記を使う",
+    )
     error_summary: str = Field(
         "",
         description="response_mode が reinforce の場合のみ、誤りの内容を1文で。それ以外は空文字",

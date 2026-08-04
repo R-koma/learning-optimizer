@@ -20,9 +20,10 @@ from typing import Any, Literal
 
 from graph.coverage import format_covered_aspects
 from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
+from graph.prompts.turn_analysis import TURN_ANALYSIS_PROMPT
 from graph.state import CoveredAspect
 
-PROMPT_VERSION = "generate_question@v1"
+PROMPT_VERSION = "generate_question@v3"
 
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
 
@@ -162,24 +163,27 @@ target_depth に対する不足の判定と、それに応じた質問:
 """
 
 _DIALOGUE_EXAMPLES = """\
+## 応答の型
+
+以下は応答の**形式だけ**を示すひな形です。〈〉は対話履歴の内容で埋める差し込み位置であり、
+〈〉内の語や、ひな形に出てくる話題そのものを応答に持ち込まないでください。
+
 ❌ 悪い例（既出観点の再質問）:
-ユーザー: 「信頼性・スケーラビリティ・メンテナンス性の 3 つがある。信頼性は…、スケーラビリティは…、メンテナンス性は…」
-AI: 「次に、スケーラビリティについて考えてみませんか？」
+ユーザー: 「〈観点1〉・〈観点2〉・〈観点3〉の 3 つがある。〈観点1〉は…、〈観点2〉は…、〈観点3〉は…」
+AI: 「次に、〈観点2〉について考えてみませんか？」
 
 ✅ 良い例（1観点に絞った深掘り）:
-AI: 「3 つの観点を端的に整理されましたね。最初の『信頼性』── 『障害が生じても正しく動作する』
-とのことですが、ここで言う『障害』とは具体的にどのようなものを想定していますか？」
+AI: 「3 つの観点を端的に整理されましたね。最初の『〈観点1〉』──『〈ユーザーの説明の要点〉』
+とのことですが、ここで言う『〈説明中の曖昧な語〉』とは具体的に何を指していますか？」
 
 ❌ 悪い例（誤りのない複数観点説明への過剰解説）:
-ユーザー: 「スループットとは 1 秒あたりに処理できるレコード数のこと。レイテンシとはリクエストが
-処理を待っている期間のこと。レスポンスタイムはクライアントから見た値で、サービスタイムに
-ネットワークやキューイングの遅延が加わったもの」（3 観点とも定義は正確）
+ユーザー: 〈観点1〉〈観点2〉〈観点3〉の定義をいずれも正確に述べる
 AI: 3 観点それぞれに「正確な定義 + 具体例 2〜3 個」を長文で補強してから再説明を促す
 
 ✅ 良い例（復唱 1 文 + 1 観点への深掘り質問 1 つ）:
-AI: 「スループット・レイテンシ・レスポンスタイムを、サービスタイムとの関係まで正確に区別できていますね。
-では『レスポンスタイム』に一歩踏み込みます──同じリクエストを何度も送ると、レスポンスタイムは
-毎回同じにならず大きくばらつきます。このばらつきはどこから生まれると思いますか？」
+AI: 「〈観点1〉・〈観点2〉・〈観点3〉を、互いの関係まで正確に区別できていますね。
+では『〈観点3〉』に一歩踏み込みます──〈ユーザーがまだ触れていない事実を 1 つ提示〉。
+これはどこから生まれると思いますか？」
 """
 
 MODE_DIALOGUE = "\n".join(
@@ -343,16 +347,19 @@ def _build_coverage_section(covered_aspects: Sequence[CoveredAspect] | None) -> 
 
 
 def _prompt_fingerprint() -> str:
-    """プロンプト本文と組み立ての内容ハッシュ。
+    """応答を形づくるプロンプト面（質問生成 + 事前分析）の内容ハッシュ。
 
     手で維持する `PROMPT_VERSION` は上げ忘れ・振り直しで本文との対応が崩れるため、
     版ラベルに依存せず同一性を判定できる値を trace に載せる。
+    事前分析のプロンプトも含めるのは、応答モードを決めて生成プロンプトを差し替える以上、
+    それが変われば同じ入力でも別の応答になるため。
     ダミー値で組み立ててからハッシュするのは本文だけでなく組み立ての変更も拾うため
     （レンダリング後の全文は会話履歴を含みターン毎に変わる）。
     """
     dummy_aspects: tuple[CoveredAspect, ...] = ({"aspect": "A", "reached_depth": "defined"},)
     parts = [
         QUESTION_PROMPT_BASE,
+        TURN_ANALYSIS_PROMPT,
         *_MODE_SECTIONS.values(),
         _build_coverage_section(dummy_aspects),
         *(

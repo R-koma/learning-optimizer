@@ -404,8 +404,6 @@ async def _handle_cancel_last_message(ctx: SessionContext, deps: Deps) -> Sessio
 async def _handle_end_session(ctx: SessionContext | None, deps: Deps) -> None:
     if ctx is not None:
         ctx.is_session_ended = True
-        # 終了スイッチは「直前に通った対話ノード」として注入する必要がある。
-        # learning / review でパスが分かれているため session_type で出し分ける。
         end_node = "review_dialogue" if ctx.session_type == "review" else "learning_dialogue"
         await deps.graph.aupdate_state(ctx.config, {"should_generate_note": True}, as_node=end_node)
         run_name = "update-review-note" if ctx.session_type == "review" else "generate-learning-note"

@@ -28,6 +28,9 @@ postgres_data/
 # =========================
 docs/plan/
 docs/security/
+docs/blog/
+server/evals/next-steps.md
+server/phase0_replay.py
 
 # =========================
 # Eval reports (フェーズ2)

@@ -67,8 +67,6 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         covered_aspects=covered_aspects,
         turn_analysis=turn_analysis,
     )
-    # 会話履歴はプロンプト本文に文字列で埋め込まれるため、画像は最新メッセージ分のみ
-    # 画像ブロックとして別途 LLM に渡す。
     llm_messages: list[BaseMessage] = [SystemMessage(content=question_prompt)]
     if state["messages"]:
         image_blocks = await load_image_blocks(state["messages"][-1], get_storage())
@@ -93,6 +91,5 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         "turn_count": state["turn_count"] + 1,
         "should_generate_note": False,
         "covered_aspects": covered_aspects,
-        # 分析なしのターンも None を明示的に書く（前ターンの値を残さないため。state.py 参照）
         "turn_analysis": _to_record(turn_analysis),
     }

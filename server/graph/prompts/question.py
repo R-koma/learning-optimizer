@@ -14,6 +14,7 @@ dialogue intent はさらに、事前分析（turn_analysis）の結果があれ
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from typing import Any, Literal
 
@@ -21,8 +22,6 @@ from graph.coverage import format_covered_aspects
 from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
 from graph.state import CoveredAspect
 
-# eval レコードの `meta.prompt_version` と突き合わせるため。
-# 本文または`build_question_prompt` の組み立てを意味的に変えたら上げる（表記は既存 jsonl に合わせる）。
 PROMPT_VERSION = "generate_question@v1"
 
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
@@ -341,6 +340,32 @@ def _build_coverage_section(covered_aspects: Sequence[CoveredAspect] | None) -> 
         f"{lines}\n"
         "上記の観点は記載の到達度まで説明済みとして扱い、同じ深さの質問を繰り返さない。\n\n"
     )
+
+
+def _prompt_fingerprint() -> str:
+    """プロンプト本文と組み立ての内容ハッシュ。
+
+    手で維持する `PROMPT_VERSION` は上げ忘れ・振り直しで本文との対応が崩れるため、
+    版ラベルに依存せず同一性を判定できる値を trace に載せる。
+    ダミー値で組み立ててからハッシュするのは本文だけでなく組み立ての変更も拾うため
+    （レンダリング後の全文は会話履歴を含みターン毎に変わる）。
+    """
+    dummy_aspects: tuple[CoveredAspect, ...] = ({"aspect": "A", "reached_depth": "defined"},)
+    parts = [
+        QUESTION_PROMPT_BASE,
+        *_MODE_SECTIONS.values(),
+        _build_coverage_section(dummy_aspects),
+        *(
+            _build_predecided_section(
+                DialogueTurnAnalysis(observations=[], response_mode=mode, selected_aspect="A", error_summary="E")
+            )
+            for mode in _PREDECIDED_MODE_BODIES
+        ),
+    ]
+    return hashlib.sha256("\x00".join(parts).encode()).hexdigest()[:12]
+
+
+PROMPT_FINGERPRINT = _prompt_fingerprint()
 
 
 def _text_of(message: Any) -> str:

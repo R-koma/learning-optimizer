@@ -1,6 +1,8 @@
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from graph.output_schemas import DialogueTurnAnalysis
+from graph.prompts import question
 from graph.prompts.question import (
     MODE_DIALOGUE,
     MODE_HINT,
@@ -203,3 +205,24 @@ class TestPredecidedMode:
         )
         assert intent == "unknown_a"
         assert "事前分析による決定" not in prompt
+
+
+class TestPromptFingerprint:
+    def test_is_stable_across_calls(self) -> None:
+        assert question._prompt_fingerprint() == question._prompt_fingerprint()
+        assert question.PROMPT_FINGERPRINT == question._prompt_fingerprint()
+
+    def test_changes_when_base_text_changes(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        before = question._prompt_fingerprint()
+        monkeypatch.setattr(question, "QUESTION_PROMPT_BASE", question.QUESTION_PROMPT_BASE + "\n追記")
+        assert question._prompt_fingerprint() != before
+
+    def test_changes_when_a_mode_section_changes(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        before = question._prompt_fingerprint()
+        monkeypatch.setitem(question._MODE_SECTIONS, "exhausted", question.MODE_HINT + "\n追記")
+        assert question._prompt_fingerprint() != before
+
+    def test_changes_when_predecided_assembly_changes(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        before = question._prompt_fingerprint()
+        monkeypatch.setitem(question._PREDECIDED_MODE_LABELS, "expand", "展開（モード B・改）")
+        assert question._prompt_fingerprint() != before

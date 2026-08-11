@@ -28,6 +28,12 @@ assertions:
       ユーザー発言に含まれる不正確な表現（「OSから独立したメモリ空間」——正しくは
       OS が割り当て、他プロセスから隔離されたメモリ空間）を、訂正せずそのまま
       追認・復唱している。
+  - id: a5
+    type: deterministic
+    check: contains_generic_prompt_phrase
+    polarity: must_not
+    criterion: >
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含まない。
 
 instances:
   - source_trace_id: 2026-07-14-os-process__t1
@@ -59,6 +65,7 @@ instances:
       a2: fail
       a3: fail
       a4: fail
+      a5: fail
     rationale: |
       ユーザーは単一観点（プロセスの定義）を自分の言葉で述べた段階。ここで AI は
       (1) 定義を言い換え・増強して解説し直し（アドレス空間・コード・データ・スタック、

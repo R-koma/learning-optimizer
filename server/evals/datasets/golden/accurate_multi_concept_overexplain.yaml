@@ -25,6 +25,12 @@ assertions:
     criterion: >
       「もし A なら〜 / B が気になる場合は〜」のような条件付きオファーを複数並べて
       ユーザーに方針を選ばせている（メニュー化）。
+  - id: a5
+    type: deterministic
+    check: contains_generic_prompt_phrase
+    polarity: must_not
+    criterion: >
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含まない。
 
 instances:
   - source_trace_id: 2026-07-08-ddia-ch1-perf__t3
@@ -62,6 +68,7 @@ instances:
       a2: fail
       a3: fail
       a4: pass
+      a5: pass
     rationale: |
       3観点（スループット / レイテンシ / レスポンスタイム）の定義はすべて正確で、訂正すべき
       誤りがない。ここで AI が全観点に定義+具体例の解説を被せると、ユーザーが自分の言葉で

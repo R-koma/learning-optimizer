@@ -48,7 +48,7 @@ judge–人間一致の突き合わせ（§3-6）は Langfuse に対応機能が
 
 ## 3. 機能要件（実装すべきもの）
 
-1. golden レコード（YAML）の読み込み。各レコードは `input` ＋ 型付き `assertions`（`type: deterministic | judge`、`criterion`、`polarity: must | must_not`）＋ あなたの人間ラベル（`pass` と assertion 別判定）を持つ。
+1. golden ファイル（YAML）の読み込み。各ファイルは 1 つの `failure_mode` につき、型付き `assertions`（`type: deterministic | judge`、`criterion`、`polarity: must | must_not`）を 1 回だけ定義し、1 件以上の証拠 `instances`（`input` ＋ `observed_output` ＋ あなたの人間ラベル：インスタンス全体の `pass` と assertion 別 `human_verdicts`）を持つ。
 2. 評価対象の出力を用意：2 モードとも実装する。
    - scoring モード：保存済み `observed_output` を採点（judge–人間一致の校正に使う）。
    - regression モード：`input` から `generate_question` を再実行して採点。temperature 0.7 で

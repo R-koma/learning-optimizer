@@ -36,7 +36,7 @@ instances:
   - source_trace_id: 2026-07-08-ddia-ch1-perf__t3
     source: real
     meta:
-      model: gpt-4.1
+      model: gpt-4.1-nano
       prompt_version: generate_question@v1
     input:
       conversation_history:

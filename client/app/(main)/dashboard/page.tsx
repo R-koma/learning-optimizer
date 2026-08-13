@@ -134,9 +134,6 @@ export default function DashBoard() {
     <div className="mx-auto max-w-4xl px-6 py-8">
       <div className="mb-6 flex items-start justify-between">
         <div className="border-l-4 border-blue-500 pl-4">
-          <p className="mb-1 text-xs font-semibold tracking-widest text-blue-500">
-            DAILY REVIEW
-          </p>
           <h1 className="text-2xl font-bold">今日の復習</h1>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-3">

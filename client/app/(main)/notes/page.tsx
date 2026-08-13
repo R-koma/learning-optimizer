@@ -24,9 +24,6 @@ export default async function NotesPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
       <div className="mb-6 border-l-4 border-muted-foreground/40 pl-4">
-        <p className="mb-1 text-xs font-semibold tracking-widest text-muted-foreground">
-          HISTORY
-        </p>
         <h1 className="text-2xl font-bold">学習履歴</h1>
       </div>
       <NoteList notes={notes} />

@@ -34,6 +34,7 @@ export function Navbar({ user }: NavbarProps) {
     user.image,
   );
   const [modalOpen, setModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await authClient.signOut({
@@ -68,7 +69,7 @@ export function Navbar({ user }: NavbarProps) {
             <span className="sr-only">テーマ切り替え</span>
           </Button>
 
-          <DropdownMenu>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Avatar className="h-8 w-8 cursor-pointer ring-offset-background transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <AvatarImage src={avatarUrl ?? undefined} />
@@ -77,14 +78,27 @@ export function Navbar({ user }: NavbarProps) {
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <div className="flex items-center gap-3 px-3 py-2.5">
-                <Avatar className="h-9 w-9 shrink-0">
-                  <AvatarImage src={avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-sm">
-                    {user.name?.charAt(0).toUpperCase() ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
+            <DropdownMenuContent className="w-60" align="end">
+              <div className="mx-1 mt-1 mb-1 flex items-center gap-3 rounded-md bg-muted/50 px-3 py-2.5">
+                <button
+                  type="button"
+                  aria-label="写真を変更"
+                  onClick={() => {
+                    setModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="group relative shrink-0 cursor-pointer rounded-full"
+                >
+                  <Avatar className="h-9 w-9 ring-2 ring-background">
+                    <AvatarImage src={avatarUrl ?? undefined} />
+                    <AvatarFallback className="text-sm">
+                      {user.name?.charAt(0).toUpperCase() ?? "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                    <CameraIcon className="h-3.5 w-3.5 text-white" />
+                  </span>
+                </button>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-semibold truncate">
                     {user.name}
@@ -96,17 +110,10 @@ export function Navbar({ user }: NavbarProps) {
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => setModalOpen(true)}
-                className="gap-2 text-xs"
-              >
-                <CameraIcon className="h-3.5 w-3.5" />
-                写真を変更
-              </DropdownMenuItem>
-              <DropdownMenuItem
                 onClick={handleSignOut}
-                className="gap-2 text-xs mt-1.5"
+                className="group gap-2 text-muted-foreground focus:bg-destructive/10 focus:text-destructive dark:focus:bg-destructive/20"
               >
-                <LogOutIcon className="h-3.5 w-3.5" />
+                <LogOutIcon className="transition-transform group-focus:translate-x-0.5" />
                 ログアウト
               </DropdownMenuItem>
             </DropdownMenuContent>

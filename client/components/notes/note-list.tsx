@@ -146,7 +146,7 @@ export function NoteList({ notes }: { notes: NoteResponse[] }) {
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-3 bottom-3 cursor-pointer"
+            className="absolute right-3 bottom-3"
             disabled={deletingId === note.id}
           >
             <EllipsisIcon className="h-4 w-4" />

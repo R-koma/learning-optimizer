@@ -150,7 +150,7 @@ export function ChatInput({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full cursor-pointer"
+            className="h-8 w-8 rounded-full"
             onClick={() => setShowMenu((prev) => !prev)}
           >
             <PlusIcon className="h-4 w-4" />
@@ -192,7 +192,7 @@ export function ChatInput({
               size="icon"
               onClick={handleSend}
               disabled={isLoading || isPreparing}
-              className="h-8 w-8 rounded-full cursor-pointer"
+              className="h-8 w-8 rounded-full"
             >
               <ArrowUpIcon className="h-4 w-4" />
             </Button>

@@ -193,7 +193,7 @@ export default function LearnPage() {
                 variant="ghost"
                 size="icon"
                 onClick={endSession}
-                className="h-8 w-8 rounded-full cursor-pointer"
+                className="h-8 w-8 rounded-full"
               >
                 <NotebookPenIcon className="h-4.5 w-4.5" />
               </Button>

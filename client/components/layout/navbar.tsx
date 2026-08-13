@@ -61,7 +61,7 @@ export function Navbar({ user }: NavbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full cursor-pointer hover:!bg-transparent active:!bg-transparent"
+            className="h-9 w-9 rounded-full hover:!bg-transparent active:!bg-transparent"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             <SunIcon className="h-4 w-4 rotate-0 scale-100 transition-transform dark:rotate-90 dark:scale-0" />

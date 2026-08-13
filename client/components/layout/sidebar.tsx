@@ -52,7 +52,7 @@ export function Sidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 cursor-pointer shrink-0 ml-1"
+                className="h-8 w-8 shrink-0 ml-1"
                 onClick={() => setExpanded(false)}
               >
                 <PanelLeftCloseIcon className="h-4 w-4" />

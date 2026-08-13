@@ -15,6 +15,11 @@ import {
   startOfMonth,
 } from "@/lib/calendar-grid";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CalendarNote {
   id: string;
@@ -43,6 +48,8 @@ export function SidebarCalendar() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewDate, setViewDate] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState<Date | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
 
   // 親が expanded のときだけマウントされるため、初回展開時に一度だけ取得される。
   // 学習（過去のノート）と未来の復習予定をまとめて読み、振り返り兼プランナーにする
@@ -190,9 +197,75 @@ export function SidebarCalendar() {
   return (
     <div className="@container mx-auto w-full max-w-[280px] rounded-xl bg-muted/40 p-3">
       <div className="mb-3 flex items-center justify-between px-1">
-        <span className="text-sm font-semibold">
-          {format(viewDate, showYear ? "yyyy年 M月" : "M月", { locale: ja })}
-        </span>
+        <Popover
+          open={isPickerOpen}
+          onOpenChange={(open) => {
+            setIsPickerOpen(open);
+            if (open) setPickerYear(viewDate.getFullYear());
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="-ml-1.5 cursor-pointer rounded-md px-1.5 py-0.5 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              {format(viewDate, showYear ? "yyyy年 M月" : "M月", {
+                locale: ja,
+              })}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-3">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <button
+                type="button"
+                aria-label="前の年"
+                onClick={() => setPickerYear((y) => y - 1)}
+                className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeftIcon className="size-3.5" />
+              </button>
+              <span className="text-sm font-semibold">{pickerYear}年</span>
+              <button
+                type="button"
+                aria-label="次の年"
+                onClick={() => setPickerYear((y) => y + 1)}
+                className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRightIcon className="size-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {Array.from({ length: 12 }, (_, monthIndex) => {
+                const isViewedMonth =
+                  pickerYear === viewDate.getFullYear() &&
+                  monthIndex === viewDate.getMonth();
+                const isCurrentMonth =
+                  pickerYear === today.getFullYear() &&
+                  monthIndex === today.getMonth();
+                return (
+                  <button
+                    key={monthIndex}
+                    type="button"
+                    onClick={() => {
+                      goToMonth(new Date(pickerYear, monthIndex, 1));
+                      setIsPickerOpen(false);
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded-lg py-1.5 text-xs font-medium transition-colors",
+                      isViewedMonth
+                        ? "bg-blue-500 font-semibold text-white"
+                        : isCurrentMonth
+                          ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {monthIndex + 1}月
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
         <div className="flex items-center gap-0.5">
           <button
             type="button"

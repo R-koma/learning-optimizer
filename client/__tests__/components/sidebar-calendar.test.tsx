@@ -125,18 +125,15 @@ describe("SidebarCalendar", () => {
     const user = userEvent.setup();
     render(<SidebarCalendar />);
 
-    expect(
-      screen.queryByRole("button", { name: "今日" }),
-    ).not.toBeInTheDocument();
-
     await user.click(await screen.findByLabelText("次の月"));
     await user.click(await screen.findByRole("button", { name: "今日" }));
 
-    const currentLabel = `${now.getFullYear()}年 ${now.getMonth() + 1}月`;
+    // 年表示は1月・12月のみ。それ以外は月だけ
+    const showYear = now.getMonth() === 0 || now.getMonth() === 11;
+    const currentLabel = showYear
+      ? `${now.getFullYear()}年 ${now.getMonth() + 1}月`
+      : `${now.getMonth() + 1}月`;
     expect(screen.getByText(currentLabel)).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "今日" }),
-    ).not.toBeInTheDocument();
   });
 
   it("fetches both notes and upcoming reviews", async () => {

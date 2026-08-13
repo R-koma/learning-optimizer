@@ -82,10 +82,6 @@ export function SidebarCalendar() {
   const weeks = useMemo(() => buildCalendarWeeks(viewDate), [viewDate]);
   const today = useMemo(() => new Date(), []);
   const todayKey = toLocalDateKey(today);
-  // 当月（実際の今月）を表示しているときだけ月ラベルを強調し、別の月へ移動したと分かるようにする
-  const isViewingCurrentMonth =
-    viewDate.getFullYear() === today.getFullYear() &&
-    viewDate.getMonth() === today.getMonth();
   // 年をまたぐ1月・12月だけ年を出す。それ以外の月は年度が変わらないため月だけで十分
   const showYear = viewDate.getMonth() === 0 || viewDate.getMonth() === 11;
 
@@ -99,6 +95,17 @@ export function SidebarCalendar() {
     setSelected(date);
     // 前後の月のマスを押したらその月へ送る
     setViewDate(startOfMonth(date));
+  };
+
+  // 前月/翌月/今日ボタンでの月移動は、別の月で選んだ日をその月に残さない。
+  // 移動先が当月なら今日を選択扱いにし、そうでなければ選択を解除する
+  const goToMonth = (date: Date) => {
+    const target = startOfMonth(date);
+    setViewDate(target);
+    const isTargetCurrentMonth =
+      target.getFullYear() === today.getFullYear() &&
+      target.getMonth() === today.getMonth();
+    setSelected(isTargetCurrentMonth ? today : null);
   };
 
   const noteEntries: DayEntry[] = selectedNotes.map((note) => ({
@@ -187,19 +194,17 @@ export function SidebarCalendar() {
           {format(viewDate, showYear ? "yyyy年 M月" : "M月", { locale: ja })}
         </span>
         <div className="flex items-center gap-0.5">
-          {!isViewingCurrentMonth && (
-            <button
-              type="button"
-              onClick={() => setViewDate(startOfMonth(today))}
-              className="mr-0.5 cursor-pointer rounded-full bg-primary/10 px-2 py-0.5 text-[0.7rem] font-medium text-primary transition-colors hover:bg-primary/15"
-            >
-              今日
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => goToMonth(today)}
+            className="mr-0.5 cursor-pointer rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[0.7rem] font-semibold text-blue-600 transition-all duration-150 hover:bg-blue-500/20 active:scale-95 dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+          >
+            今日
+          </button>
           <button
             type="button"
             aria-label="前の月"
-            onClick={() => setViewDate((d) => addMonths(d, -1))}
+            onClick={() => goToMonth(addMonths(viewDate, -1))}
             className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ChevronLeftIcon className="size-3.5" />
@@ -207,7 +212,7 @@ export function SidebarCalendar() {
           <button
             type="button"
             aria-label="次の月"
-            onClick={() => setViewDate((d) => addMonths(d, 1))}
+            onClick={() => goToMonth(addMonths(viewDate, 1))}
             className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ChevronRightIcon className="size-3.5" />

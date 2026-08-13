@@ -13,7 +13,6 @@ class LocalObjectStorage:
         self._base = Path(base_dir).resolve()
 
     def _resolve(self, key: str) -> Path:
-        # key は外部由来になり得るため、base_dir 配下に閉じ込めてパストラバーサルを防ぐ。
         target = (self._base / key).resolve()
         if target != self._base and self._base not in target.parents:
             raise ValueError("Invalid storage key")

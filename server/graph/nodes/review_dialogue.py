@@ -25,7 +25,6 @@ async def review_dialogue(state: LearningState) -> dict[str, Any]:
         focus_section=build_focus_section(state.get("prior_improvements")),
     )
     history: list[BaseMessage] = list(state["messages"])
-    # 最新ユーザーメッセージに画像があれば、その content をテキスト＋画像ブロックへ差し替えて渡す。
     if history:
         image_blocks = await load_image_blocks(history[-1], get_storage())
         if image_blocks:

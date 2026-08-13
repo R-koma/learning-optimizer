@@ -29,7 +29,6 @@ class ImageAttachment(BaseModel):
 
     @model_validator(mode="after")
     def _validate_content_matches_mime(self) -> "ImageAttachment":
-        # 申告 mime はなりすまし得るため、実バイトのシグネチャと一致するか確認する。
         decoded = base64.b64decode(self.data, validate=True)
         if detect_image_mime(decoded) != self.mime_type:
             raise ValueError("image content does not match declared mime_type")

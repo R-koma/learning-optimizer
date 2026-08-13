@@ -26,8 +26,6 @@ def image_attachments_kwargs(attachments: list[dict[str, str]]) -> dict[str, Any
     return {_ATTACHMENTS_KEY: attachments}
 
 
-# LangChain の HumanMessage.content は str | list[str | dict[Any, Any]]。dict のキー/値は
-# 不変なので、content ブロックは dict[Any, Any] として組み立てる。
 ContentBlock = dict[Any, Any]
 
 
@@ -37,7 +35,6 @@ def text_block(text: str) -> ContentBlock:
 
 def image_block_from_bytes(data: bytes, mime_type: str) -> ContentBlock:
     b64 = base64.b64encode(data).decode()
-    # detail=high: コードや図中の文字を読む必要があるため低解像度では不足する。
     return {
         "type": "image_url",
         "image_url": {"url": f"data:{mime_type};base64,{b64}", "detail": "high"},

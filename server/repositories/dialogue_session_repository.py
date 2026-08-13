@@ -20,7 +20,7 @@ async def create(
     record = await conn.fetchrow(
         query, str(session_id), user_id, session_type, graph_version, str(note_id) if note_id else None
     )
-    assert record is not None  # INSERT ... RETURNING は必ず1行返す
+    assert record is not None
     return dict(record)
 
 

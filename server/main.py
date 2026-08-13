@@ -17,13 +17,10 @@ from observability.langfuse_tracing import init_tracing, shutdown_tracing
 from observability.langfuse_tracing import is_enabled as is_tracing_enabled
 from repositories import dialogue_session_repository
 
-# アプリ側ロガー（api.*, graph.* など）の INFO を root ハンドラで表示する。
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO"),
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
-# uvicorn は自前ハンドラでログを出す。root への伝播を切って二重出力を防ぐ
-# （uvicorn.error / uvicorn.access は uvicorn ロガーのハンドラ経由で従来どおり1回出る）。
 logging.getLogger("uvicorn").propagate = False
 
 logger = logging.getLogger(__name__)

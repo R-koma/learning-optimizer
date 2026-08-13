@@ -89,8 +89,6 @@ async def _generate_note_background(
         ) as run:
             result = await graph.ainvoke(None, config=run.config)
             run.set_output({"note_id": str(result.get("note_id")), "topic": result.get("topic")})
-        # learning は generate_note で新規 note_id が state に設定される
-        # review は start_review 時点で既存 note_id が state に注入されている
         generated_note_id: UUID | None = result.get("note_id")
         async with pool.acquire() as conn:
             if generated_note_id is not None:
@@ -107,7 +105,6 @@ async def _stream_ai_response(graph: Any, input: Any, config: dict[str, Any], we
     ai_content = ""
     async for msg, metadata in graph.astream(input, config, stream_mode="messages"):
         node = metadata.get("langgraph_node", "")
-        # 内部 LLM 呼び出し（ノード内の structured output 等）の出力をユーザーへ流さない
         if INTERNAL_LLM_TAG in (metadata.get("tags") or []):
             continue
         if isinstance(msg, AIMessageChunk) and node in _STREAMING_NODES and msg.content:
@@ -242,7 +239,6 @@ async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionCo
         "should_generate_note": False,
         "session_type": "review",
     }
-    # 前回フィードバックの改善点を復習プロンプトの重点項目に注入する（初回・空は省略）。
     if feedbacks and feedbacks[-1]["improvements"].strip():
         initial_state["prior_improvements"] = feedbacks[-1]["improvements"]
     return await _start_session(
@@ -269,8 +265,6 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
         await deps.websocket.send_text(ErrorMessage(detail="Invalid session type").model_dump_json())
         return None
 
-    # 別トポロジー世代で保存されたチェックポイントは現グラフと噛み合わず、
-    # 再開すると別パスに化けて破損する。再開を許さず破棄する。
     if existing["graph_version"] != GRAPH_VERSION:
         async with deps.pool.acquire() as conn:
             await dialogue_session_repository.abandon_by_id(conn, msg.session_id, deps.user_id)

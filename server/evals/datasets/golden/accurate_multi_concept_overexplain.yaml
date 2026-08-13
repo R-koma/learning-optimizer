@@ -51,6 +51,7 @@ instances:
             ネットワークやキューイングによる遅延が含まれる。
       graph_state:
         topic: "DDIA 1章"
+        learning_goal: null
         target_depth: explain
         focus_aspects: []
     observed_output: |

@@ -184,15 +184,27 @@ make dev-client  # フロントエンド（別ターミナル）
 
 > **マイグレーション順序の注意**: `alembic upgrade head` の前に `client/better-auth_migrations/*.sql` を適用する必要があります（外部キー制約）。`make setup` はこの順序を自動で行います。
 
-> **BetterAuth スキーマの再生成**: `client/better-auth_migrations/*.sql` は静的スナップショットで、`client/lib/auth.ts` のプラグイン構成とは自動同期しません。プラグインを追加・変更したとき（例: `jwt()` は `jwks` テーブルを要求）は `cd client && npx @better-auth/cli generate --config lib/auth.ts` で再生成してコミットしてください。漏れると新環境のセットアップ時に `relation "jwks"/"user" does not exist` で認証が失敗します。
+> **BetterAuth スキーマの再生成**: `client/better-auth_migrations/*.sql` は静的スナップショットで、`client/lib/auth.ts` のプラグイン構成とは自動同期しません。プラグインを追加・変更したとき（例: `jwt()` は `jwks` テーブルを要求）は再生成してコミットしてください。漏れると新環境のセットアップ時に `relation "jwks"/"user" does not exist` で認証が失敗します。
+
+クライアント側のマイグレーションコマンドは 2 つあり、役割が異なります。
+
+| コマンド | 動作 |
+|----------|------|
+| `cd client && npx @better-auth/cli generate --config lib/auth.ts` | 現在のプラグイン構成に対応する**フルスキーマ SQL を新しいファイル名で出力**する。DB には一切触れない |
+| `cd client && npx @better-auth/cli migrate --config lib/auth.ts` | `client/.env.local` の `DATABASE_URL` が指す DB へ**直接 DDL を適用**する。ファイルは残らない |
+
+リポジトリの正規手順は `generate` で SQL を出してコミットし、DB への適用は `make setup`（psql 経由）に任せる方です。`migrate` は接続先が `client/.env.local` 依存なので、意図しない DB へ適用しないか確認してから使ってください。
+
+> **スナップショットは常に 1 ファイルだけ**: `generate` が出力するのは差分ではなくフルスキーマです。再生成したら**古いファイルを削除**して、`client/better-auth_migrations/` には最新の 1 ファイルのみを置いてください。複数残すと `make setup` が古い方を先に適用し、新しい方は全文 `already exists` で失敗します。
 
 ### トラブルシューティング
 
 | 症状 | 原因 | 対処 |
 |------|------|------|
 | `relation "user" does not exist`（`alembic upgrade head` 時） | BetterAuth の認証SQL未適用 | `client/better-auth_migrations/*.sql` を先に適用（`make setup` が自動実行） |
-| `relation "jwks" does not exist`（認証時） | 認証SQLが古く `jwks` を含まない | `cd client && npx @better-auth/cli migrate --config lib/auth.ts` で不足テーブルを追加し、SQLを再生成してコミット |
+| `relation "jwks" does not exist` など、認証・JWT 発行時のスキーマ不整合 | コミット済みスナップショットが `client/lib/auth.ts` のプラグイン構成より古い | `cd client && npx @better-auth/cli generate --config lib/auth.ts` で再生成し、古いスナップショットを削除して 1 ファイルにしてコミット。開発 DB は `docker compose down -v` → `make setup` で作り直す |
 | `role "..." does not exist`（psql/接続時） | `.env` の `POSTGRES_USER` と接続先ユーザーの不一致 | DBコンテナの実値（`docker compose exec db printenv POSTGRES_USER`）に合わせる |
+| `relation "user" already exists`（`make setup` 時） | 認証SQLのスナップショットが複数ある、または適用済みの DB に再実行した | `client/better-auth_migrations/` を最新 1 ファイルに整理する。作り直す場合は `docker compose down -v` でボリュームごと削除してから `make setup` |
 
 ---
 

@@ -13,7 +13,7 @@ setup-server:
 	db=$$(docker compose exec -T db printenv POSTGRES_DB); \
 	for f in client/better-auth_migrations/*.sql; do \
 		echo "Applying $$f..."; \
-		docker compose exec -T db psql -U "$$user" -d "$$db" -f - < "$$f"; \
+		docker compose exec -T db psql -U "$$user" -d "$$db" -v ON_ERROR_STOP=1 -f - < "$$f" || exit 1; \
 	done
 	cd server && uv run alembic upgrade head
 	cd server && uv run pre-commit install

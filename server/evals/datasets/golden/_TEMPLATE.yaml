@@ -38,6 +38,7 @@ instances:
           content: "信頼性、スケーラビリティ、メンテナンス性..."
       graph_state:
         topic: "DDIA 1章"
+        learning_goal: null
         target_depth: explain
         focus_aspects: ["信頼性", "スケーラビリティ"]
     observed_output: |                          # ラベルした出力（judge検証の対象）

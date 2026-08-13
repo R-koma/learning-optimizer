@@ -49,6 +49,7 @@ instances:
             プログラムの実行単位である。
       graph_state:
         topic: "プロセス"
+        learning_goal: null
         target_depth: explain
         focus_aspects: []
     observed_output: |

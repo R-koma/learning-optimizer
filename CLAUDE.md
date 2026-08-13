@@ -25,7 +25,7 @@ uv run pytest                                                 # テスト全実�
 uv run pytest --cov=. --cov-report=term                      # カバレッジ付き
 ```
 
-> **Note:** eval ハーネスは再構築中。`evals/` には現在データ資産のみ（`datasets/`・`rubrics/`）が残り、実行コードは未実装。
+> **Note:** eval ハーネスは再構築中。`evals/` にあるのはデータ資産（`datasets/golden/*.yaml`・`datasets/*.jsonl`）と deterministic assertion の check レジストリ（`checks.py`）のみで、ランナー（`eval.py`）と capture ツールは未実装。
 
 ### フロントエンド（`client/`）
 ```bash
@@ -69,7 +69,7 @@ server/
 ├── storage/                   # 対話添付のオブジェクトストレージ抽象（local 実装、S3 は #128 で追加）
 ├── services/review_scheduler.py
 ├── migrations/                # Alembic（env.py, versions/）
-├── evals/                     # データ資産のみ（datasets/・rubrics/）。ハーネスは再構築中
+├── evals/                     # datasets/（golden YAML・jsonl）+ checks.py。ランナーは再構築中
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/

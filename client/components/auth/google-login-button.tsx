@@ -14,7 +14,7 @@ export default function GoogleLoginButton() {
   return (
     <Button
       variant="outline"
-      className="w-full h-11 cursor-pointer"
+      className="w-full h-11"
       onClick={handleGoogleSignIn}
     >
       <FcGoogle />

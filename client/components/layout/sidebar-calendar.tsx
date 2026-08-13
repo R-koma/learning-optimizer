@@ -15,6 +15,11 @@ import {
   startOfMonth,
 } from "@/lib/calendar-grid";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CalendarNote {
   id: string;
@@ -43,6 +48,8 @@ export function SidebarCalendar() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewDate, setViewDate] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState<Date | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear());
 
   // 親が expanded のときだけマウントされるため、初回展開時に一度だけ取得される。
   // 学習（過去のノート）と未来の復習予定をまとめて読み、振り返り兼プランナーにする
@@ -82,10 +89,8 @@ export function SidebarCalendar() {
   const weeks = useMemo(() => buildCalendarWeeks(viewDate), [viewDate]);
   const today = useMemo(() => new Date(), []);
   const todayKey = toLocalDateKey(today);
-  // 当月（実際の今月）を表示しているときだけ月ラベルを強調し、別の月へ移動したと分かるようにする
-  const isViewingCurrentMonth =
-    viewDate.getFullYear() === today.getFullYear() &&
-    viewDate.getMonth() === today.getMonth();
+  // 年をまたぐ1月・12月だけ年を出す。それ以外の月は年度が変わらないため月だけで十分
+  const showYear = viewDate.getMonth() === 0 || viewDate.getMonth() === 11;
 
   const selectedKey = selected ? toLocalDateKey(selected) : null;
   const selectedNotes = selectedKey ? (notesByDate.get(selectedKey) ?? []) : [];
@@ -97,6 +102,17 @@ export function SidebarCalendar() {
     setSelected(date);
     // 前後の月のマスを押したらその月へ送る
     setViewDate(startOfMonth(date));
+  };
+
+  // 前月/翌月/今日ボタンでの月移動は、別の月で選んだ日をその月に残さない。
+  // 移動先が当月なら今日を選択扱いにし、そうでなければ選択を解除する
+  const goToMonth = (date: Date) => {
+    const target = startOfMonth(date);
+    setViewDate(target);
+    const isTargetCurrentMonth =
+      target.getFullYear() === today.getFullYear() &&
+      target.getMonth() === today.getMonth();
+    setSelected(isTargetCurrentMonth ? today : null);
   };
 
   const noteEntries: DayEntry[] = selectedNotes.map((note) => ({
@@ -131,8 +147,8 @@ export function SidebarCalendar() {
                 className={cn(
                   "size-1.5 shrink-0 rounded-full",
                   variant === "learned"
-                    ? "bg-primary"
-                    : "border border-primary",
+                    ? "bg-blue-500"
+                    : "border border-amber-500",
                 )}
               />
               <span className="truncate text-xs group-hover:text-primary">
@@ -147,14 +163,13 @@ export function SidebarCalendar() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[280px]">
-        <div className="mb-3 flex items-center justify-between gap-1 px-1">
-          <Skeleton className="size-7 rounded-full" />
-          <div className="flex flex-col items-center gap-1">
-            <Skeleton className="h-4 w-24 rounded" />
-            <Skeleton className="h-0.5 w-24 rounded-full" />
+      <div className="@container mx-auto w-full max-w-[280px] rounded-xl bg-muted/40 p-3">
+        <div className="mb-3 flex items-center justify-between px-1">
+          <Skeleton className="h-4 w-14 rounded" />
+          <div className="flex items-center gap-0.5">
+            <Skeleton className="size-6 rounded-full" />
+            <Skeleton className="size-6 rounded-full" />
           </div>
-          <Skeleton className="size-7 rounded-full" />
         </div>
 
         <div className="grid grid-cols-7 pb-1.5">
@@ -180,49 +195,102 @@ export function SidebarCalendar() {
   }
 
   return (
-    <div className="@container mx-auto w-full max-w-[280px]">
-      <div className="mb-3 px-1">
-        <div className="flex items-center justify-between gap-1">
+    <div className="@container mx-auto w-full max-w-[280px] rounded-xl bg-muted/40 p-3">
+      <div className="mb-3 flex items-center justify-between px-1">
+        <Popover
+          open={isPickerOpen}
+          onOpenChange={(open) => {
+            setIsPickerOpen(open);
+            if (open) setPickerYear(viewDate.getFullYear());
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="-ml-1.5 cursor-pointer rounded-md px-1.5 py-0.5 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              {format(viewDate, showYear ? "yyyy年 M月" : "M月", {
+                locale: ja,
+              })}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-3">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <button
+                type="button"
+                aria-label="前の年"
+                onClick={() => setPickerYear((y) => y - 1)}
+                className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronLeftIcon className="size-3.5" />
+              </button>
+              <span className="text-sm font-semibold">{pickerYear}年</span>
+              <button
+                type="button"
+                aria-label="次の年"
+                onClick={() => setPickerYear((y) => y + 1)}
+                className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ChevronRightIcon className="size-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {Array.from({ length: 12 }, (_, monthIndex) => {
+                const isViewedMonth =
+                  pickerYear === viewDate.getFullYear() &&
+                  monthIndex === viewDate.getMonth();
+                const isCurrentMonth =
+                  pickerYear === today.getFullYear() &&
+                  monthIndex === today.getMonth();
+                return (
+                  <button
+                    key={monthIndex}
+                    type="button"
+                    onClick={() => {
+                      goToMonth(new Date(pickerYear, monthIndex, 1));
+                      setIsPickerOpen(false);
+                    }}
+                    className={cn(
+                      "cursor-pointer rounded-lg py-1.5 text-xs font-medium transition-colors",
+                      isViewedMonth
+                        ? "bg-blue-500 font-semibold text-white"
+                        : isCurrentMonth
+                          ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {monthIndex + 1}月
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => goToMonth(today)}
+            className="mr-0.5 cursor-pointer rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[0.7rem] font-semibold text-blue-600 transition-all duration-150 hover:bg-blue-500/20 active:scale-95 dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+          >
+            今日
+          </button>
           <button
             type="button"
             aria-label="前の月"
-            onClick={() => setViewDate((d) => addMonths(d, -1))}
-            className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => goToMonth(addMonths(viewDate, -1))}
+            className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ChevronLeftIcon className="size-4" />
+            <ChevronLeftIcon className="size-3.5" />
           </button>
-          <div className="flex flex-col items-center">
-            <span className="text-sm font-semibold">
-              {format(viewDate, "yyyy年 M月", { locale: ja })}
-            </span>
-            {/* 当月表示時のみアクセント下線を出す。非表示時も高さを確保してレイアウトのずれを防ぐ */}
-            <span
-              className={cn(
-                "mt-0.5 h-0.5 w-full rounded-full transition-colors",
-                isViewingCurrentMonth ? "bg-primary" : "bg-transparent",
-              )}
-            />
-          </div>
           <button
             type="button"
             aria-label="次の月"
-            onClick={() => setViewDate((d) => addMonths(d, 1))}
-            className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => goToMonth(addMonths(viewDate, 1))}
+            className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ChevronRightIcon className="size-4" />
+            <ChevronRightIcon className="size-3.5" />
           </button>
         </div>
-        {!isViewingCurrentMonth && (
-          <div className="mt-1 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setViewDate(startOfMonth(today))}
-              className="cursor-pointer rounded-full border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              今日
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-7">
@@ -255,16 +323,17 @@ export function SidebarCalendar() {
               onClick={isInteractive ? () => handleSelect(date) : undefined}
               className={cn(
                 // 既定色はサイドバーの非アクティブ項目と同じ text-muted-foreground にそろえる
-                "relative mx-auto flex aspect-square w-full items-center justify-center rounded-full text-xs text-muted-foreground transition-colors @[17rem]:text-sm",
+                "relative mx-auto flex aspect-square w-full items-center justify-center rounded-full text-xs text-muted-foreground transition-all duration-150 @[17rem]:text-sm",
                 !inCurrentMonth && "text-muted-foreground/40",
                 isInteractive ? "cursor-pointer" : "cursor-default",
-                isInteractive && !isSelected && "hover:bg-muted",
-                // 今日: 円形のリングで縁取り（選択日の塗りつぶしと区別する）
-                isToday &&
+                // 今日（未選択）: ソフトなブルーの塗りつぶしで区別する
+                isInteractive &&
                   !isSelected &&
-                  "font-semibold text-primary ring-1 ring-inset ring-primary/50",
+                  (isToday
+                    ? "bg-blue-500/10 font-semibold text-blue-600 hover:scale-110 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+                    : "hover:scale-110 hover:bg-muted"),
                 isSelected &&
-                  "bg-primary font-semibold text-primary-foreground hover:bg-primary",
+                  "bg-blue-500 font-semibold text-white shadow-sm shadow-blue-500/30 hover:bg-blue-600",
               )}
             >
               {date.getDate()}
@@ -274,7 +343,7 @@ export function SidebarCalendar() {
                     <span
                       className={cn(
                         "size-1 rounded-full",
-                        isSelected ? "bg-primary-foreground" : "bg-primary",
+                        isSelected ? "bg-white" : "bg-blue-500",
                       )}
                     />
                   )}
@@ -282,9 +351,7 @@ export function SidebarCalendar() {
                     <span
                       className={cn(
                         "size-1 rounded-full border",
-                        isSelected
-                          ? "border-primary-foreground"
-                          : "border-primary",
+                        isSelected ? "border-white" : "border-amber-500",
                       )}
                     />
                   )}
@@ -297,11 +364,11 @@ export function SidebarCalendar() {
 
       <div className="mt-2 flex items-center justify-center gap-3 text-[0.65rem] text-muted-foreground/70">
         <span className="flex items-center gap-1">
-          <span className="size-1.5 rounded-full bg-primary" />
+          <span className="size-1.5 rounded-full bg-blue-500" />
           学習
         </span>
         <span className="flex items-center gap-1">
-          <span className="size-1.5 rounded-full border border-primary" />
+          <span className="size-1.5 rounded-full border border-amber-500" />
           復習予定
         </span>
       </div>

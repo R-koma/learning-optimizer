@@ -128,7 +128,7 @@ export default function ReviewPage({
                 variant="ghost"
                 size="icon"
                 onClick={endSession}
-                className="h-8 w-8 rounded-full cursor-pointer"
+                className="h-8 w-8 rounded-full"
               >
                 <NotebookPenIcon className="h-4.5 w-4.5" />
               </Button>
@@ -243,11 +243,7 @@ export default function ReviewPage({
           <Markdown>{note.summary}</Markdown>
         </div>
 
-        <Button
-          onClick={handleStartReview}
-          size="lg"
-          className="w-full gap-2 cursor-pointer"
-        >
+        <Button onClick={handleStartReview} size="lg" className="w-full gap-2">
           <RotateCcwIcon className="h-5 w-5" />
           復習を開始する
         </Button>

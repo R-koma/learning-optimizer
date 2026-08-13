@@ -193,7 +193,7 @@ export default function LearnPage() {
                 variant="ghost"
                 size="icon"
                 onClick={endSession}
-                className="h-8 w-8 rounded-full cursor-pointer"
+                className="h-8 w-8 rounded-full"
               >
                 <NotebookPenIcon className="h-4.5 w-4.5" />
               </Button>
@@ -255,7 +255,6 @@ export default function LearnPage() {
         <div className="my-4 w-full max-w-lg">
           <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/8 via-background to-background p-8 shadow-sm">
             <div className="mb-6 border-l-4 border-blue-500/40 pl-4">
-              <Skeleton className="mb-2 h-3 w-24" />
               <Skeleton className="h-6 w-28" />
             </div>
             <div className="flex flex-col gap-6">
@@ -346,9 +345,6 @@ export default function LearnPage() {
 
             <div className="relative">
               <div className="mb-6 border-l-4 border-blue-500 pl-4">
-                <p className="mb-1 text-xs font-semibold tracking-widest text-blue-500">
-                  NEW LEARNING
-                </p>
                 <h1 className="text-xl font-bold tracking-tight text-foreground">
                   新規学習
                 </h1>

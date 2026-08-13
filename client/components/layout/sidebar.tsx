@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 import { useSidebarWidth } from "@/hooks/use-sidebar-width";
 
 const NAV_LINKS = [
-  { href: "/dashboard", label: "ダッシュボード", icon: LayoutDashboardIcon },
-  { href: "/learn", label: "新規学習", icon: PlusCircleIcon },
-  { href: "/notes", label: "学習履歴", icon: BookOpenIcon },
+  { href: "/dashboard", label: "復習", icon: LayoutDashboardIcon },
+  { href: "/learn", label: "新規", icon: PlusCircleIcon },
+  { href: "/notes", label: "履歴", icon: BookOpenIcon },
 ];
 
 export function Sidebar() {

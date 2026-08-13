@@ -13,7 +13,7 @@ async def insert(
     RETURNING *
     """
     record = await conn.fetchrow(query, str(dialogue_session_id), role, content, message_order)
-    assert record is not None  # INSERT ... RETURNING は必ず1行返す
+    assert record is not None
     return dict(record)
 
 

@@ -185,7 +185,6 @@ async def test_update_without_mark_preserves_existing_manually_edited_at(
     assert edited is not None
     edited_at = edited["manually_edited_at"]
 
-    # 復習再生成パス（mark なし）はフラグを上書きしない
     regenerated = await note_repository.update(db_conn, note_id=note_id, user_id=user_id, content="Regenerated")
     assert regenerated is not None
     assert regenerated["manually_edited_at"] == edited_at

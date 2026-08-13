@@ -109,7 +109,7 @@ async def get_session_image(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
 
     data = await get_storage().get(image["storage_key"])
-    # 保存 mime はクライアント申告由来で実体と一致する保証がないため、ブラウザの
+    # 保存 mime は実体と一致する保証がないため、ブラウザの
     # MIME スニッフィングを抑止する（多層防御）。
     return Response(
         content=data,

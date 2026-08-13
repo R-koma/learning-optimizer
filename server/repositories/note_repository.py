@@ -61,7 +61,7 @@ async def insert(
                   manually_edited_at, created_at, updated_at
     """
     record = await conn.fetchrow(query, note_id, user_id, topic, content, summary, category, aspect_map)
-    assert record is not None  # INSERT ... RETURNING は必ず1行返す
+    assert record is not None
     return dict(record)
 
 

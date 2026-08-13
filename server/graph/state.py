@@ -9,9 +9,6 @@ from graph.output_schemas import ResponseMode
 
 TargetDepth = Literal["recognize", "explain", "apply"]
 
-# DialogueAnalysis.depth_level（surface / principle / applied）との対応:
-# surface ≒ mentioned〜defined / principle ≒ exemplified / applied ≒ applied。
-# こちらは観点単位の到達度なので、発話から判定しやすい4段階（言及→定義→具体例→応用）を使う。
 ReachedDepth = Literal["mentioned", "defined", "exemplified", "applied"]
 
 
@@ -48,10 +45,5 @@ class LearningState(TypedDict):
     learning_goal: NotRequired[str]
     target_depth: NotRequired[TargetDepth]
     focus_aspects: NotRequired[list[str]]
-    # 旧チェックポイントには存在しないため NotRequired。読む側は state.get() で欠損許容する
     covered_aspects: NotRequired[list[CoveredAspect]]
-    # 「直近ターンの」事前分析結果。covered_aspects と違い累積せず毎ターン置き換わる。
-    # 事前分析を行わなかったターン（dialogue intent 以外・分析失敗）は None を書き込む。
-    # 前ターンの値が残ると、チェックポイント履歴を辿る eval エクスポートが別ターンの
-    # 決定内容を取り違えるため、値が無いことも明示的に記録する必要がある。
     turn_analysis: NotRequired[TurnAnalysisRecord | None]

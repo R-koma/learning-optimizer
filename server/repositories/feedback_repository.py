@@ -31,7 +31,7 @@ async def insert(
     RETURNING *
     """
     record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
-    assert record is not None  # INSERT/UPSERT ... RETURNING は必ず1行返す
+    assert record is not None
     return dict(record)
 
 
@@ -55,5 +55,5 @@ async def upsert_for_note(
     RETURNING *
     """
     record = await conn.fetchrow(query, note_id, dialogue_session_id, understanding_level, strength, improvements)
-    assert record is not None  # INSERT/UPSERT ... RETURNING は必ず1行返す
+    assert record is not None
     return dict(record)

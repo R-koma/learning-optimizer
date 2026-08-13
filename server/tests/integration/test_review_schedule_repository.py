@@ -52,7 +52,7 @@ async def test_insert_creates_pending_schedule(db_conn: asyncpg.Connection, test
 async def test_find_pending_includes_past_schedule(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
     """next_review_at が過去のスケジュールは一覧に含まれる"""
     note = await _create_test_note(db_conn, test_user["id"])
-    past_review = datetime(2026, 4, 15, 10, 0, 0, tzinfo=UTC)  # 現在時刻より過去
+    past_review = datetime(2026, 4, 15, 10, 0, 0, tzinfo=UTC)
 
     await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=past_review)
 
@@ -65,7 +65,7 @@ async def test_find_pending_includes_past_schedule(db_conn: asyncpg.Connection, 
 async def test_find_pending_excludes_future_schedule(db_conn: asyncpg.Connection, test_user: dict[str, str]) -> None:
     """next_review_at が未来のスケジュールは一覧に含まれない"""
     note = await _create_test_note(db_conn, test_user["id"])
-    future_review = datetime(2099, 12, 31, 0, 0, 0, tzinfo=UTC)  # DBのNOW()に依存するため遠い未来を使用
+    future_review = datetime(2099, 12, 31, 0, 0, 0, tzinfo=UTC)
 
     await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=future_review)
 
@@ -83,7 +83,6 @@ async def test_find_pending_excludes_completed_schedule(
     past_review = datetime(2026, 4, 15, 10, 0, 0, tzinfo=UTC)
 
     schedule = await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=past_review)
-    # mark_completed で status を completed に変更
     await review_schedule_repository.mark_completed(
         db_conn,
         schedule_id=schedule["id"],
@@ -199,7 +198,6 @@ async def test_count_completed_today_counts_reviewed_today(
     """今日 last_reviewed_at が記録されたスケジュールは当日完了として数える"""
     note = await _create_test_note(db_conn, test_user["id"])
     await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=FUTURE_REVIEW)
-    # update_schedule は last_reviewed_at = NOW() を設定する（＝今日復習した状態）
     await review_schedule_repository.update_schedule(
         db_conn, note_id=note["id"], review_count=1, next_review_at=FUTURE_REVIEW
     )
@@ -229,7 +227,6 @@ async def test_count_completed_today_excludes_past_review(
     """last_reviewed_at が過去日のスケジュールは当日完了に数えない"""
     note = await _create_test_note(db_conn, test_user["id"])
     schedule = await review_schedule_repository.insert(db_conn, note_id=note["id"], next_review_at=FUTURE_REVIEW)
-    # last_reviewed_at を JST で確実に前日以前になる過去へ直接書き換える
     await db_conn.execute(
         "UPDATE review_schedules SET last_reviewed_at = $2 WHERE id = $1",
         schedule["id"],

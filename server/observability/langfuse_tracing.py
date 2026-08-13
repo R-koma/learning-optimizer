@@ -90,8 +90,6 @@ def build_graph_config(
     """
     return {
         "configurable": {"thread_id": str(session_id)},
-        # グラフ実行自体の観測名。root span（操作名）と別名にしないと、同名の観測が
-        # 二段重なって trace ツリーが読みづらくなる。
         "run_name": f"{session_type}-graph",
         "metadata": {
             "langfuse_session_id": str(session_id),
@@ -144,7 +142,5 @@ async def traced_graph_run(
         tags=metadata["langfuse_tags"],
     ):
         with _client.start_as_current_observation(as_type=as_type, name=name, input=input) as span:
-            # ハンドラは root span が active な状態で生成する。生成時点の trace context を
-            # 引き継ぐため、外で作るとグラフの観測が root span の下にぶら下がらない。
             run_config["callbacks"] = [CallbackHandler()]
             yield TracedRun(run_config, span)

@@ -285,7 +285,7 @@ def test_cancel_without_session_returns_error(ws_env: SimpleNamespace) -> None:
 def test_cancel_before_first_turn_returns_error(ws_env: SimpleNamespace) -> None:
     with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
         _authenticate(ws)
-        _start_learning(ws)  # message_order は 2 のため取り消し不可
+        _start_learning(ws)
 
         ws.send_json({"type": "cancel_last_message"})
         res = ws.receive_json()
@@ -340,8 +340,6 @@ def test_resume_with_stale_graph_version_is_rejected(ws_env: SimpleNamespace) ->
 async def test_disconnect_marks_session_as_disconnect(
     test_pool: asyncpg.Pool, test_user: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # TestClient の close 機構は disconnect 経路でサーバタスクを cancel しがちで不安定なため、
-    # フェイク WS を直接ハンドラへ渡し、receive 枯渇で WebSocketDisconnect を決定的に送出する。
     user_id = test_user["id"]
 
     async def fake_get_pool() -> asyncpg.Pool:

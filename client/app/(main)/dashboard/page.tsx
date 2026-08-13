@@ -123,21 +123,13 @@ export default function DashBoard() {
 
   if (!session) return null;
 
-  const today = new Date().toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  });
-
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between">
         <div className="border-l-4 border-blue-500 pl-4">
           <h1 className="text-2xl font-bold">今日の復習</h1>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-3">
-          <p className="text-sm text-muted-foreground">{today}</p>
           <Button
             asChild
             className="gap-2 bg-blue-600 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/30 [a]:hover:bg-blue-500 active:translate-y-0 active:shadow-sm"
@@ -175,24 +167,13 @@ export default function DashBoard() {
       )}
 
       <section>
-        <div className="mb-4 flex items-center gap-2">
-          <RotateCcwIcon className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">復習</h2>
-          {pendingCount > 0 && (
-            <Badge variant="destructive" className="ml-1">
-              {pendingCount}
-            </Badge>
-          )}
-        </div>
-
         {reviews.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 text-center">
-            <SparklesIcon className="mb-4 h-10 w-10 text-muted-foreground/30" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
+              <SparklesIcon className="h-6 w-6 text-emerald-500" />
+            </div>
             <p className="text-sm font-medium text-muted-foreground">
               復習が必要なノートはありません
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              学習を続けると、ここに復習スケジュールが表示されます
             </p>
           </div>
         ) : (

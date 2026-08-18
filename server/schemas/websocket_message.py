@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from core import config
 from core.image_signature import detect_image_mime
-from graph.state import TargetDepth
 
 
 class ImageAttachment(BaseModel):
@@ -39,7 +38,6 @@ class StartLearningMessage(BaseModel):
     type: Literal["start_learning"]
     topic: str
     learning_goal: str | None = None
-    target_depth: TargetDepth | None = None
     focus_aspects: list[str] | None = None
 
 

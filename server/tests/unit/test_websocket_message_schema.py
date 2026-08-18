@@ -4,7 +4,7 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from core import config
-from schemas.websocket_message import ImageAttachment, IncomingMessage, UserMessage
+from schemas.websocket_message import ImageAttachment, IncomingMessage, StartLearningMessage, UserMessage
 
 _adapter: TypeAdapter[IncomingMessage] = TypeAdapter(IncomingMessage)
 
@@ -84,3 +84,9 @@ def test_rejects_too_many_images() -> None:
     images = [{"mime_type": "image/png", "data": _b64(_PNG_BYTES)}] * (config.MAX_IMAGES_PER_MESSAGE + 1)
     with pytest.raises(ValidationError, match="at most"):
         _adapter.validate_python({"type": "user_message", "content": "hi", "images": images})
+
+
+def test_start_learning_ignores_legacy_target_depth() -> None:
+    msg = _adapter.validate_python({"type": "start_learning", "topic": "二分探索", "target_depth": "explain"})
+    assert isinstance(msg, StartLearningMessage)
+    assert not hasattr(msg, "target_depth")

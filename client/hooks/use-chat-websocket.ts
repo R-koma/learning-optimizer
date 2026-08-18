@@ -62,11 +62,8 @@ interface NoteStatusResponse {
   feedback?: Feedback | null;
 }
 
-export type TargetDepth = "recognize" | "explain" | "apply";
-
 export interface StartLearningOptions {
   learning_goal?: string;
-  target_depth?: TargetDepth;
 }
 
 interface UseChatWebSocketReturn {
@@ -328,13 +325,10 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
         type: "start_learning";
         topic: string;
         learning_goal?: string;
-        target_depth?: TargetDepth;
       } = { type: "start_learning", topic };
 
       const goal = options?.learning_goal?.trim();
       if (goal) payload.learning_goal = goal;
-
-      if (options?.target_depth) payload.target_depth = options.target_depth;
 
       const checkAndSend = () => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {

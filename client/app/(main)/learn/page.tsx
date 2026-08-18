@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useChatWebSocket, type TargetDepth } from "@/hooks/use-chat-websocket";
+import { useChatWebSocket } from "@/hooks/use-chat-websocket";
 import { fetchAPI } from "@/lib/api";
 import { loadResumableMessages, isResumableStatus } from "@/lib/session";
 import type { PreparedImage } from "@/lib/image";
@@ -17,47 +17,16 @@ import { MessageCopyButton } from "@/components/chat/message-copy-button";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { Markdown } from "@/components/ui/markdown";
 import { closeOpenCodeFence } from "@/lib/chat-markdown";
-import type { LucideIcon } from "lucide-react";
 import {
   ArrowRightIcon,
-  BookOpenIcon,
-  CheckIcon,
   HistoryIcon,
   Loader2Icon,
-  MessageCircleIcon,
   NotebookPenIcon,
   PencilIcon,
   FlagIcon,
   PlusIcon,
-  RocketIcon,
   XIcon,
 } from "lucide-react";
-
-const TARGET_DEPTH_OPTIONS: {
-  value: TargetDepth;
-  label: string;
-  hint: string;
-  icon: LucideIcon;
-}[] = [
-  {
-    value: "recognize",
-    label: "概要",
-    hint: "言葉の意味と全体像が分かる",
-    icon: BookOpenIcon,
-  },
-  {
-    value: "explain",
-    label: "説明",
-    hint: "他人に教えられる、具体例を出せる",
-    icon: MessageCircleIcon,
-  },
-  {
-    value: "apply",
-    label: "実践応用",
-    hint: "具体的な場面で使える、応用展開できる",
-    icon: RocketIcon,
-  },
-];
 
 interface ActiveSessionResponse {
   session_id: string;
@@ -74,7 +43,6 @@ export default function LearnPage() {
   const sessionParam = searchParams.get("session");
   const [topic, setTopic] = useState("");
   const [learningGoal, setLearningGoal] = useState("");
-  const [targetDepth, setTargetDepth] = useState<TargetDepth | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -141,7 +109,6 @@ export default function LearnPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     setTopic("");
     setLearningGoal("");
-    setTargetDepth(null);
     setIsDetailsOpen(false);
     setInput("");
     setIsBootstrapping(true);
@@ -215,7 +182,6 @@ export default function LearnPage() {
 
     startLearning(topic.trim(), {
       learning_goal: learningGoal.trim() || undefined,
-      target_depth: targetDepth ?? undefined,
     });
   };
 
@@ -259,14 +225,6 @@ export default function LearnPage() {
             </div>
             <div className="flex flex-col gap-6">
               <Skeleton className="h-12 w-full rounded-xl" />
-              <div className="grid gap-3">
-                <Skeleton className="h-4 w-28" />
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-24 w-full rounded-xl" />
-                  ))}
-                </div>
-              </div>
               <Skeleton className="h-5 w-32" />
               <Skeleton className="mt-2 h-12 w-full rounded-xl" />
             </div>
@@ -367,67 +325,6 @@ export default function LearnPage() {
                       className="h-12 rounded-xl border-input/60 bg-background/60 text-base shadow-sm backdrop-blur transition-colors focus-visible:border-blue-500/60"
                       required
                     />
-                  </div>
-
-                  <div className="grid gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">
-                        習熟レベル
-                      </span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        任意
-                      </span>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {TARGET_DEPTH_OPTIONS.map((option) => {
-                        const isSelected = targetDepth === option.value;
-                        const Icon = option.icon;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() =>
-                              setTargetDepth(isSelected ? null : option.value)
-                            }
-                            className={`group/opt relative flex cursor-pointer flex-col gap-3 rounded-xl border p-4 text-left transition-all duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:outline-none ${
-                              isSelected
-                                ? "border-blue-500/60 bg-blue-500/10 shadow-sm ring-1 ring-blue-500/15"
-                                : "border-input/60 bg-background/45 hover:-translate-y-0.5 hover:border-blue-500/30 hover:bg-background/80 hover:shadow-md"
-                            }`}
-                          >
-                            <span className="flex items-center gap-2">
-                              <Icon
-                                className={`h-4 w-4 shrink-0 transition-colors ${
-                                  isSelected
-                                    ? "text-blue-500"
-                                    : "text-muted-foreground group-hover/opt:text-blue-500"
-                                }`}
-                              />
-                              <span className="flex-1 text-sm font-semibold tracking-tight whitespace-nowrap text-foreground">
-                                {option.label}
-                              </span>
-                              <span
-                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                                  isSelected
-                                    ? "border-blue-500 bg-blue-500 text-white"
-                                    : "border-input/80 bg-background/80"
-                                }`}
-                              >
-                                {isSelected && (
-                                  <CheckIcon
-                                    className="h-3 w-3"
-                                    strokeWidth={3}
-                                  />
-                                )}
-                              </span>
-                            </span>
-                            <span className="text-xs leading-relaxed text-muted-foreground">
-                              {option.hint}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
                   </div>
 
                   <div>

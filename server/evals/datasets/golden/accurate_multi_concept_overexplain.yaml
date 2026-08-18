@@ -52,7 +52,6 @@ instances:
       graph_state:
         topic: "DDIA 1章"
         learning_goal: null
-        target_depth: explain
         focus_aspects: []
     observed_output: |
       素晴らしい整理ですね。3つの概念を正確に押さえられています。

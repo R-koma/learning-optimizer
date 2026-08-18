@@ -39,7 +39,6 @@ instances:
       graph_state:
         topic: "DDIA 1章"
         learning_goal: null
-        target_depth: explain
         focus_aspects: ["信頼性", "スケーラビリティ"]
     observed_output: |                          # ラベルした出力（judge検証の対象）
       素晴らしい整理ですね。信頼性については、正確には「...能力」と言えます。

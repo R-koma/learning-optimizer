@@ -7,8 +7,6 @@ from typing_extensions import TypedDict
 
 from graph.output_schemas import ResponseMode
 
-TargetDepth = Literal["recognize", "explain", "apply"]
-
 ReachedDepth = Literal["mentioned", "defined", "exemplified", "applied"]
 
 
@@ -43,7 +41,6 @@ class LearningState(TypedDict):
     note_summary: NotRequired[str]
     prior_improvements: NotRequired[str]
     learning_goal: NotRequired[str]
-    target_depth: NotRequired[TargetDepth]
     focus_aspects: NotRequired[list[str]]
     covered_aspects: NotRequired[list[CoveredAspect]]
     turn_analysis: NotRequired[TurnAnalysisRecord | None]

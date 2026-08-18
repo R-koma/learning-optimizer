@@ -206,8 +206,6 @@ async def _handle_start_learning(msg: StartLearningMessage, deps: Deps) -> Sessi
     }
     if msg.learning_goal and msg.learning_goal.strip():
         initial_state["learning_goal"] = msg.learning_goal.strip()
-    if msg.target_depth is not None:
-        initial_state["target_depth"] = msg.target_depth
     if msg.focus_aspects:
         cleaned_aspects = [a.strip() for a in msg.focus_aspects if a and a.strip()]
         if cleaned_aspects:

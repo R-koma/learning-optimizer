@@ -12,7 +12,6 @@ async def learning_start(state: LearningState) -> dict[str, Any]:
     topic = state["topic"]
     plan_fields = format_learning_plan_fields(
         learning_goal=state.get("learning_goal"),
-        target_depth=state.get("target_depth") or "recognize",
         focus_aspects=state.get("focus_aspects"),
     )
     prompt = LEARNING_PLANNER_PROMPT.format(topic=topic, **plan_fields)

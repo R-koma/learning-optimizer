@@ -50,7 +50,6 @@ instances:
       graph_state:
         topic: "プロセス"
         learning_goal: null
-        target_depth: explain
         focus_aspects: []
     observed_output: |
       プロセスは、コンピュータの中で動作するプログラムの実行単位であり、オペレーティングシステムから

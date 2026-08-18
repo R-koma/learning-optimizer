@@ -5,12 +5,10 @@ def _render(
     *,
     topic: str = "データシステムの基礎",
     learning_goal: str | None = None,
-    target_depth: str = "recognize",
     focus_aspects: list[str] | None = None,
 ) -> str:
     fields = format_learning_plan_fields(
         learning_goal=learning_goal,
-        target_depth=target_depth,  # type: ignore[arg-type]
         focus_aspects=focus_aspects,
     )
     return LEARNING_PLANNER_PROMPT.format(topic=topic, **fields)
@@ -28,9 +26,9 @@ class TestLearningPlannerPromptRendering:
         assert "捏造" in rendered
         assert "既にお伝えいただいた内容から" in rendered
 
-    def test_ui_selection_note_present(self) -> None:
+    def test_ui_input_note_present(self) -> None:
         rendered = _render()
-        assert "UI 選択値" in rendered
+        assert "UI 入力値" in rendered
 
     def test_topic_is_interpolated(self) -> None:
         rendered = _render(topic="クロージャ")

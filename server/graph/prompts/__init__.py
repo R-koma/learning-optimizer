@@ -6,7 +6,6 @@
 
 from graph.prompts._base import (
     NO_FABRICATION_CHARTER,
-    TARGET_DEPTH_LABELS,
     UNSPECIFIED_PLACEHOLDER,
     format_learning_plan_fields,
     inject_charter,
@@ -51,7 +50,6 @@ __all__ = [
     "NO_FABRICATION_CHARTER",
     "QUESTION_PROMPT_BASE",
     "REVIEW_SYSTEM_PROMPT",
-    "TARGET_DEPTH_LABELS",
     "TURN_ANALYSIS_PROMPT",
     "UNSPECIFIED_PLACEHOLDER",
     "UPDATE_NOTE_PROMPT",

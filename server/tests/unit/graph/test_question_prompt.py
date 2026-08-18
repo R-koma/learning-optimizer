@@ -16,7 +16,6 @@ from graph.state import CoveredAspect
 
 _PLAN_FIELDS = {
     "learning_goal": "未指定",
-    "target_depth_label": "自分の言葉で説明できるレベル",
     "focus_aspects": "未指定",
 }
 
@@ -117,8 +116,12 @@ class TestBuildQuestionPrompt:
 
     def test_plan_fields_are_interpolated(self) -> None:
         prompt, _ = self._build([HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")])
-        assert "自分の言葉で説明できるレベル" in prompt
         assert "ReAct" in prompt
+        assert "学習ゴール: 未指定" in prompt
+
+    def test_fixed_goal_statement_is_present(self) -> None:
+        prompt, _ = self._build([HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")])
+        assert "具体例または動作原理まで述べられる" in prompt
 
 
 _DIALOGUE_MESSAGES = [HumanMessage(content="ReAct は推論と行動を交互に行うエージェントです。")]

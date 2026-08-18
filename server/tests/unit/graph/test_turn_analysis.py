@@ -22,7 +22,6 @@ _STATE = cast(
 
 _PLAN_FIELDS = {
     "learning_goal": "未指定",
-    "target_depth_label": "自分の言葉で説明できるレベル",
     "focus_aspects": "未指定",
 }
 
@@ -65,4 +64,5 @@ class TestAnalyzeDialogueTurn:
         prompt = mock_invoke.call_args.args[0][0].content
         assert "二分探索" in prompt
         assert "- 前提条件: defined（定義済み）" in prompt
+        assert "到達目標は exemplified" in prompt
         assert mock_invoke.call_args.kwargs["config"]["run_name"] == "turn-analysis"

@@ -54,7 +54,7 @@ judge–人間一致の突き合わせ（§3-6）は Langfuse に対応機能が
    - regression モード：`input` から `generate_question` を再実行して採点。temperature 0.7 で
      出力が揺れるため、1 レコードにつき N 回（既定 3〜5）生成し assertion 別 pass 率で見る。
 3. assertion を `type` で振り分け：`deterministic` → コード関数、`judge` → LLM 呼び出し。
-4. judge：1 criterion・二値・`{verdict, reason}` を返す。クロスファミリのモデル。
+4. judge：1 criterion・二値・`{reason, holds}` を返す。クロスファミリのモデル。
 5. レコード単位で集約：`must` が満たされ `must_not` が現れていなければ pass。
 6. **judge 検証：judge 判定を人間ラベルと突き合わせ、一致（混同行列 or 一致率）を出す。** ← 心臓部。
    `human_verdict` は保存済み `observed_output` へのラベルなので、この突き合わせは
@@ -68,7 +68,7 @@ judge–人間一致の突き合わせ（§3-6）は Langfuse に対応機能が
 - [ ] golden YAML を読み込む load 関数がある
 - [ ] scoring / regression をコマンドライン引数等で切り替えられる
 - [ ] assertion を `type` で deterministic / judge に振り分けるディスパッチがある
-- [ ] judge は 1 criterion・二値・`{verdict, reason}` を返す（曖昧スコアを出すコードになっていない）
+- [ ] judge は 1 criterion・二値・`{reason, holds}` を返す（曖昧スコアを出すコードになっていない）
 - [ ] `polarity`（must / must_not）が集約ロジックに反映されている
 - [ ] **judge 判定を人間ラベルと突き合わせる比較ロジックがある**
 - [ ] `report/` に結果を書き出す関数がある

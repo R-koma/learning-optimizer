@@ -23,6 +23,7 @@ _JSONL_PATH = Path(__file__).parent / "datasets" / "generate_questions.jsonl"
 
 _JUDGE_MAX_ATTEMPTS = 3
 _EVAL_USER_ID = "eval-regression"
+_NOT_APPLICABLE = "na"
 
 JUDGE_PROMPT = """\
 ## 役割
@@ -73,14 +74,18 @@ class AssertionOutcome:
     assertion_id: str
     assertion_type: str
     polarity: str
-    holds: bool
+    holds: bool | None
     verdict: str
     human_verdict: str
     detail: str
 
     @property
+    def applicable(self) -> bool:
+        return self.verdict != _NOT_APPLICABLE
+
+    @property
     def agrees(self) -> bool:
-        return self.verdict == self.human_verdict
+        return self.applicable and self.verdict == self.human_verdict
 
 
 def load_golden_records() -> Iterator[dict[str, Any]]:
@@ -176,6 +181,18 @@ async def judge_by_llm(assertion: dict[str, Any], trace: SourceTrace) -> JudgeRe
 async def evaluate_assertion(
     assertion: dict[str, Any], trace: SourceTrace, human_verdicts: dict[str, str]
 ) -> AssertionOutcome:
+    human_verdict = human_verdicts[assertion["id"]]
+    if human_verdict == _NOT_APPLICABLE:
+        return AssertionOutcome(
+            assertion_id=assertion["id"],
+            assertion_type=assertion["type"],
+            polarity=assertion["polarity"],
+            holds=None,
+            verdict=_NOT_APPLICABLE,
+            human_verdict=human_verdict,
+            detail=f"applies_when: {assertion.get('applies_when', '').strip()}",
+        )
+
     if assertion["type"] == "judge":
         judged = await judge_by_llm(assertion, trace)
         holds, detail = judged.holds, judged.reason
@@ -191,7 +208,7 @@ async def evaluate_assertion(
         polarity=assertion["polarity"],
         holds=holds,
         verdict=to_verdict(assertion["polarity"], holds),
-        human_verdict=human_verdicts[assertion["id"]],
+        human_verdict=human_verdict,
         detail=detail,
     )
 
@@ -208,7 +225,7 @@ def format_output(record: dict[str, Any], instance: dict[str, Any], outcomes: li
     print(f"failure_mode={record['failure_mode']}  source_trace_id={instance['source_trace_id']}")
     print("-" * 100)
     for outcome in outcomes:
-        mark = "OK " if outcome.agrees else "NG "
+        mark = "-- " if not outcome.applicable else ("OK " if outcome.agrees else "NG ")
         print(
             f"{mark}{outcome.assertion_id}  {outcome.assertion_type:<13} {outcome.polarity:<8} "
             f"holds={str(outcome.holds):<5} judge={outcome.verdict:<4} human={outcome.human_verdict}"
@@ -218,15 +235,18 @@ def format_output(record: dict[str, Any], instance: dict[str, Any], outcomes: li
 
 
 def validate(outcomes: list[AssertionOutcome]) -> None:
-    tp = sum(1 for o in outcomes if o.human_verdict == "fail" and o.verdict == "fail")
-    fn = sum(1 for o in outcomes if o.human_verdict == "fail" and o.verdict == "pass")
-    fp = sum(1 for o in outcomes if o.human_verdict == "pass" and o.verdict == "fail")
-    tn = sum(1 for o in outcomes if o.human_verdict == "pass" and o.verdict == "pass")
+    scored = [o for o in outcomes if o.applicable]
+    skipped = len(outcomes) - len(scored)
+    tp = sum(1 for o in scored if o.human_verdict == "fail" and o.verdict == "fail")
+    fn = sum(1 for o in scored if o.human_verdict == "fail" and o.verdict == "pass")
+    fp = sum(1 for o in scored if o.human_verdict == "pass" and o.verdict == "fail")
+    tn = sum(1 for o in scored if o.human_verdict == "pass" and o.verdict == "pass")
     agreed = tp + tn
-    total = len(outcomes)
+    total = len(scored)
 
     print("=" * 100)
     print(f"judge–人間一致: {agreed}/{total}" + (f" ({agreed / total:.0%})" if total else ""))
+    print(f"  適用外（applies_when を満たさず採点対象外）: {skipped} 件")
     print(f"  TP={tp} TN={tn} FP={fp} FN={fn}   （陽性 = 人間ラベル fail）")
     print(f"  TPR={tp / (tp + fn):.0%}" if tp + fn else "  TPR=n/a")
     print(f"  TNR={tn / (tn + fp):.0%}" if tn + fp else "  TNR=n/a")

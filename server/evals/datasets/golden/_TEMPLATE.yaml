@@ -14,6 +14,8 @@ assertions:
   - id: a2
     type: judge
     polarity: must_not
+    applies_when: >                           # 任意：この assertion を適用する前提条件（input の性質で書く）
+      学習者の直前の発言に、定義済みの概念が1つ以上含まれている。
     criterion: >
       学習者が未定義の概念に、システムが先に定義・説明を与えている。
   - id: a3
@@ -48,7 +50,7 @@ instances:
     pass: false                                 # observed_output 全体の合否。assertion 別は human_verdicts
     human_verdicts:                             # assertions の id と対応させる
       a1: fail
-      a2: fail
+      a2: na                                    # applies_when を満たさない instance は na（採点対象外）
       a3: pass
 
     # ---- 人間の根拠（critique。このインスタンスに固有）----

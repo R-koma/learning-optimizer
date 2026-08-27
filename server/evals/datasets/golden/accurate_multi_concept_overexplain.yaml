@@ -3,17 +3,25 @@ schema_version: 1
 status: active
 
 assertions:
-  - id: a1
+  - id: a1a
     type: judge
     polarity: must
     criterion: >
-      列挙された複数概念のうち1つに焦点を絞り、ユーザーがまだ説明していない側面
-      （具体例・因果・応用場面など）を引き出す質問をしている。
+      列挙された複数概念のうち1つだけに焦点を絞って質問している。
+  - id: a1b
+    type: judge
+    polarity: must
+    criterion: >
+      質問が、何について何を答えればよいかを応答だけから特定できる具体性を持っている
+      （答えるべき範囲が一意に定まる）。
   - id: a2
     type: judge
     polarity: must_not
+    applies_when: >
+      ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。
     criterion: >
-      誤りのない説明に対して、複数の観点へ定義・具体例の解説を与えている。
+      ユーザーが述べた観点について、定義または具体例を新たに提示している。
+      該当する観点が1つでもあれば true。
   - id: a3
     type: judge
     polarity: must_not
@@ -30,7 +38,7 @@ assertions:
     check: contains_generic_prompt_phrase
     polarity: must_not
     criterion: >
-      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含まない。
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。
 
 instances:
   - source_trace_id: 2026-07-08-ddia-ch1-perf__t3
@@ -64,7 +72,8 @@ instances:
       それでは、まずスループットについて、もう一度自分の言葉で説明してみてもらえますか？
     pass: false
     human_verdicts:
-      a1: fail
+      a1a: pass
+      a1b: fail
       a2: fail
       a3: fail
       a4: pass

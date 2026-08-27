@@ -72,9 +72,11 @@ def test_deterministic_assertions_match_human_verdicts() -> None:
         for instance in data["instances"]:
             observed_output = outputs[instance["source_trace_id"]]
             for assertion_id, assertion in deterministic.items():
+                actual = instance["human_verdicts"][assertion_id]
+                if actual == "na":
+                    continue
                 outcome = run_check(assertion["check"], observed_output)
                 expected = "pass" if _passed(assertion["polarity"], outcome.holds) else "fail"
-                actual = instance["human_verdicts"][assertion_id]
                 if expected != actual:
                     mismatches.append(
                         f"{data['_path']}: instance={instance['source_trace_id']} "

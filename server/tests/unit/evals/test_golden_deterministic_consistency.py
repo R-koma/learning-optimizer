@@ -16,7 +16,7 @@ from typing import Any
 
 import yaml
 
-from evals.checks import run_check
+from evals.checks import check_fingerprint, run_check
 
 _DATASETS_DIR = Path(__file__).resolve().parents[3] / "evals" / "datasets"
 _GOLDEN_DIR = _DATASETS_DIR / "golden"
@@ -84,3 +84,18 @@ def test_deterministic_assertions_match_human_verdicts() -> None:
                         f"({outcome.detail})"
                     )
     assert not mismatches, "\n".join(mismatches)
+
+
+def test_deterministic_assertion_fingerprints_match_implementation() -> None:
+    stale: list[str] = []
+    for data in _load_golden_files():
+        for assertion in data["assertions"]:
+            if assertion["type"] != "deterministic":
+                continue
+            current = check_fingerprint(assertion["check"])
+            if assertion.get("check_fingerprint") != current:
+                stale.append(
+                    f"{data['_path']}: assertion={assertion['id']} check={assertion['check']} "
+                    f"recorded={assertion.get('check_fingerprint')!r} current={current!r}"
+                )
+    assert not stale, "\n".join(stale)

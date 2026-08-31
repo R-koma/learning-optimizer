@@ -11,7 +11,7 @@ import yaml
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import BaseModel, Field
 
-from evals.checks import run_check
+from evals.checks import check_fingerprint, run_check
 from graph.llm import llm, llm_judge
 from graph.prompts.question import PROMPT_VERSION
 from graph.state import LearningState
@@ -96,6 +96,33 @@ def load_golden_records() -> Iterator[dict[str, Any]]:
             record = yaml.safe_load(f)
         if record.get("status") == "active":
             yield record
+
+
+def validate_check_fingerprints() -> dict[str, str]:
+    """golden の check_fingerprint が現行実装と一致するか検証し、使用中の check 名→fingerprint を返す。
+
+    採点ループ内ではなく実行前に一括で見るのは、`evaluate_instance` が judge と deterministic を
+    `asyncio.gather` で同時に走らせるため、assertion 単位で落とすと judge の課金が先に発生するため。
+    """
+    in_use: dict[str, str] = {}
+    stale: list[str] = []
+    for record in load_golden_records():
+        for assertion in record["assertions"]:
+            if assertion["type"] != "deterministic":
+                continue
+            current = check_fingerprint(assertion["check"])
+            in_use[assertion["check"]] = current
+            if assertion.get("check_fingerprint") != current:
+                stale.append(
+                    f"  {record['failure_mode']}/{assertion['id']}: check={assertion['check']} "
+                    f"recorded={assertion.get('check_fingerprint')!r} current={current!r}"
+                )
+    if stale:
+        raise ValueError(
+            "deterministic check の実装が golden 記録時から変わっている。criterion を読み直し、"
+            "必要なら human_verdicts を付け直してから check_fingerprint を更新すること:\n" + "\n".join(stale)
+        )
+    return in_use
 
 
 def get_source_trace(trace_id: str) -> SourceTrace:
@@ -253,8 +280,11 @@ def validate(outcomes: list[AssertionOutcome]) -> None:
 
 
 async def main() -> None:
+    fingerprints = validate_check_fingerprints()
+
     print(f"model={llm.model_name} temperature={llm.temperature}")
-    print(f"judge={llm_judge.model} prompt_version={PROMPT_VERSION}\n")
+    print(f"judge={llm_judge.model} prompt_version={PROMPT_VERSION}")
+    print("checks=" + (" ".join(f"{name}@{fp}" for name, fp in sorted(fingerprints.items())) or "(none)") + "\n")
 
     all_outcomes: list[AssertionOutcome] = []
     for record in load_golden_records():

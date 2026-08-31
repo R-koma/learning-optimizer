@@ -1,6 +1,6 @@
 # ---- taxonomy 定義（failure_mode につき1回。ファイル名 = failure_mode）----
 failure_mode: premature_definition           # taxonomy のカテゴリ
-schema_version: 1
+schema_version: 2
 status: draft                                # 任意：active / draft / deprecated
 
 # ---- assertion（runner が検証する契約。instances 全件に共通適用）----
@@ -21,6 +21,11 @@ assertions:
   - id: a3
     type: deterministic
     check: check_name_here                    # type: deterministic はレジストリのキーが必須
+    check_fingerprint: 0123456789ab           # evals.checks.check_fingerprint(check) の値。
+                                              # 値が変わったら criterion を読み直し、必要なら
+                                              # human_verdicts を付け直してから転記すること
+                                              # （実装が変わった記録であり、criterion がまだ
+                                              #   実装を正しく説明しているかは人間しか判断できない）
     polarity: must
     criterion: >
       列挙された複数概念のうち1つに焦点を絞って質問している。

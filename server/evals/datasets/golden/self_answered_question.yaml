@@ -1,5 +1,5 @@
 failure_mode: self_answered_question
-schema_version: 1
+schema_version: 2
 status: active
 
 assertions:
@@ -31,9 +31,10 @@ assertions:
   - id: a5
     type: deterministic
     check: contains_generic_prompt_phrase
+    check_fingerprint: a9bd66a88432
     polarity: must_not
     criterion: >
-      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含まない。
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。
 
 instances:
   - source_trace_id: 2026-07-14-os-process__t1

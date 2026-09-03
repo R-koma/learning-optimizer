@@ -23,9 +23,14 @@ uv run ruff check . --fix && uv run ruff format .             # Lint + フォー
 uv run mypy .                                                 # 型チェック（strict）
 uv run pytest                                                 # テスト全実行
 uv run pytest --cov=. --cov-report=term                      # カバレッジ付き
+
+uv run python -m evals.eval --mode scoring                    # 保存済み出力を採点（judge–人間一致を出す）
+uv run python -m evals.eval --mode regression --runs 5        # input から再生成して採点（現行プロンプトの測定）
+uv run python -m evals.eval --emit-instance <trace_id>        # golden の写しを正本 jsonl から生成
 ```
 
-> **Note:** eval ハーネスは再構築中。`evals/` にあるのはデータ資産（`datasets/golden/*.yaml`・`datasets/*.jsonl`）と deterministic assertion の check レジストリ（`checks.py`）のみで、ランナー（`eval.py`）と capture ツールは未実装。
+> **Note:** `evals/tools/capture.py`（実セッションからの jsonl エクスポート）は未実装。
+> regression の生成を正本へ足す最小の経路として `--emit-jsonl <path>` がある。
 
 ### フロントエンド（`client/`）
 ```bash
@@ -69,7 +74,7 @@ server/
 ├── storage/                   # 対話添付のオブジェクトストレージ抽象（local 実装、S3 は #128 で追加）
 ├── services/review_scheduler.py
 ├── migrations/                # Alembic（env.py, versions/）
-├── evals/                     # datasets/（golden YAML・jsonl）+ checks.py。ランナーは再構築中
+├── evals/                     # eval.py（scoring / regression）・checks.py・golden_yaml.py + datasets/
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/

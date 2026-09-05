@@ -18,6 +18,8 @@ from evals.eval import (
     aggregate_verdict,
     assertion_agreement,
     assertion_pass_rates,
+    calibration_gate,
+    escalation_summary,
     failure_mode_pass_rates,
     format_conversation,
     get_source_trace,
@@ -25,8 +27,10 @@ from evals.eval import (
     message_text,
     next_rerun_id,
     record_agreement,
+    should_escalate,
     to_state,
     to_verdict,
+    wilson_interval,
 )
 
 
@@ -37,6 +41,9 @@ def outcome(
     verdict: str = "pass",
     human: str = "",
     assertion_type: str = "judge",
+    decided_by: str = "check",
+    screen_holds: bool | None = None,
+    screen_detail: str = "",
 ) -> AssertionOutcome:
     return AssertionOutcome(
         assertion_id=assertion_id,
@@ -46,6 +53,9 @@ def outcome(
         verdict=verdict,
         human_verdict=human,
         detail="",
+        decided_by=decided_by,
+        screen_holds=screen_holds,
+        screen_detail=screen_detail,
     )
 
 
@@ -65,6 +75,31 @@ class TestToVerdict:
     def test_unknown_polarity_raises(self) -> None:
         with pytest.raises(ValueError, match="unknown polarity"):
             to_verdict("should", True)
+
+
+class TestShouldEscalate:
+    def test_must_escalates_when_holds_false(self) -> None:
+        assert should_escalate("must", False) is True
+        assert should_escalate("must", True) is False
+
+    def test_must_not_escalates_when_holds_true(self) -> None:
+        assert should_escalate("must_not", True) is True
+        assert should_escalate("must_not", False) is False
+
+
+class TestWilsonInterval:
+    def test_no_samples_yields_none(self) -> None:
+        assert wilson_interval(0, 0) is None
+
+    def test_18_of_20(self) -> None:
+        lower, upper = wilson_interval(18, 20)  # type: ignore[misc]
+        assert lower == pytest.approx(0.699, abs=0.01)
+        assert upper == pytest.approx(0.972, abs=0.01)
+
+    def test_all_pass_upper_bound_caps_at_one(self) -> None:
+        lower, upper = wilson_interval(20, 20)  # type: ignore[misc]
+        assert upper == pytest.approx(1.0)
+        assert lower == pytest.approx(0.839, abs=0.01)
 
 
 class TestAggregateVerdict:
@@ -138,6 +173,129 @@ class TestAssertionAgreement:
 
     def test_empty_input_yields_no_rate(self) -> None:
         assert assertion_agreement([])["agreement_rate"] is None
+
+
+class TestAssertionOutcomeCascade:
+    def test_non_escalated_screen_verdict_matches_final(self) -> None:
+        o = outcome(polarity="must_not", verdict="pass", decided_by="screen", screen_holds=False)
+        assert o.screen_verdict == "pass"
+        assert o.escalated is False
+
+    def test_escalated_screen_verdict_keeps_screen_fail(self) -> None:
+        # screen said holds=True (must_not -> fail), confirm overturned to pass.
+        o = outcome(polarity="must_not", verdict="pass", decided_by="confirm", screen_holds=True)
+        assert o.screen_verdict == "fail"
+        assert o.verdict == "pass"
+        assert o.escalated is True
+
+    def test_deterministic_screen_verdict_falls_back_to_final(self) -> None:
+        o = outcome(assertion_type="deterministic", verdict="pass", decided_by="check", screen_holds=None)
+        assert o.screen_verdict == "pass"
+
+    def test_na_screen_verdict_falls_back_to_final(self) -> None:
+        o = outcome(verdict="na", decided_by="na", screen_holds=None)
+        assert o.screen_verdict == "na"
+
+
+class TestAssertionAgreementStage:
+    def _escalated_overturned(self) -> RunResult:
+        # screen said fail (FP against a positive), confirm overturned to pass (TN).
+        return RunResult(
+            run_index=1,
+            output="",
+            outcomes=[
+                outcome(
+                    "a2", polarity="must_not", verdict="pass", human="pass", decided_by="confirm", screen_holds=True
+                )
+            ],
+        )
+
+    def test_screen_stage_counts_the_overturned_fp(self) -> None:
+        result = assertion_agreement([instance("fm", "t1", True, [self._escalated_overturned()])], stage="screen")
+        assert result["confusion_matrix"] == {"tp": 0, "tn": 0, "fp": 1, "fn": 0}
+
+    def test_final_stage_counts_the_confirmed_tn(self) -> None:
+        result = assertion_agreement([instance("fm", "t1", True, [self._escalated_overturned()])], stage="final")
+        assert result["confusion_matrix"] == {"tp": 0, "tn": 1, "fp": 0, "fn": 0}
+
+    def test_default_stage_is_final(self) -> None:
+        runs = [self._escalated_overturned()]
+        assert assertion_agreement([instance("fm", "t1", True, runs)]) == assertion_agreement(
+            [instance("fm", "t1", True, runs)], stage="final"
+        )
+
+
+class TestEscalationSummary:
+    def test_counts_escalated_and_overturned(self) -> None:
+        overturned = outcome(
+            "a2", polarity="must_not", verdict="pass", human="pass", decided_by="confirm", screen_holds=True
+        )
+        confirmed_fail = outcome(
+            "a3", polarity="must_not", verdict="fail", human="fail", decided_by="confirm", screen_holds=True
+        )
+        not_escalated = outcome("a1", polarity="must", verdict="pass", human="pass", decided_by="screen")
+        run = RunResult(run_index=1, output="", outcomes=[overturned, confirmed_fail, not_escalated])
+        summary = escalation_summary([instance("fm", "t1", True, [run])])
+
+        assert summary["total_judge"] == 3
+        assert summary["escalated"] == 2
+        assert summary["confirmed_fail"] == 1
+        assert summary["overturned_to_pass"] == 1
+        assert [o["assertion_id"] for o in summary["overturned"]] == ["a2"]
+
+    def test_na_and_deterministic_are_excluded_from_total_judge(self) -> None:
+        na = outcome("a4", verdict="na", decided_by="na")
+        deterministic = outcome("a5", assertion_type="deterministic", verdict="pass", decided_by="check")
+        run = RunResult(run_index=1, output="", outcomes=[na, deterministic])
+        summary = escalation_summary([instance("fm", "t1", True, [run])])
+
+        assert summary["total_judge"] == 0
+        assert summary["escalated"] == 0
+
+
+class TestCalibrationGate:
+    def _results(
+        self, *, tp: int, tn: int, fp: int, fn: int, positive_extra_fail: bool = False
+    ) -> list[InstanceResult]:
+        outcomes = (
+            [outcome("a1", verdict="fail", human="fail") for _ in range(tp)]
+            + [outcome("a1", verdict="pass", human="pass") for _ in range(tn)]
+            + [outcome("a1", verdict="fail", human="pass") for _ in range(fp)]
+            + [outcome("a1", verdict="pass", human="fail") for _ in range(fn)]
+        )
+        # human_pass=False here so these synthetic instances never trip the positive-record
+        # check below — they exist only to populate the assertion-level confusion matrix.
+        results = [instance(f"fm{i}", f"t{i}", False, [RunResult(1, "", [o])]) for i, o in enumerate(outcomes)]
+        if positive_extra_fail:
+            failing_run = RunResult(1, "", [outcome("a1", verdict="fail", human="")])
+            results.append(instance("fm-extra", "t-extra-positive", True, [failing_run]))
+        return results
+
+    def test_passes_when_all_thresholds_met(self) -> None:
+        gate = calibration_gate(self._results(tp=9, tn=9, fp=0, fn=0), stage="final")
+        assert gate["passed"] is True
+        assert gate["failures"] == []
+
+    def test_fails_below_tnr_threshold(self) -> None:
+        gate = calibration_gate(self._results(tp=9, tn=8, fp=2, fn=0), stage="final")
+        assert gate["passed"] is False
+        assert any("TNR" in reason for reason in gate["failures"])
+
+    def test_screen_stage_names_the_cascade_limitation_on_low_tnr(self) -> None:
+        gate = calibration_gate(self._results(tp=9, tn=8, fp=2, fn=0), stage="screen")
+        assert any("カスケードで救えない" in reason for reason in gate["failures"])
+
+    def test_final_stage_requires_all_positive_records_to_pass(self) -> None:
+        gate = calibration_gate(self._results(tp=9, tn=9, fp=0, fn=0, positive_extra_fail=True), stage="final")
+        assert gate["passed"] is False
+        assert gate["positive_records"]["total"] == 1
+        assert gate["positive_records"]["passed"] == 0
+
+    def test_no_samples_reports_missing_class(self) -> None:
+        gate = calibration_gate([], stage="final")
+        assert gate["passed"] is False
+        assert gate["tpr"] is None
+        assert gate["tnr"] is None
 
 
 class TestRecordAgreement:

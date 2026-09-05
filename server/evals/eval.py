@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import logging
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -104,6 +105,9 @@ class AssertionOutcome:
     verdict: str
     human_verdict: str
     detail: str
+    decided_by: str = "check"
+    screen_holds: bool | None = None
+    screen_detail: str = ""
 
     @property
     def applicable(self) -> bool:
@@ -112,6 +116,17 @@ class AssertionOutcome:
     @property
     def agrees(self) -> bool:
         return self.applicable and bool(self.human_verdict) and self.verdict == self.human_verdict
+
+    @property
+    def screen_verdict(self) -> str:
+        """screen 単体の verdict。judge 以外（deterministic / na）は final と同じ。"""
+        if self.assertion_type != "judge" or self.screen_holds is None:
+            return self.verdict
+        return to_verdict(self.polarity, self.screen_holds)
+
+    @property
+    def escalated(self) -> bool:
+        return self.decided_by == "confirm"
 
 
 @dataclass
@@ -148,9 +163,63 @@ def resolve_judge(model: str | None) -> BaseChatModel:
     return ChatAnthropic(model=model, temperature=0)
 
 
+_DEFAULT_CONFIRM_MODEL = "claude-opus-5"
+
+
+def resolve_confirm_judge(model: str | None, *, cascade: bool) -> BaseChatModel | None:
+    """`--no-cascade` なら None（従来の単一 judge）。既定の confirm モデルは claude-opus-5。"""
+    if not cascade:
+        return None
+    return resolve_judge(model if model is not None else _DEFAULT_CONFIRM_MODEL)
+
+
 def judge_model_name(judge: BaseChatModel) -> str:
     name = getattr(judge, "model", None) or getattr(judge, "model_name", None)
     return str(name) if name else type(judge).__name__
+
+
+# USD / 1M トークンの単価（input, output）。2026-06 時点の公式表。日付サフィックス付きモデル名
+# （例: claude-haiku-4-5-20251001）は前方一致で解決する。未知モデルは estimated_cost_usd=None。
+_JUDGE_PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
+    "claude-haiku-4-5": (1.0, 5.0),
+    "claude-sonnet-5": (2.0, 10.0),
+    "claude-opus-5": (5.0, 25.0),
+}
+
+
+def _price_for(model: str) -> tuple[float, float] | None:
+    for prefix, price in _JUDGE_PRICE_PER_MTOK.items():
+        if model.startswith(prefix):
+            return price
+    return None
+
+
+@dataclass
+class JudgeUsage:
+    """judge 呼び出しのトークン使用量をモデル別に集計する（regression のコスト実測用）。"""
+
+    per_model: dict[str, dict[str, int]] = field(default_factory=dict)
+
+    def record(self, model: str, raw: BaseMessage | None) -> None:
+        stats = self.per_model.setdefault(model, {"calls": 0, "input_tokens": 0, "output_tokens": 0})
+        stats["calls"] += 1
+        usage = getattr(raw, "usage_metadata", None) if raw is not None else None
+        if usage:
+            stats["input_tokens"] += usage.get("input_tokens") or 0
+            stats["output_tokens"] += usage.get("output_tokens") or 0
+
+    def to_report(self) -> dict[str, Any]:
+        report: dict[str, Any] = {}
+        for model, stats in self.per_model.items():
+            price = _price_for(model)
+            cost = None
+            if price is not None:
+                input_price, output_price = price
+                input_cost = stats["input_tokens"] / 1_000_000 * input_price
+                output_cost = stats["output_tokens"] / 1_000_000 * output_price
+                cost = input_cost + output_cost
+            report[model] = {**stats, "estimated_cost_usd": cost}
+        return report
 
 
 def load_golden_records() -> Iterator[dict[str, Any]]:
@@ -270,6 +339,28 @@ def to_verdict(polarity: str, holds: bool) -> str:
     raise ValueError(f"unknown polarity: {polarity!r} (expected 'must' or 'must_not')")
 
 
+def should_escalate(polarity: str, holds: bool) -> bool:
+    """screen の判定を confirm に回すべきか。verdict（polarity 適用後）が fail のときだけ回す。
+
+    「良いものを fail と言う」誤り（TNR を壊す FP）だけを confirm に回す設計。
+    screen が pass と言ったもの（FN の可能性）は confirm に届かない。
+    """
+    return to_verdict(polarity, holds) == "fail"
+
+
+def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float, float] | None:
+    """二項比率の Wilson score 95%（既定）信頼区間。標本が無ければ None。"""
+    if total == 0:
+        return None
+    phat = successes / total
+    denom = 1 + z**2 / total
+    center = phat + z**2 / (2 * total)
+    margin = z * math.sqrt(phat * (1 - phat) / total + z**2 / (4 * total**2))
+    lower = (center - margin) / denom
+    upper = (center + margin) / denom
+    return max(0.0, lower), min(1.0, upper)
+
+
 def aggregate_verdict(outcomes: list[AssertionOutcome]) -> str:
     """must が満たされ must_not が現れていなければ pass。適用外（na）は中立。"""
     scored = [o for o in outcomes if o.applicable]
@@ -281,7 +372,11 @@ def format_conversation(conversation_history: list[dict[str, str]]) -> str:
 
 
 async def judge_by_llm(
-    assertion: dict[str, Any], trace: SourceTrace, output: str, judge: BaseChatModel
+    assertion: dict[str, Any],
+    trace: SourceTrace,
+    output: str,
+    judge: BaseChatModel,
+    usage: JudgeUsage | None = None,
 ) -> JudgeResult:
     """1 criterion を二値で判定する。
 
@@ -296,6 +391,7 @@ async def judge_by_llm(
         criterion=assertion["criterion"].strip(),
     )
     runnable = judge.with_structured_output(JudgeResult, include_raw=True)
+    model_name = judge_model_name(judge)
 
     last_error: str = "unknown"
     for attempt in range(1, _JUDGE_MAX_ATTEMPTS + 1):
@@ -306,6 +402,8 @@ async def judge_by_llm(
             last_error = f"{type(exc).__name__}: {exc}"
             logger.warning("judge attempt %d/%d raised for %s", attempt, _JUDGE_MAX_ATTEMPTS, assertion["id"])
             continue
+        if usage is not None:
+            usage.record(model_name, result.get("raw") if isinstance(result, dict) else None)
         parsed = result["parsed"] if isinstance(result, dict) else result
         if isinstance(parsed, JudgeResult):
             return parsed
@@ -325,6 +423,8 @@ async def evaluate_assertion(
     judge: BaseChatModel,
     *,
     compare_to_human: bool,
+    confirm_judge: BaseChatModel | None = None,
+    usage: JudgeUsage | None = None,
 ) -> AssertionOutcome:
     declared = human_verdicts[assertion["id"]]
     human_verdict = declared if compare_to_human else ""
@@ -339,14 +439,23 @@ async def evaluate_assertion(
             verdict=_NOT_APPLICABLE,
             human_verdict=human_verdict,
             detail=f"applies_when: {assertion.get('applies_when', '').strip()}",
+            decided_by=_NOT_APPLICABLE,
         )
 
+    screen_holds: bool | None = None
+    screen_detail = ""
     if assertion["type"] == "judge":
-        judged = await judge_by_llm(assertion, trace, output, judge)
-        holds, detail = judged.holds, judged.reason
+        screened = await judge_by_llm(assertion, trace, output, judge, usage)
+        screen_holds, screen_detail = screened.holds, screened.reason
+        holds, detail, decided_by = screen_holds, screen_detail, "screen"
+        # confirm には screen の verdict が fail（= 良い出力を fail と言った可能性）のときだけ回す。
+        # screen が pass と言ったもの（FN の可能性）は confirm に届かない（計画の限界として明記済み）。
+        if confirm_judge is not None and should_escalate(assertion["polarity"], screen_holds):
+            confirmed = await judge_by_llm(assertion, trace, output, confirm_judge, usage)
+            holds, detail, decided_by = confirmed.holds, confirmed.reason, "confirm"
     elif assertion["type"] == "deterministic":
         outcome = run_check(assertion["check"], output)
-        holds, detail = outcome.holds, outcome.detail
+        holds, detail, decided_by = outcome.holds, outcome.detail, "check"
     else:
         raise ValueError(f"unknown assertion type: {assertion['type']!r} (expected 'judge' or 'deterministic')")
 
@@ -358,6 +467,9 @@ async def evaluate_assertion(
         verdict=to_verdict(assertion["polarity"], holds),
         human_verdict=human_verdict,
         detail=detail,
+        decided_by=decided_by,
+        screen_holds=screen_holds,
+        screen_detail=screen_detail,
     )
 
 
@@ -369,6 +481,8 @@ async def evaluate_output(
     judge: BaseChatModel,
     *,
     compare_to_human: bool,
+    confirm_judge: BaseChatModel | None = None,
+    usage: JudgeUsage | None = None,
 ) -> list[AssertionOutcome]:
     return list(
         await asyncio.gather(
@@ -380,6 +494,8 @@ async def evaluate_output(
                     instance["human_verdicts"],
                     judge,
                     compare_to_human=compare_to_human,
+                    confirm_judge=confirm_judge,
+                    usage=usage,
                 )
                 for assertion in record["assertions"]
             )
@@ -395,6 +511,8 @@ async def evaluate_instance(
     *,
     mode: str,
     runs: int,
+    confirm_judge: BaseChatModel | None = None,
+    usage: JudgeUsage | None = None,
 ) -> InstanceResult:
     result = InstanceResult(
         failure_mode=record["failure_mode"],
@@ -405,7 +523,16 @@ async def evaluate_instance(
     for run_index in range(1, (runs if mode == "regression" else 1) + 1):
         generation = await generate_output(trace) if mode == "regression" else None
         output = generation.output if generation else trace.observed_output
-        outcomes = await evaluate_output(record, instance, trace, output, judge, compare_to_human=compare_to_human)
+        outcomes = await evaluate_output(
+            record,
+            instance,
+            trace,
+            output,
+            judge,
+            compare_to_human=compare_to_human,
+            confirm_judge=confirm_judge,
+            usage=usage,
+        )
         result.runs.append(RunResult(run_index=run_index, output=output, outcomes=outcomes, generation=generation))
     return result
 
@@ -474,16 +601,26 @@ def failure_mode_pass_rates(results: list[InstanceResult]) -> list[dict[str, Any
     ]
 
 
-def assertion_agreement(results: list[InstanceResult]) -> dict[str, Any]:
+def assertion_agreement(results: list[InstanceResult], *, stage: str = "final") -> dict[str, Any]:
+    """judge–人間一致を混同行列で出す。`stage="screen"` はカスケードの screen 単体を見る。
+
+    stage="screen" で applicable / human_verdict の判定は screen ではなく final の値を使う
+    （na は applies_when という input の性質で、カスケードの有無に関わらず同じ扱いになるため）。
+    """
+
+    def verdict_of(o: AssertionOutcome) -> str:
+        return o.screen_verdict if stage == "screen" else o.verdict
+
     outcomes = [o for r in results for run in r.runs for o in run.outcomes]
     scored = [o for o in outcomes if o.applicable and o.human_verdict]
-    tp = sum(1 for o in scored if o.human_verdict == "fail" and o.verdict == "fail")
-    fn = sum(1 for o in scored if o.human_verdict == "fail" and o.verdict == "pass")
-    fp = sum(1 for o in scored if o.human_verdict == "pass" and o.verdict == "fail")
-    tn = sum(1 for o in scored if o.human_verdict == "pass" and o.verdict == "pass")
+    tp = sum(1 for o in scored if o.human_verdict == "fail" and verdict_of(o) == "fail")
+    fn = sum(1 for o in scored if o.human_verdict == "fail" and verdict_of(o) == "pass")
+    fp = sum(1 for o in scored if o.human_verdict == "pass" and verdict_of(o) == "fail")
+    tn = sum(1 for o in scored if o.human_verdict == "pass" and verdict_of(o) == "pass")
     total = len(scored)
     return {
         "granularity": "assertion",
+        "stage": stage,
         "total": total,
         "agreed": tp + tn,
         "agreement_rate": (tp + tn) / total if total else None,
@@ -496,14 +633,45 @@ def assertion_agreement(results: list[InstanceResult]) -> dict[str, Any]:
                 "failure_mode": r.failure_mode,
                 "source_trace_id": r.source_trace_id,
                 "assertion_id": o.assertion_id,
-                "judged": o.verdict,
+                "judged": verdict_of(o),
                 "human": o.human_verdict,
-                "detail": o.detail,
+                "detail": o.screen_detail if stage == "screen" and o.assertion_type == "judge" else o.detail,
             }
             for r in results
             for run in r.runs
             for o in run.outcomes
-            if o.applicable and o.human_verdict and not o.agrees
+            if o.applicable and o.human_verdict and verdict_of(o) != o.human_verdict
+        ],
+    }
+
+
+def escalation_summary(results: list[InstanceResult]) -> dict[str, Any]:
+    """カスケードで screen から confirm に回った judge assertion の内訳。
+
+    overturned（screen=fail → confirm=pass）は Haiku と Opus が割れた箇所そのもので、
+    criterion レビューの入力になる（todo.md 規約6: 割れたら criterion の曖昧さを疑う）。
+    """
+    judged = [
+        (r, o) for r in results for run in r.runs for o in run.outcomes if o.assertion_type == "judge" and o.applicable
+    ]
+    escalated = [(r, o) for r, o in judged if o.escalated]
+    confirmed_fail = [o for _, o in escalated if o.verdict == "fail"]
+    overturned = [o for _, o in escalated if o.verdict == "pass"]
+    return {
+        "total_judge": len(judged),
+        "escalated": len(escalated),
+        "confirmed_fail": len(confirmed_fail),
+        "overturned_to_pass": len(overturned),
+        "overturned": [
+            {
+                "failure_mode": r.failure_mode,
+                "source_trace_id": r.source_trace_id,
+                "assertion_id": o.assertion_id,
+                "screen_detail": o.screen_detail,
+                "confirm_detail": o.detail,
+            }
+            for r, o in escalated
+            if o.verdict == "pass"
         ],
     }
 
@@ -568,6 +736,57 @@ def assertion_agreement_rates(results: list[InstanceResult]) -> list[dict[str, A
     return [rows[key] for key in sorted(rows)]
 
 
+def calibration_gate(
+    results: list[InstanceResult], *, stage: str, tpr_min: float = 0.9, tnr_min: float = 0.9
+) -> dict[str, Any]:
+    """方向別の合格条件（TPR ≥ tpr_min かつ TNR ≥ tnr_min）で judge を評価する。
+
+    総合一致率だけでは「良いものを fail と言う」偏り（P1）が 90% の下に隠れるため、
+    TPR/TNR を別々にゲートする。`stage="final"` のときだけ正例レコードが judge 集約で
+    全件 pass になることも要求する（record_agreement とは独立に、この gate 自体で判定する）。
+    """
+    agreement = assertion_agreement(results, stage=stage)
+    matrix = agreement["confusion_matrix"]
+    tp, tn, fp, fn = matrix["tp"], matrix["tn"], matrix["fp"], matrix["fn"]
+    tpr, tnr = agreement["tpr"], agreement["tnr"]
+    tpr_ci = wilson_interval(tp, tp + fn)
+    tnr_ci = wilson_interval(tn, tn + fp)
+
+    failures: list[str] = []
+    if tpr is None:
+        failures.append("TPR: 陽性（人間ラベル fail）の標本が無い")
+    elif tpr < tpr_min:
+        failures.append(f"TPR {tpr:.0%} が閾値 {tpr_min:.0%} 未満")
+    if tnr is None:
+        failures.append("TNR: 陰性（人間ラベル pass）の標本が無い")
+    elif tnr < tnr_min:
+        failures.append(f"TNR {tnr:.0%} が閾値 {tnr_min:.0%} 未満")
+        if stage == "screen":
+            failures.append("screen の FN はカスケードで救えない（confirm は screen=fail のときだけ動く）")
+
+    positive_records = {"total": 0, "passed": 0}
+    if stage == "final":
+        positives = [r for r in results if r.human_pass is True]
+        positive_records["total"] = len(positives)
+        positive_records["passed"] = sum(1 for r in positives if all(run.verdict == "pass" for run in r.runs))
+        if positive_records["total"] and positive_records["passed"] < positive_records["total"]:
+            failures.append(
+                f"正例レコードが judge 集約で全件 pass にならない "
+                f"({positive_records['passed']}/{positive_records['total']})"
+            )
+
+    return {
+        "stage": stage,
+        "tpr": tpr,
+        "tpr_ci95": tpr_ci,
+        "tnr": tnr,
+        "tnr_ci95": tnr_ci,
+        "positive_records": positive_records,
+        "passed": not failures,
+        "failures": failures,
+    }
+
+
 def _instance_kind(human_pass: bool | None) -> str:
     if human_pass is None:
         return "未ラベル"
@@ -595,16 +814,65 @@ def print_scoring_summary(report: dict[str, Any]) -> None:
         for mismatch in row["mismatches"]:
             print(f"      NG {mismatch['source_trace_id']}  judged={mismatch['judged']} human={mismatch['human']}")
 
-    agreement = report["agreement"]["assertion"]
-    matrix = agreement["confusion_matrix"]
-    rate = agreement["agreement_rate"]
-    suffix = f" ({rate:.0%})" if rate is not None else ""
-    print(f"\njudge–人間一致（assertion 単位）: {agreement['agreed']}/{agreement['total']}{suffix}")
-    counts = f"TP={matrix['tp']} TN={matrix['tn']} FP={matrix['fp']} FN={matrix['fn']}"
-    print(f"  {counts}   （陽性 = 人間ラベル fail）")
-    print(f"  TPR={agreement['tpr']:.0%}" if agreement["tpr"] is not None else "  TPR=n/a")
-    print(f"  TNR={agreement['tnr']:.0%}" if agreement["tnr"] is not None else "  TNR=n/a")
-    print(f"  適用外（applies_when を満たさず採点対象外）: {agreement['not_applicable']} 件")
+    def _print_agreement(label: str, agreement: dict[str, Any]) -> None:
+        matrix = agreement["confusion_matrix"]
+        rate = agreement["agreement_rate"]
+        suffix = f" ({rate:.0%})" if rate is not None else ""
+        print(f"\njudge–人間一致（{label}）: {agreement['agreed']}/{agreement['total']}{suffix}")
+        counts = f"TP={matrix['tp']} TN={matrix['tn']} FP={matrix['fp']} FN={matrix['fn']}"
+        print(f"  {counts}   （陽性 = 人間ラベル fail）")
+        print(f"  TPR={agreement['tpr']:.0%}" if agreement["tpr"] is not None else "  TPR=n/a")
+        print(f"  TNR={agreement['tnr']:.0%}" if agreement["tnr"] is not None else "  TNR=n/a")
+        print(f"  適用外（applies_when を満たさず採点対象外）: {agreement['not_applicable']} 件")
+
+    screen_model = report["meta"]["judge"]["screen"]
+    confirm_model = report["meta"]["judge"]["confirm"]
+    cascade_enabled = confirm_model is not None
+
+    if cascade_enabled:
+        _print_agreement(f"screen={screen_model} 単体", report["agreement"]["screen_assertion"])
+        _print_agreement(f"final（screen={screen_model} → confirm={confirm_model}）", report["agreement"]["assertion"])
+    else:
+        _print_agreement(f"assertion 単位・judge={screen_model}", report["agreement"]["assertion"])
+
+    if cascade_enabled:
+        esc = report["agreement"]["escalations"]
+        print(
+            f"\nエスカレーション: {esc['escalated']}/{esc['total_judge']} 件"
+            f"（fail 確定 {esc['confirmed_fail']} / pass に覆った {esc['overturned_to_pass']}）"
+        )
+        for item in esc["overturned"]:
+            print(f"  覆った: {item['failure_mode']}/{item['source_trace_id']} {item['assertion_id']}")
+            print(f"    screen ({screen_model}) : {item['screen_detail']}")
+            print(f"    confirm({confirm_model}): {item['confirm_detail']}")
+
+    for stage in (("screen",) if cascade_enabled else ()) + ("final",):
+        gate = report["agreement"]["calibration"][stage]
+        tpr = f"{gate['tpr']:.0%}" if gate["tpr"] is not None else "n/a"
+        tnr = f"{gate['tnr']:.0%}" if gate["tnr"] is not None else "n/a"
+        tpr_ci = f" [{gate['tpr_ci95'][0]:.0%},{gate['tpr_ci95'][1]:.0%}]" if gate["tpr_ci95"] else ""
+        tnr_ci = f" [{gate['tnr_ci95'][0]:.0%},{gate['tnr_ci95'][1]:.0%}]" if gate["tnr_ci95"] else ""
+        status = "PASS" if gate["passed"] else "FAIL"
+        print(f"\n校正ゲート（{stage}）: {status}  TPR={tpr}{tpr_ci}  TNR={tnr}{tnr_ci}")
+        if stage == "final" and gate["positive_records"]["total"]:
+            print(f"  正例レコード: {gate['positive_records']['passed']}/{gate['positive_records']['total']} pass")
+        for reason in gate["failures"]:
+            print(f"  NG {reason}")
+
+    print_judge_usage(report)
+
+
+def print_judge_usage(report: dict[str, Any]) -> None:
+    usage = report["meta"]["judge_usage"]
+    if not usage:
+        return
+    print("\njudge トークン使用量")
+    for model, stats in usage.items():
+        cost = f"${stats['estimated_cost_usd']:.4f}" if stats["estimated_cost_usd"] is not None else "n/a"
+        print(
+            f"  {model:<30} calls={stats['calls']:<4} "
+            f"input={stats['input_tokens']:<8} output={stats['output_tokens']:<8} cost≈{cost}"
+        )
 
 
 def print_regression_summary(report: dict[str, Any]) -> None:
@@ -621,6 +889,7 @@ def print_regression_summary(report: dict[str, Any]) -> None:
             f"{row['passed']}/{row['runs'] - row['not_applicable']} ({rate}){na}"
         )
     print("\n人間ラベルが無いため judge–人間一致は算出しない（scoring モードで校正する）。")
+    print_judge_usage(report)
 
 
 def print_summary(report: dict[str, Any]) -> None:
@@ -644,6 +913,8 @@ def build_report(
     runs: int,
     fingerprints: dict[str, str],
     judge: BaseChatModel,
+    confirm_judge: BaseChatModel | None = None,
+    usage: JudgeUsage | None = None,
 ) -> dict[str, Any]:
     report: dict[str, Any] = {
         "meta": {
@@ -655,6 +926,11 @@ def build_report(
             "prompt_version": PROMPT_VERSION,
             "prompt_fingerprint": PROMPT_FINGERPRINT,
             "judge_model": judge_model_name(judge),
+            "judge": {
+                "screen": judge_model_name(judge),
+                "confirm": judge_model_name(confirm_judge) if confirm_judge is not None else None,
+            },
+            "judge_usage": usage.to_report() if usage is not None else {},
             "check_fingerprints": fingerprints,
         },
         "records": [
@@ -677,6 +953,9 @@ def build_report(
                                 "judged": o.verdict,
                                 "human": o.human_verdict or None,
                                 "detail": o.detail,
+                                "decided_by": o.decided_by,
+                                "screen_holds": o.screen_holds,
+                                "screen_detail": o.screen_detail or None,
                             }
                             for o in run.outcomes
                         ],
@@ -694,9 +973,15 @@ def build_report(
     }
     if mode == "scoring":
         report["agreement"] = {
-            "assertion": assertion_agreement(results),
+            "assertion": assertion_agreement(results, stage="final"),
+            "screen_assertion": assertion_agreement(results, stage="screen"),
             "record": record_agreement(results),
             "by_assertion": assertion_agreement_rates(results),
+            "escalations": escalation_summary(results),
+            "calibration": {
+                "final": calibration_gate(results, stage="final"),
+                "screen": calibration_gate(results, stage="screen"),
+            },
         }
     return report
 
@@ -757,9 +1042,12 @@ def emit_jsonl(path: Path, results: list[InstanceResult], sources: dict[str, dic
     return written
 
 
-async def run(mode: str, runs: int, judge: BaseChatModel) -> tuple[list[InstanceResult], list[str], dict[str, str]]:
+async def run(
+    mode: str, runs: int, judge: BaseChatModel, *, confirm_judge: BaseChatModel | None = None
+) -> tuple[list[InstanceResult], list[str], dict[str, str], JudgeUsage]:
     fingerprints = validate_check_fingerprints()
     sources = load_source_records()
+    usage = JudgeUsage()
 
     results: list[InstanceResult] = []
     errors: list[str] = []
@@ -784,14 +1072,16 @@ async def run(mode: str, runs: int, judge: BaseChatModel) -> tuple[list[Instance
                 seen_inputs.add(fingerprint)
 
             try:
-                result = await evaluate_instance(record, instance, trace, judge, mode=mode, runs=runs)
+                result = await evaluate_instance(
+                    record, instance, trace, judge, mode=mode, runs=runs, confirm_judge=confirm_judge, usage=usage
+                )
             except Exception as exc:
                 logger.exception("instance failed: %s", label)
                 errors.append(f"{label}: {type(exc).__name__}: {exc}")
                 continue
             print_instance(result)
             results.append(result)
-    return results, errors, fingerprints
+    return results, errors, fingerprints, usage
 
 
 def parse_args() -> argparse.Namespace:
@@ -804,8 +1094,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--judge-model",
         default=None,
-        help="judge に使う Anthropic モデル（既定は graph.llm の llm_judge）。criterion の曖昧さは"
+        help="screen（1段目）に使う Anthropic モデル（既定は graph.llm の llm_judge）。criterion の曖昧さは"
         "モデル間の判定の割れとして現れるため、複数モデルで確認する",
+    )
+    parser.add_argument(
+        "--confirm-judge-model",
+        default=None,
+        help=f"confirm（2段目）に使う Anthropic モデル（既定は {_DEFAULT_CONFIRM_MODEL}）。"
+        "screen が fail と判定した judge assertion だけ確認に回す（--no-cascade で無効化）",
+    )
+    parser.add_argument(
+        "--no-cascade",
+        action="store_true",
+        help="confirm 段を無効化し、screen 単体の判定を最終値にする（従来の単一 judge 相当）",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="scoring モードで最終判定の校正ゲート（TPR/TNR ≥ 90%% かつ正例レコード全件 pass）が"
+        "不合格のとき exit code 1 で終了する",
     )
     return parser.parse_args()
 
@@ -818,11 +1125,25 @@ async def main() -> None:
         return
 
     judge = resolve_judge(args.judge_model)
+    confirm_judge = resolve_confirm_judge(args.confirm_judge_model, cascade=not args.no_cascade)
     print(f"mode={args.mode} model={llm.model_name} temperature={llm.temperature}")
-    print(f"judge={judge_model_name(judge)} prompt_version={PROMPT_VERSION} prompt_fingerprint={PROMPT_FINGERPRINT}\n")
+    confirm_label = judge_model_name(confirm_judge) if confirm_judge is not None else "none"
+    print(
+        f"judge(screen)={judge_model_name(judge)} judge(confirm)={confirm_label} "
+        f"prompt_version={PROMPT_VERSION} prompt_fingerprint={PROMPT_FINGERPRINT}\n"
+    )
 
-    results, errors, fingerprints = await run(args.mode, args.runs, judge)
-    report = build_report(results, errors, mode=args.mode, runs=args.runs, fingerprints=fingerprints, judge=judge)
+    results, errors, fingerprints, usage = await run(args.mode, args.runs, judge, confirm_judge=confirm_judge)
+    report = build_report(
+        results,
+        errors,
+        mode=args.mode,
+        runs=args.runs,
+        fingerprints=fingerprints,
+        judge=judge,
+        confirm_judge=confirm_judge,
+        usage=usage,
+    )
     print_summary(report)
 
     out = args.out or _REPORTS_DIR / f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{args.mode}.json"
@@ -833,6 +1154,9 @@ async def main() -> None:
     if args.emit_jsonl:
         written = emit_jsonl(args.emit_jsonl, results, load_source_records())
         print(f"emitted {len(written)} record(s) to {args.emit_jsonl}")
+
+    if args.strict and args.mode == "scoring" and not report["agreement"]["calibration"]["final"]["passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

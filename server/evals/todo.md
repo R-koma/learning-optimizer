@@ -112,38 +112,38 @@ judge–人間一致の突き合わせ（§3-6）は Langfuse に対応機能が
 
 ## 4. Section A — 構造チェック（Claude Code がコード読解で確認可）
 
-- [ ] golden YAML を読み込む load 関数がある
-- [ ] scoring / regression をコマンドライン引数等で切り替えられる
-- [ ] assertion を `type` で deterministic / judge に振り分けるディスパッチがある
-- [ ] judge は 1 criterion・二値・`{reason, holds}` を返す（曖昧スコアを出すコードになっていない）
-- [ ] `polarity`（must / must_not）が集約ロジックに反映されている
-- [ ] **judge 判定を人間ラベルと突き合わせる比較ロジックがある**
-- [ ] `report/` に結果を書き出す関数がある
-- [ ] コードが 1 ファイルに収まっている（不要な分割をしていない）
+- [x] golden YAML を読み込む load 関数がある
+- [x] scoring / regression をコマンドライン引数等で切り替えられる
+- [x] assertion を `type` で deterministic / judge に振り分けるディスパッチがある
+- [x] judge は 1 criterion・二値・`{reason, holds}` を返す（曖昧スコアを出すコードになっていない）
+- [x] `polarity`（must / must_not）が集約ロジックに反映されている
+- [x] **judge 判定を人間ラベルと突き合わせる比較ロジックがある**
+- [x] `report/` に結果を書き出す関数がある
+- [x] コードが 1 ファイルに収まっている（不要な分割をしていない）
 
 ---
 
 ## 5. Section B — 挙動チェック（実際に走らせて確認）
 
-- [ ] `python eval.py` が golden に対しエラー無く完走する（scoring モード）
-- [ ] regression モードが完走し、レコード×assertion 別に N 回生成の pass 率が出る
-- [ ] report に per-record 判定が出る
-- [ ] report に per-assertion 判定が出る
-- [ ] report に失敗モード別 pass 率が出る
-- [ ] **report に judge–人間 一致（混同行列 or 一致率）の実数が出る**
-- [ ] 決定的チェックは再実行で同じ結果になる（判定が安定）
-- [ ] エラーになったレコードは握りつぶされず report に出る
+- [x] `python eval.py` が golden に対しエラー無く完走する（scoring モード）
+- [x] regression モードが完走し、レコード×assertion 別に N 回生成の pass 率が出る
+- [x] report に per-record 判定が出る
+- [x] report に per-assertion 判定が出る
+- [x] report に失敗モード別 pass 率が出る
+- [x] **report に judge–人間 一致（混同行列 or 一致率）の実数が出る**
+- [x] 決定的チェックは再実行で同じ結果になる（判定が安定）
+- [x] エラーになったレコードは握りつぶされず report に出る
 
 ---
 
 ## 6. Section C — 品質 / アンチパターン回避
 
-- [ ] judge が「4.2 / 5」のような曖昧スコアを出していない（pass / fail のみ）
-- [ ] judge 1 呼び出し = 1 criterion（複数基準を一度に採点していない）
-- [ ] report に `model` / `prompt_version` が記録されている（再現性）
-- [ ] judge がクロスファミリ（システムが GPT なら judge は別系統のモデル）
-- [ ] golden レコードに型付き assertion がある（薄い `input/output/pass` だけになっていない）
-- [ ] regression モードは本番のプロンプト構築コード（`build_question_prompt` /
+- [x] judge が「4.2 / 5」のような曖昧スコアを出していない（pass / fail のみ）
+- [x] judge 1 呼び出し = 1 criterion（複数基準を一度に採点していない）
+- [x] report に `model` / `prompt_version` が記録されている（再現性）
+- [x] judge がクロスファミリ（システムが GPT なら judge は別系統のモデル）
+- [x] golden レコードに型付き assertion がある（薄い `input/output/pass` だけになっていない）
+- [x] regression モードは本番のプロンプト構築コード（`build_question_prompt` /
       `analyze_dialogue_turn` 等）を import して通す。eval 側にプロンプトを複製すると
       本番との乖離が測れなくなる
 
@@ -175,41 +175,47 @@ judge–人間一致の突き合わせ（§3-6）は Langfuse に対応機能が
 
 ---
 
-## 9. 未決 — judge モデルの選定（criterion の表現力を決める）
+## 9. 決着 — judge は Haiku→Opus の 2 段カスケード（2026-09-05）
 
-**判定器を明示しない一致率は意味を持たない。** 同じ golden・同じ criterion でも、judge モデルを
-変えると一致率が変わる（`--judge-model` で切り替え可能）。現在の実測：
+**採用: screen（既定 Haiku 4.5）で全件判定し、screen が fail と言った judge assertion だけ
+confirm（既定 Opus 5）に回す。** `--judge-model` が screen、`--confirm-judge-model` が confirm、
+`--no-cascade` で従来の単一 judge に戻せる。
+
+### 根拠（実測）
+
+Haiku の誤りは全て FP（FN=0、TNR=85%）、Opus は FP=0（TNR=100%）。つまり Haiku が pass と
+言ったものは信用でき、fail と言ったものだけ疑わしい。この非対称性がカスケードを成立させる。
+`a2` の FP はいずれも「訂正のための記述」を「言い直し・補強」と読む誤りで、4 通りの文面
+（下表）で再現するため文面調整では直らない（Haiku の弁別能力の限界）。
 
 | criterion の形 | Haiku 4.5 | Sonnet 5 | Opus 5 |
 |---|---|---|---|
 | 現行（但し書きあり） | 18/20 | 19/20 | 20/20 |
 | 1 文に畳んだ版 | 18/20 | 17/20 | 20/20 |
+| 定義または具体例を新たに提示している | FP=2 | — | — |
+| 正しく述べた内容を言い直し・補強して解説している | FP=2 | — | — |
+| 正しかった部分についてさらに説明を続けている | FP=2 | — | 20/20 |
 
-### Haiku の `a2` は文面の問題ではない
+### 合格条件（総合一致率から方向別へ変更）
 
-`accurate_multi_concept_overexplain` の `a2` は **4 通りの文面**を試したが、Haiku はすべてで
-**同じ 2 件を誤検出（FP=2）**した。理由も一貫して「〜を認めた上で、〜している」という要約で、
-**受け止め・訂正・解説の追加を区別していない**。
+総合一致率だけでは「良いものを fail と言う」偏りが 90% の下に隠れる。`calibration_gate()` が
+`TPR ≥ 90% かつ TNR ≥ 90%` に加えて **正例レコードが judge 集約で全件 pass** を要求する
+（`stage="final"` のときのみ）。`--strict` を付けると scoring モードで final ゲート不合格時に
+exit code 1 になる。
 
-| 文面 | Haiku |
-|---|---|
-| 定義または具体例を新たに提示している | FP=2 |
-| 正しく述べた内容を言い直し・補強して解説している | FP=2 |
-| 同上 + 但し書き | FP=2 |
-| 正しかった部分についてさらに説明を続けている | FP=2 |
+### 限界（カスケードが救わないもの）
 
-Opus は 4 通りすべてで 20/20。文面で直る種類の不具合ではなく、**Haiku の弁別能力の限界**と見るのが妥当。
+**screen の FN（欠陥を pass と言う誤り）は confirm に届かない。** confirm はエスカレーション
+条件（`should_escalate`: polarity 適用後の verdict が fail）を満たしたときだけ動くため、screen が
+pass と誤判定した場合はそのまま最終判定になる。最終判定の TPR ≈ screen の TPR、TNR ≈ confirm の
+TNR。scoring の校正ゲートは `stage="screen"` の TPR も出すので、そこが閾値を割ったら
+「カスケードでは救えない」旨が failures に出る。
 
-### 帰結
+### 決めた際に確認した点
 
-**judge モデルの選択が、書ける criterion の表現力を決める。**
-
-| 選択 | 帰結 |
-|---|---|
-| Opus 5 を基準にする | 現状 20/20。受け止め・訂正・解説の区別のような繊細な criterion が書ける。コストは高い |
-| Haiku を基準にする | `a2` をより機械的な形（例：解説文の数を数える）へ落とす必要がある。**区別の細かさを捨てる**ことになる |
-| 全モデル一致を合格条件にする | 最も厳しい。現状 `a2`（Haiku）と `a1`（Sonnet）が未達で、直すには最も弱いモデルに criterion を合わせることになる |
-
-未決。決めるまでは、報告する一致率に **必ず judge モデル名を併記する**（report の `meta.judge_model`）。
-なお judge は temperature 0 でも判定が揺れる（同一入力で `a2` が fail/fail/pass/pass と反転した実測あり）。
-**1〜2 ラベルの差を読まない。**
+- **判定器を明示しない一致率は意味を持たない。** 同じ golden・同じ criterion でも、judge モデルを
+  変えると一致率が変わる（`--judge-model` / `--confirm-judge-model` で切り替え可能）。report の
+  `meta.judge`（screen/confirm）に必ず併記する
+- `a2` の criterion 自体は変更していない（文面調整では直らないことを確認済みのため）
+- judge は temperature 0 でも判定が揺れる（同一入力で `a2` が fail/fail/pass/pass と反転した実測あり）。
+  **1〜2 ラベルの差を読まない**

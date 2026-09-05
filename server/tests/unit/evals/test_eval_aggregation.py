@@ -6,6 +6,8 @@ judge 呼び出しと生成は API を叩くので対象外。ここで守るの
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -23,6 +25,7 @@ from evals.eval import (
     failure_mode_pass_rates,
     format_conversation,
     get_source_trace,
+    load_golden_records,
     load_source_records,
     message_text,
     next_rerun_id,
@@ -30,6 +33,7 @@ from evals.eval import (
     should_escalate,
     to_state,
     to_verdict,
+    validate_human_verdicts,
     wilson_interval,
 )
 
@@ -439,3 +443,42 @@ class TestSourceRecords:
     def test_unknown_trace_id_raises(self) -> None:
         with pytest.raises(ValueError, match="unknown source_trace_id"):
             get_source_trace("nope", {})
+
+
+def golden(*, assertion_ids: list[str], human_verdicts: dict[str, str]) -> dict[str, Any]:
+    return {
+        "failure_mode": "fm",
+        "assertions": [{"id": assertion_id} for assertion_id in assertion_ids],
+        "instances": [{"source_trace_id": "t1", "human_verdicts": human_verdicts}],
+    }
+
+
+class TestValidateHumanVerdicts:
+    def test_accepts_exact_key_match(self) -> None:
+        validate_human_verdicts([golden(assertion_ids=["a1", "a2"], human_verdicts={"a1": "pass", "a2": "na"})])
+
+    def test_missing_label_raises(self) -> None:
+        with pytest.raises(ValueError, match="ラベルが無い assertion: a2"):
+            validate_human_verdicts([golden(assertion_ids=["a1", "a2"], human_verdicts={"a1": "pass"})])
+
+    def test_label_for_undeclared_assertion_raises(self) -> None:
+        with pytest.raises(ValueError, match="assertions に無い id へのラベル: a9"):
+            validate_human_verdicts([golden(assertion_ids=["a1"], human_verdicts={"a1": "pass", "a9": "fail"})])
+
+    def test_unknown_verdict_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="不正な verdict 'Fail'"):
+            validate_human_verdicts([golden(assertion_ids=["a1"], human_verdicts={"a1": "Fail"})])
+
+    def test_reports_every_problem_at_once(self) -> None:
+        with pytest.raises(ValueError) as exc:
+            validate_human_verdicts([golden(assertion_ids=["a1", "a2"], human_verdicts={"a1": "yes", "a9": "pass"})])
+
+        message = str(exc.value)
+        assert "ラベルが無い assertion: a2" in message
+        assert "assertions に無い id へのラベル: a9" in message
+        assert "不正な verdict 'yes'" in message
+
+    def test_active_golden_corpus_is_valid(self) -> None:
+        records = list(load_golden_records())
+        assert records
+        validate_human_verdicts(records)

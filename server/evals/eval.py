@@ -32,6 +32,7 @@ _REPORTS_DIR = Path(__file__).parent / "reports"
 _JUDGE_MAX_ATTEMPTS = 3
 _EVAL_USER_ID = "eval-regression"
 _NOT_APPLICABLE = "na"
+_VALID_VERDICTS = frozenset({"pass", "fail", _NOT_APPLICABLE})
 
 JUDGE_PROMPT = """\
 ## 役割
@@ -149,8 +150,6 @@ class InstanceResult:
     runs: list[RunResult] = field(default_factory=list)
 
 
-# 新しめの Anthropic モデルは `temperature` を受け付けず 400 を返す
-# （invalid_request_error: `temperature` is deprecated for this model）。
 _TEMPERATURE_UNSUPPORTED: frozenset[str] = frozenset({"claude-opus-5", "claude-sonnet-5"})
 
 
@@ -178,8 +177,6 @@ def judge_model_name(judge: BaseChatModel) -> str:
     return str(name) if name else type(judge).__name__
 
 
-# USD / 1M トークンの単価（input, output）。2026-06 時点の公式表。日付サフィックス付きモデル名
-# （例: claude-haiku-4-5-20251001）は前方一致で解決する。未知モデルは estimated_cost_usd=None。
 _JUDGE_PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5": (1.0, 5.0),
     "claude-sonnet-5": (2.0, 10.0),
@@ -252,6 +249,34 @@ def validate_check_fingerprints() -> dict[str, str]:
             "必要なら human_verdicts を付け直してから check_fingerprint を更新すること:\n" + "\n".join(stale)
         )
     return in_use
+
+
+def validate_human_verdicts(records: list[dict[str, Any]]) -> None:
+    """人間ラベルのキー集合と値を採点前に検証する。
+
+    どちらも壊れても実行時エラーにならない: 余分なキーは誰も読まず、`pass` / `fail` / `na` 以外の値は
+    混同行列のどのセルにも入らないまま分母にだけ残り、TPR / TNR と校正ゲートを 100% のまま通す。
+    """
+    problems: list[str] = []
+    for record in records:
+        declared = {assertion["id"] for assertion in record["assertions"]}
+        for instance in record["instances"]:
+            label = f"{record['failure_mode']}/{instance['source_trace_id']}"
+            verdicts = instance["human_verdicts"]
+            if missing := sorted(declared - set(verdicts)):
+                problems.append(f"  {label}: human_verdicts にラベルが無い assertion: {', '.join(missing)}")
+            if extra := sorted(set(verdicts) - declared):
+                problems.append(f"  {label}: assertions に無い id へのラベル: {', '.join(extra)}")
+            problems.extend(
+                f"  {label}/{assertion_id}: 不正な verdict {verdict!r}"
+                for assertion_id, verdict in sorted(verdicts.items())
+                if verdict not in _VALID_VERDICTS
+            )
+    if problems:
+        raise ValueError(
+            f"golden の human_verdicts が不正（verdict は {'/'.join(sorted(_VALID_VERDICTS))} のみ）:\n"
+            + "\n".join(problems)
+        )
 
 
 def load_source_records() -> dict[str, dict[str, Any]]:
@@ -429,7 +454,6 @@ async def evaluate_assertion(
     declared = human_verdicts[assertion["id"]]
     human_verdict = declared if compare_to_human else ""
 
-    # applies_when は input の性質なので、再生成した出力でも instance の na 宣言をそのまま使う。
     if declared == _NOT_APPLICABLE:
         return AssertionOutcome(
             assertion_id=assertion["id"],
@@ -448,8 +472,6 @@ async def evaluate_assertion(
         screened = await judge_by_llm(assertion, trace, output, judge, usage)
         screen_holds, screen_detail = screened.holds, screened.reason
         holds, detail, decided_by = screen_holds, screen_detail, "screen"
-        # confirm には screen の verdict が fail（= 良い出力を fail と言った可能性）のときだけ回す。
-        # screen が pass と言ったもの（FN の可能性）は confirm に届かない（計画の限界として明記済み）。
         if confirm_judge is not None and should_escalate(assertion["polarity"], screen_holds):
             confirmed = await judge_by_llm(assertion, trace, output, confirm_judge, usage)
             holds, detail, decided_by = confirmed.holds, confirmed.reason, "confirm"
@@ -1046,14 +1068,14 @@ async def run(
     mode: str, runs: int, judge: BaseChatModel, *, confirm_judge: BaseChatModel | None = None
 ) -> tuple[list[InstanceResult], list[str], dict[str, str], JudgeUsage]:
     fingerprints = validate_check_fingerprints()
+    records = list(load_golden_records())
+    validate_human_verdicts(records)
     sources = load_source_records()
     usage = JudgeUsage()
 
     results: list[InstanceResult] = []
     errors: list[str] = []
-    for record in load_golden_records():
-        # 正例と負例は同じターンの別応答なので input が一致する。regression は input から作り直すため、
-        # instance ごとに回すと同じ入力を二重に生成して pass 率が重複計上される。
+    for record in records:
         seen_inputs: set[str] = set()
         for instance in record["instances"]:
             label = f"{record['failure_mode']}/{instance['source_trace_id']}"

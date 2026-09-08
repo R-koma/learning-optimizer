@@ -779,12 +779,12 @@ def calibration_gate(
         failures.append("TPR: 陽性（人間ラベル fail）の標本が無い")
     elif tpr < tpr_min:
         failures.append(f"TPR {tpr:.0%} が閾値 {tpr_min:.0%} 未満")
+        if stage == "screen":
+            failures.append("screen の FN はカスケードで救えない（confirm は screen=fail のときだけ動く）")
     if tnr is None:
         failures.append("TNR: 陰性（人間ラベル pass）の標本が無い")
     elif tnr < tnr_min:
         failures.append(f"TNR {tnr:.0%} が閾値 {tnr_min:.0%} 未満")
-        if stage == "screen":
-            failures.append("screen の FN はカスケードで救えない（confirm は screen=fail のときだけ動く）")
 
     positive_records = {"total": 0, "passed": 0}
     if stage == "final":

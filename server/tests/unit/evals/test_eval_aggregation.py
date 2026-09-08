@@ -285,9 +285,20 @@ class TestCalibrationGate:
         assert gate["passed"] is False
         assert any("TNR" in reason for reason in gate["failures"])
 
-    def test_screen_stage_names_the_cascade_limitation_on_low_tnr(self) -> None:
-        gate = calibration_gate(self._results(tp=9, tn=8, fp=2, fn=0), stage="screen")
+    def test_screen_stage_names_the_cascade_limitation_on_low_tpr(self) -> None:
+        gate = calibration_gate(self._results(tp=8, tn=9, fp=0, fn=2), stage="screen")
+        assert gate["passed"] is False
         assert any("カスケードで救えない" in reason for reason in gate["failures"])
+
+    def test_screen_stage_low_tnr_omits_the_cascade_caveat(self) -> None:
+        gate = calibration_gate(self._results(tp=9, tn=8, fp=2, fn=0), stage="screen")
+        assert gate["passed"] is False
+        assert [reason for reason in gate["failures"] if "screen" in reason] == []
+
+    def test_final_stage_omits_screen_notes(self) -> None:
+        gate = calibration_gate(self._results(tp=8, tn=8, fp=2, fn=2), stage="final")
+        assert gate["passed"] is False
+        assert [reason for reason in gate["failures"] if "screen" in reason] == []
 
     def test_final_stage_requires_all_positive_records_to_pass(self) -> None:
         gate = calibration_gate(self._results(tp=9, tn=9, fp=0, fn=0, positive_extra_fail=True), stage="final")

@@ -29,10 +29,33 @@ uv run python -m evals.eval --mode regression --runs 5        # input から再�
 uv run python -m evals.eval --mode scoring --no-cascade        # カスケードを無効化し screen 単体で判定（従来の単一 judge）
 uv run python -m evals.eval --mode scoring --strict            # 校正ゲート（TPR/TNR≥90%・正例レコード全件pass）不合格で exit 1
 uv run python -m evals.eval --emit-instance <trace_id>        # golden の写しを正本 jsonl から生成
+uv run python -m evals.eval --list-unannotated                 # 人間ラベル（pass）が無いレコードを一覧
+uv run python -m evals.eval --mode regression --replay-mode pinned  # 保存済みの turn_decision を注入して応答生成だけ再実行
+uv run python -m evals.eval --mode regression --allow-unfaithful    # 忠実に再現できない入力も再生成する（既定はスキップ）
+uv run python -m evals.eval --mode regression --emit-jsonl <path>  # regression の生成を正本へ追記
+
+uv run python -m evals.tools.capture --list                   # 直近の learning セッション一覧
+uv run python -m evals.tools.capture --latest --dry-run       # 直近セッションの生成レコードを表示（追記しない）
+uv run python -m evals.tools.capture --session-id <uuid>      # 指定セッションを正本 jsonl へ追記（id 重複はスキップ）
 ```
 
-> **Note:** `evals/tools/capture.py`（実セッションからの jsonl エクスポート）は未実装。
-> regression の生成を正本へ足す最小の経路として `--emit-jsonl <path>` がある。
+> **Note:** jsonl の `input.graph_state` は**生成直前**の state（再実行の入力）で、`turn_decision` は
+> **そのターンがプロンプトへ注入した値**（`response_mode` / `selected_aspect` / `error_summary` /
+> merge 後の `covered_aspects`。`output` の直後・`input` の外）。`turn_analysis` はノードが読まずに
+> 書くだけの値なので `input.graph_state.turn_analysis` は「前のターンの決定」であり、決定を注入して
+> 再生成する用途（`--replay-mode pinned`）に使ってはいけない。
+>
+> **Note:** regression は **capture 由来のレコード（`meta.captured_by`）だけを再生成する**。手で転記した
+> レコードは `conversation_history` が本番の `messages` と 1:1 になっておらず（トピック発話や
+> `learning_start` の応答が欠けている）、`classify_user_intent` の判定とプロンプトの直近履歴が本番と
+> 変わるため。スキップした理由は report に出る（`--allow-unfaithful` で従来どおり回せる）。
+>
+> **Note:** jsonl の `source` と `failure_mode` / `first_failure` の値空間は `evals/taxonomy.py` が正本。
+> 追加は `tests/unit/evals/test_dataset_invariants.py` が強制する（自由文字列だと表記ゆれで集計が割れる）。
+>
+> **Note:** capture は**セッション直後に実行する**。`meta`（model / prompt_version / prompt_fingerprint）は
+> 実行時点のコードの値であり、セッション実施時点の値ではない。遡及エクスポートでずれた場合の一次資料は
+> Langfuse の該当 trace（`sessionId = dialogue_session_id`）だが、Hobby プランは 30 日でデータアクセスが切れる。
 
 ### フロントエンド（`client/`）
 ```bash
@@ -76,7 +99,7 @@ server/
 ├── storage/                   # 対話添付のオブジェクトストレージ抽象（local 実装、S3 は #128 で追加）
 ├── services/review_scheduler.py
 ├── migrations/                # Alembic（env.py, versions/）
-├── evals/                     # eval.py（scoring / regression）・checks.py・golden_yaml.py + datasets/
+├── evals/                     # eval.py（scoring / regression）・checks.py・golden_yaml.py・taxonomy.py・tools/capture.py + datasets/
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/
@@ -260,4 +283,6 @@ PR マージ前に全通過が必須:
 - **復習完了はダッシュボードに残さず消す**: ダッシュボード（`GET /api/review-schedules`）は `next_review_at <= NOW()` かつ `status IN ('pending','overdue')` の未到来分だけを返す。実際の復習完了（review セッションの `update_note_and_feedback` → `_advance_review_schedule`）で `next_review_at` が将来へ進むと自動的に一覧から消える。フロントで「開いた＝復習済み」のような疑似状態を持って表示を残さない（次回到来まで非表示が正）。当日の進捗バーに必要な「当日完了件数」は一覧から消えるため `completed_today` として別途集計して返している
 - **golden の deterministic assertion は `check_fingerprint`（`evals/checks.py` の実装の内容ハッシュ）を持たせる**: `check:` の名前だけでは golden から実装を辿れず、検出フレーズや判定ロジックを変えても record は無変更で通る。ずれたまま採点すると `human_verdicts` との不一致が judge の誤りとして現れ、**judge のせいでない failure を judge のせいだと誤診する**。値が動いたら criterion を読み直してから転記すること（実装が変わった記録であって、criterion がまだ実装を正しく説明しているかは人間しか判断できない）
 - **`LearningState` のキー削除・改名は `GRAPH_VERSION` を上げる**（トポロジー不変でも例外）: `should_interrupt()`（`_algo.py`）はチェックポイントに永続化された `channel_versions` を丸ごと参照するが、`versions_seen[INTERRUPT]` の更新（`_loop.py`）は現在のグラフが宣言しているチャンネルにしか及ばない。宣言から消えたキーの version は永遠に「済」にならず、そのキーに値を持つ既存スレッドは `learning_dialogue` / `review_dialogue` の直前で毎ターン再中断し続け、進行不能になる
+- **再開時に「応答が返らないまま残ったユーザーメッセージ」を巻き戻す**: 応答生成の途中で切断すると、DB と state にユーザーメッセージだけが残る。放置するとユーザーは同じ内容を再送するしかなく、履歴に同一発言が二重に残る（実セッションで発生）。`_handle_resume_session` の `_rollback_unanswered_turn()` が state（`RemoveMessage`）と DB の両方から取り除き、`pending_message_rolled_back` でクライアントの入力欄へ戻す。対話ノードは走っていないので `turn_count` は触らない。state への反映前に落ちた場合は DB 側にだけ残るので、そちらも同じ関数が拾う
+- **対話ノードは `prepare_turn`（事前分析）と `respond`（応答生成）に分かれている**: eval が保存済みの決定を注入して応答生成だけ再実行できるようにするため（`--replay-mode pinned`）。分析の揺れとプロンプト改訂の効果を切り分けられなくなるので、この分割を戻さないこと。本番の `learning_dialogue` は両方を順に呼ぶだけ
 - **eval の judge カスケードは screen の fail だけを confirm に回す**: エスカレーション条件（`should_escalate`）は `holds` ではなく polarity 適用後の verdict で判定する。screen（既定 Haiku）の FN（欠陥を pass と言う誤り）は confirm（既定 Opus）に届かないため最終判定に残る。scoring の校正ゲートは screen 単体の TPR も出すので、そこを見て「カスケードで救えない」誤りが無いか確認すること

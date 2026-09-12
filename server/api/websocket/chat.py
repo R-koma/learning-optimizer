@@ -36,6 +36,7 @@ from schemas.websocket_message import (
     ImageAttachment,
     IncomingMessage,
     NoteGeneratedMessage,
+    PendingMessageRolledBack,
     ResumeSessionMessage,
     SessionEndedMessage,
     SessionResumedMessage,
@@ -248,6 +249,31 @@ async def _handle_start_review(msg: StartReviewMessage, deps: Deps) -> SessionCo
     )
 
 
+async def _rollback_unanswered_turn(session_id: UUID, config: dict[str, Any], deps: Deps) -> str | None:
+    """応答が返らないまま残ったユーザーメッセージを state と DB から取り除き、その本文を返す。
+
+    応答生成の途中で切断すると、ユーザーメッセージだけが state と DB に残る。放置すると
+    ユーザーは同じ内容を再送するしかなく、履歴に同一発言が二重に残る（実セッションで発生）。
+    `turn_count` は対話ノードが走っていないので触らない。
+    """
+    state = await deps.graph.aget_state(config)
+    messages = state.values.get("messages") or []
+    if messages and messages[-1].type == "human":
+        pending = str(messages[-1].content)
+        await deps.graph.aupdate_state(config, {"messages": [RemoveMessage(id=messages[-1].id)]})
+        async with deps.pool.acquire() as conn:
+            await dialogue_message_repository.delete_last_n(conn, session_id, 1)
+        return pending
+
+    # state への反映前に落ちた場合は DB 側にだけ残る
+    async with deps.pool.acquire() as conn:
+        rows = await dialogue_message_repository.find_by_session_id(conn, session_id)
+        if rows and rows[-1]["role"] == "user":
+            await dialogue_message_repository.delete_last_n(conn, session_id, 1)
+            return str(rows[-1]["content"])
+    return None
+
+
 async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> SessionContext | None:
     async with deps.pool.acquire() as conn:
         existing = await dialogue_session_repository.find_by_id(conn, msg.session_id, deps.user_id)
@@ -277,6 +303,10 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
     async with deps.pool.acquire() as conn:
         if existing["status"] == "disconnect":
             await dialogue_session_repository.update_status(conn, msg.session_id, "in_progress")
+
+    pending = await _rollback_unanswered_turn(msg.session_id, config, deps)
+
+    async with deps.pool.acquire() as conn:
         last_message_order = await dialogue_message_repository.get_max_message_order(conn, msg.session_id)
 
     await deps.websocket.send_text(
@@ -285,6 +315,8 @@ async def _handle_resume_session(msg: ResumeSessionMessage, deps: Deps) -> Sessi
             session_type=resumed_session_type,
         ).model_dump_json()
     )
+    if pending is not None:
+        await deps.websocket.send_text(PendingMessageRolledBack(content=pending).model_dump_json())
 
     return SessionContext(
         session_id=msg.session_id,

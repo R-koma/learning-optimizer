@@ -133,6 +133,13 @@ class CancelLastMessageSuccess(BaseModel):
     cancelled_content: str
 
 
+class PendingMessageRolledBack(BaseModel):
+    """再開時に、応答が返らないまま残っていたユーザーメッセージを取り消したことを伝える。"""
+
+    type: Literal["pending_message_rolled_back"] = "pending_message_rolled_back"
+    content: str
+
+
 class CancelLastMessageError(BaseModel):
     type: Literal["cancel_last_message_error"] = "cancel_last_message_error"
     detail: str

@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Any
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -13,6 +14,14 @@ from graph.state import CoveredAspect, LearningState, TurnAnalysisRecord
 from storage import get_storage
 
 
+@dataclass(frozen=True)
+class TurnPlan:
+    """事前分析が決めた、このターンのプロンプトへ注入する値。"""
+
+    covered_aspects: list[CoveredAspect] = field(default_factory=list)
+    analysis: DialogueTurnAnalysis | None = None
+
+
 def _to_record(analysis: DialogueTurnAnalysis | None) -> TurnAnalysisRecord | None:
     """プロンプトに注入された決定内容だけを state 保存用に抜き出す。"""
     if analysis is None:
@@ -24,20 +33,7 @@ def _to_record(analysis: DialogueTurnAnalysis | None) -> TurnAnalysisRecord | No
     )
 
 
-async def learning_dialogue(state: LearningState) -> dict[str, Any]:
-    """対話継続: ファシリテーターとして説明を促す（評価はしない）。
-
-    dialogue intent のターンでは応答生成の前に事前分析（turn_analysis）を 1 回行い、
-    観点カバレッジの更新と応答モードの決定をする。事前分析が失敗しても
-    ターンは止めず、モード自己判定のプロンプトへフォールバックする。
-
-    決定内容（response_mode / selected_aspect）は state に残す。プロンプトを変える値なので、
-    これが無いと会話履歴と state からターンを再現できない（eval の regression 実行で使う）。
-
-    学習セッションはユーザーの明示的な終了操作で完了するため、このノードは
-    終了判定を持たず、`should_generate_note` は常に False を返す。
-    （終了スイッチは api/websocket/chat.py の `_handle_end_session` が外部から立てる）
-    """
+def _turn_context(state: LearningState) -> tuple[str, dict[str, str]]:
     recent_messages = "\n".join(
         f"{'ユーザー' if msg.type == 'human' else 'AI'}: {msg.content}" for msg in state["messages"][-6:]
     )
@@ -45,26 +41,44 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         learning_goal=state.get("learning_goal"),
         focus_aspects=state.get("focus_aspects"),
     )
+    return recent_messages, plan_fields
 
+
+async def prepare_turn(state: LearningState) -> TurnPlan:
+    """応答生成の前に事前分析を 1 回行い、観点カバレッジと応答モードを決める。
+
+    dialogue intent 以外では分析しない。分析が失敗してもターンは止めず、
+    `analysis=None` を返して呼び出し側をモード自己判定のプロンプトへフォールバックさせる。
+    """
+    recent_messages, plan_fields = _turn_context(state)
     covered_aspects: list[CoveredAspect] = list(state.get("covered_aspects") or [])
-    turn_analysis: DialogueTurnAnalysis | None = None
+    analysis: DialogueTurnAnalysis | None = None
     if classify_user_intent(state["messages"]) == "dialogue":
-        turn_analysis = await analyze_dialogue_turn(
+        analysis = await analyze_dialogue_turn(
             state,
             recent_messages=recent_messages,
             plan_fields=plan_fields,
             covered_aspects=covered_aspects,
         )
-        if turn_analysis is not None:
-            covered_aspects = merge_coverage(covered_aspects, turn_analysis.observations)
+        if analysis is not None:
+            covered_aspects = merge_coverage(covered_aspects, analysis.observations)
+    return TurnPlan(covered_aspects=covered_aspects, analysis=analysis)
 
+
+async def respond(state: LearningState, plan: TurnPlan) -> dict[str, Any]:
+    """決定済みの `plan` で質問プロンプトを組み、応答を生成する。
+
+    分析と分けてあるのは、eval が保存済みの決定を注入して応答生成だけを再実行できるようにするため
+    （分析の揺れとプロンプト改訂の効果を切り分ける）。
+    """
+    recent_messages, plan_fields = _turn_context(state)
     question_prompt, intent = build_question_prompt(
         topic=state["topic"],
         recent_messages=recent_messages,
         plan_fields=plan_fields,
         messages=state["messages"],
-        covered_aspects=covered_aspects,
-        turn_analysis=turn_analysis,
+        covered_aspects=plan.covered_aspects,
+        turn_analysis=plan.analysis,
     )
     llm_messages: list[BaseMessage] = [SystemMessage(content=question_prompt)]
     if state["messages"]:
@@ -79,8 +93,8 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
                 "prompt_version": PROMPT_VERSION,
                 "prompt_fingerprint": PROMPT_FINGERPRINT,
                 "intent": intent,
-                "response_mode": turn_analysis.response_mode if turn_analysis else None,
-                "selected_aspect": turn_analysis.selected_aspect if turn_analysis else None,
+                "response_mode": plan.analysis.response_mode if plan.analysis else None,
+                "selected_aspect": plan.analysis.selected_aspect if plan.analysis else None,
             }
         },
     )
@@ -89,6 +103,19 @@ async def learning_dialogue(state: LearningState) -> dict[str, Any]:
         "messages": [response],
         "turn_count": state["turn_count"] + 1,
         "should_generate_note": False,
-        "covered_aspects": covered_aspects,
-        "turn_analysis": _to_record(turn_analysis),
+        "covered_aspects": plan.covered_aspects,
+        "turn_analysis": _to_record(plan.analysis),
     }
+
+
+async def learning_dialogue(state: LearningState) -> dict[str, Any]:
+    """対話継続: ファシリテーターとして説明を促す（評価はしない）。
+
+    決定内容（response_mode / selected_aspect）は state に残す。プロンプトを変える値なので、
+    これが無いと会話履歴と state からターンを再現できない（eval の regression 実行で使う）。
+
+    学習セッションはユーザーの明示的な終了操作で完了するため、このノードは
+    終了判定を持たず、`should_generate_note` は常に False を返す。
+    （終了スイッチは api/websocket/chat.py の `_handle_end_session` が外部から立てる）
+    """
+    return await respond(state, await prepare_turn(state))

@@ -20,7 +20,9 @@ from evals.eval import (
     aggregate_verdict,
     assertion_agreement,
     assertion_pass_rates,
+    build_report,
     calibration_gate,
+    coverage_stability,
     escalation_summary,
     failure_mode_pass_rates,
     format_conversation,
@@ -29,13 +31,18 @@ from evals.eval import (
     load_source_records,
     message_text,
     next_rerun_id,
+    print_summary,
     record_agreement,
+    replay_blocker,
     should_escalate,
     to_state,
+    to_turn_plan,
     to_verdict,
+    unannotated_ids,
     validate_human_verdicts,
     wilson_interval,
 )
+from graph.llm import llm_judge
 
 
 def outcome(
@@ -493,3 +500,130 @@ class TestValidateHumanVerdicts:
         records = list(load_golden_records())
         assert records
         validate_human_verdicts(records)
+
+
+def _trace(meta: dict[str, Any]) -> SourceTrace:
+    return SourceTrace(trace_id="t", turn=4, meta=meta, input={"graph_state": {"topic": "x"}}, observed_output="o")
+
+
+def test_replay_blocker_passes_capture_derived_records() -> None:
+    assert replay_blocker(_trace({"captured_by": "capture"})) is None
+
+
+def test_replay_blocker_rejects_hand_written_records() -> None:
+    blocker = replay_blocker(_trace({"model": "gpt-4.1"}))
+
+    assert blocker is not None
+    assert "capture" in blocker
+
+
+def test_unannotated_ids_lists_records_without_a_human_label() -> None:
+    sources: dict[str, dict[str, Any]] = {
+        "a": {"id": "a", "pass": None},
+        "b": {"id": "b", "pass": False},
+        "c": {"id": "c", "pass": True},
+    }
+
+    assert unannotated_ids(sources) == ["a"]
+
+
+def test_replay_blocker_rejects_pinned_replay_without_a_decision() -> None:
+    trace = _trace({"captured_by": "capture"})
+
+    assert replay_blocker(trace, "full") is None
+    assert "turn_decision" in (replay_blocker(trace, "pinned") or "")
+
+
+def test_to_turn_plan_restores_the_saved_decision() -> None:
+    covered = [{"aspect": "スループット", "reached_depth": "defined"}]
+    trace = SourceTrace(
+        trace_id="t",
+        turn=4,
+        meta={},
+        input={"graph_state": {"topic": "x", "covered_aspects": []}},
+        observed_output="o",
+        turn_decision={
+            "response_mode": "expand",
+            "selected_aspect": "スループット",
+            "error_summary": "",
+            "covered_aspects": covered,
+        },
+        has_turn_decision=True,
+    )
+
+    plan = to_turn_plan(trace)
+
+    assert plan.covered_aspects == covered
+    assert plan.analysis is not None
+    assert plan.analysis.response_mode == "expand"
+    assert plan.analysis.selected_aspect == "スループット"
+    assert plan.analysis.observations == []
+
+
+def test_to_turn_plan_falls_back_to_the_input_coverage_when_no_analysis_ran() -> None:
+    covered = [{"aspect": "定義", "reached_depth": "mentioned"}]
+    trace = SourceTrace(
+        trace_id="t",
+        turn=4,
+        meta={},
+        input={"graph_state": {"topic": "x", "covered_aspects": covered}},
+        observed_output="o",
+        turn_decision=None,
+        has_turn_decision=True,
+    )
+
+    plan = to_turn_plan(trace)
+
+    assert plan.analysis is None
+    assert plan.covered_aspects == covered
+
+
+def _run_with_coverage(aspects: list[list[str]]) -> InstanceResult:
+    result = InstanceResult(failure_mode="fm", source_trace_id="t", human_pass=None)
+    for index, names in enumerate(aspects, start=1):
+        generation = Generation(
+            output="o",
+            turn_analysis={"response_mode": "expand", "selected_aspect": names[0], "error_summary": ""},
+            covered_aspects=[{"aspect": name, "reached_depth": "defined"} for name in names],
+            turn_count=2,
+        )
+        result.runs.append(RunResult(run_index=index, output="o", outcomes=[], generation=generation))
+    return result
+
+
+def test_coverage_stability_is_one_when_every_run_names_the_same_aspects() -> None:
+    rows = coverage_stability([_run_with_coverage([["定義"], ["定義"]])])
+
+    assert rows[0]["mean_jaccard"] == 1.0
+
+
+def test_coverage_stability_detects_a_drifting_aspect_vocabulary() -> None:
+    rows = coverage_stability([_run_with_coverage([["定義"], ["メモリ空間", "独立性", "実行単位"]])])
+
+    assert rows[0]["mean_jaccard"] == 0.0
+    assert rows[0]["aspect_sets"] == [["定義"], ["メモリ空間", "実行単位", "独立性"]]
+
+
+def test_coverage_stability_skips_single_run_instances() -> None:
+    assert coverage_stability([_run_with_coverage([["定義"]])]) == []
+
+
+@pytest.mark.parametrize("mode", ["scoring", "regression"])
+def test_print_summary_runs_for_both_modes(mode: str, capsys: pytest.CaptureFixture[str]) -> None:
+    """レポート組み立てと表示の経路を通す（判定は他のテスト、ここは KeyError 等の検出）。"""
+    report = build_report(
+        [],
+        errors=["boom"],
+        mode=mode,
+        runs=3,
+        fingerprints={},
+        judge=llm_judge,
+        skipped=[{"failure_mode": "fm", "source_trace_id": "t", "reason": "r"}],
+        replay_mode="pinned",
+    )
+
+    print_summary(report)
+
+    out = capsys.readouterr().out
+    assert "boom" in out
+    assert report["meta"]["mode"] == mode

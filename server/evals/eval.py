@@ -18,8 +18,10 @@ from pydantic import BaseModel, Field
 
 from evals.checks import check_fingerprint, run_check
 from evals.golden_yaml import dump_copy_block
+from evals.tools.capture import CAPTURED_BY
 from graph.llm import llm, llm_judge
-from graph.nodes.learning_dialogue import learning_dialogue
+from graph.nodes.learning_dialogue import TurnPlan, learning_dialogue, respond
+from graph.output_schemas import DialogueTurnAnalysis
 from graph.prompts.question import PROMPT_FINGERPRINT, PROMPT_VERSION
 from graph.state import LearningState
 
@@ -87,6 +89,8 @@ class SourceTrace:
     meta: dict[str, Any]
     input: dict[str, Any]
     observed_output: str
+    turn_decision: dict[str, Any] | None = None
+    has_turn_decision: bool = False
 
 
 @dataclass(frozen=True)
@@ -95,6 +99,12 @@ class Generation:
     turn_analysis: dict[str, Any] | None
     covered_aspects: list[dict[str, Any]]
     turn_count: int
+
+    def turn_decision(self) -> dict[str, Any] | None:
+        """そのターンがプロンプトへ注入した決定値（capture の `turn_decision` と同じ形）。"""
+        if not self.turn_analysis:
+            return None
+        return {**self.turn_analysis, "covered_aspects": self.covered_aspects}
 
 
 @dataclass(frozen=True)
@@ -300,6 +310,43 @@ def get_source_trace(trace_id: str, sources: dict[str, dict[str, Any]]) -> Sourc
         meta=record["meta"],
         input=record["input"],
         observed_output=record["output"],
+        turn_decision=record.get("turn_decision"),
+        has_turn_decision="turn_decision" in record,
+    )
+
+
+def replay_blocker(trace: SourceTrace, replay_mode: str = "full") -> str | None:
+    """本番のターンを忠実に再現できない理由。再現できるなら None。
+
+    手で書いたレコードは `conversation_history` が本番の `messages` と 1:1 になっておらず
+    （トピック発話や learning_start の応答が欠けている）、`classify_user_intent` の判定と
+    プロンプトの直近履歴が本番と変わる。capture 由来だけが 1:1 を保証できる。
+    """
+    if trace.meta.get("captured_by") != CAPTURED_BY:
+        return "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    if replay_mode == "pinned" and not trace.has_turn_decision:
+        return "turn_decision を持たないため、そのターンの決定を注入できない"
+    return None
+
+
+def to_turn_plan(trace: SourceTrace) -> TurnPlan:
+    """保存済みの決定内容から、そのターンがプロンプトへ注入した値を組み直す。
+
+    `observations` は `covered_aspects` にマージ済みなので保存しておらず、ここでは空で足りる
+    （プロンプトが読むのは response_mode / selected_aspect / error_summary だけ）。
+    """
+    decision = trace.turn_decision
+    if decision is None:
+        graph_state = trace.input["graph_state"]
+        return TurnPlan(covered_aspects=list(graph_state.get("covered_aspects") or []))
+    return TurnPlan(
+        covered_aspects=list(decision.get("covered_aspects") or []),
+        analysis=DialogueTurnAnalysis(
+            observations=[],
+            response_mode=decision["response_mode"],
+            selected_aspect=decision["selected_aspect"],
+            error_summary=decision["error_summary"],
+        ),
     )
 
 
@@ -315,7 +362,7 @@ def to_state(trace: SourceTrace) -> LearningState:
         "note_id": uuid4(),
         "messages": messages,
         "topic": graph_state["topic"],
-        "turn_count": trace.turn,
+        "turn_count": graph_state.get("turn_count") or trace.turn,
         "should_generate_note": False,
         "session_type": "learning",
     }
@@ -341,13 +388,15 @@ def message_text(message: BaseMessage) -> str:
     return "".join(parts)
 
 
-async def generate_output(trace: SourceTrace) -> Generation:
-    """本番の対話ノードをそのまま呼んで応答を作り直す（regression モード）。
+async def generate_output(trace: SourceTrace, replay_mode: str = "full") -> Generation:
+    """本番の対話ノードを呼んで応答を作り直す（regression モード）。
 
-    事前分析を含めて実行するため、プロンプト改訂の効果と分析の揺れが両方入る。
-    保存済み `turn_analysis` を注入する分離実行は、jsonl 側にその値が無いため今は行えない。
+    `full` は事前分析込みで実行するのでプロンプト改訂の効果と分析の揺れが両方入る。
+    `pinned` は保存済みの決定（`turn_decision`）を注入して応答生成だけを再実行するので、
+    分析の揺れを除いた「プロンプトを直した効果」だけが見える。
     """
-    result = await learning_dialogue(to_state(trace))
+    state = to_state(trace)
+    result = await (respond(state, to_turn_plan(trace)) if replay_mode == "pinned" else learning_dialogue(state))
     return Generation(
         output=message_text(result["messages"][0]),
         turn_analysis=result.get("turn_analysis"),
@@ -535,6 +584,7 @@ async def evaluate_instance(
     runs: int,
     confirm_judge: BaseChatModel | None = None,
     usage: JudgeUsage | None = None,
+    replay_mode: str = "full",
 ) -> InstanceResult:
     result = InstanceResult(
         failure_mode=record["failure_mode"],
@@ -543,7 +593,7 @@ async def evaluate_instance(
     )
     compare_to_human = mode == "scoring"
     for run_index in range(1, (runs if mode == "regression" else 1) + 1):
-        generation = await generate_output(trace) if mode == "regression" else None
+        generation = await generate_output(trace, replay_mode) if mode == "regression" else None
         output = generation.output if generation else trace.observed_output
         outcomes = await evaluate_output(
             record,
@@ -621,6 +671,42 @@ def failure_mode_pass_rates(results: list[InstanceResult]) -> list[dict[str, Any
         }
         for mode, verdicts in sorted(by_mode.items())
     ]
+
+
+def _jaccard(left: set[str], right: set[str]) -> float:
+    if not left and not right:
+        return 1.0
+    return len(left & right) / len(left | right)
+
+
+def coverage_stability(results: list[InstanceResult]) -> list[dict[str, Any]]:
+    """同一入力の run 間で、事前分析が付ける観点名がどれだけ一致するかを測る。
+
+    `merge_coverage` は観点名の文字列をキーに dedup するため、run ごとに粒度が変われば
+    多ターンで「既出観点を再質問しない」が静かに壊れる。その揺れを数字にする。
+    """
+    rows: list[dict[str, Any]] = []
+    for result in results:
+        aspect_sets = [
+            {a["aspect"] for a in run.generation.covered_aspects} for run in result.runs if run.generation is not None
+        ]
+        if len(aspect_sets) < 2:
+            continue
+        pairs = [
+            _jaccard(aspect_sets[i], aspect_sets[j])
+            for i in range(len(aspect_sets))
+            for j in range(i + 1, len(aspect_sets))
+        ]
+        rows.append(
+            {
+                "failure_mode": result.failure_mode,
+                "source_trace_id": result.source_trace_id,
+                "runs": len(aspect_sets),
+                "mean_jaccard": sum(pairs) / len(pairs),
+                "aspect_sets": [sorted(s) for s in aspect_sets],
+            }
+        )
+    return rows
 
 
 def assertion_agreement(results: list[InstanceResult], *, stage: str = "final") -> dict[str, Any]:
@@ -898,7 +984,7 @@ def print_judge_usage(report: dict[str, Any]) -> None:
 
 
 def print_regression_summary(report: dict[str, Any]) -> None:
-    print(f"失敗モード別 pass 率（{report['meta']['runs']} 回生成）")
+    print(f"失敗モード別 pass 率（{report['meta']['runs']} 回生成 / replay={report['meta']['replay_mode']}）")
     for row in report["aggregate"]["failure_mode_pass_rates"]:
         print(f"  {row['failure_mode']:<38} {row['passed']}/{row['runs']} ({row['pass_rate']:.0%})")
 
@@ -910,6 +996,19 @@ def print_regression_summary(report: dict[str, Any]) -> None:
             f"  {row['source_trace_id']:<45} {row['assertion_id']:<4} "
             f"{row['passed']}/{row['runs'] - row['not_applicable']} ({rate}){na}"
         )
+    stability = report["aggregate"]["coverage_stability"]
+    if stability:
+        print("\n観点名の run 間一致（事前分析の揺れ。1.0 なら毎回同じ観点セット）")
+        for row in stability:
+            print(f"  {row['source_trace_id']:<45} mean_jaccard={row['mean_jaccard']:.2f}")
+            for aspects in row["aspect_sets"]:
+                print(f"      {aspects}")
+
+    if report["skipped"]:
+        print("\n忠実に再現できないためスキップしたインスタンス")
+        for item in report["skipped"]:
+            print(f"  {item['failure_mode']}/{item['source_trace_id']}: {item['reason']}")
+        print("  （--allow-unfaithful を付けると従来どおり再生成する）")
     print("\n人間ラベルが無いため judge–人間一致は算出しない（scoring モードで校正する）。")
     print_judge_usage(report)
 
@@ -937,11 +1036,14 @@ def build_report(
     judge: BaseChatModel,
     confirm_judge: BaseChatModel | None = None,
     usage: JudgeUsage | None = None,
+    skipped: list[dict[str, str]] | None = None,
+    replay_mode: str = "full",
 ) -> dict[str, Any]:
     report: dict[str, Any] = {
         "meta": {
             "mode": mode,
             "runs": runs if mode == "regression" else 1,
+            "replay_mode": replay_mode if mode == "regression" else None,
             "generated_at": datetime.now(UTC).isoformat(),
             "model": llm.model_name,
             "temperature": llm.temperature,
@@ -990,8 +1092,10 @@ def build_report(
         "aggregate": {
             "assertion_pass_rates": assertion_pass_rates(results),
             "failure_mode_pass_rates": failure_mode_pass_rates(results),
+            "coverage_stability": coverage_stability(results),
         },
         "errors": errors,
+        "skipped": skipped or [],
     }
     if mode == "scoring":
         report["agreement"] = {
@@ -1006,6 +1110,11 @@ def build_report(
             },
         }
     return report
+
+
+def unannotated_ids(sources: dict[str, dict[str, Any]]) -> list[str]:
+    """人間ラベル（`pass`）が付いていないレコードの id。"""
+    return [record["id"] for record in sources.values() if record.get("pass") is None]
 
 
 def next_rerun_id(source_trace_id: str, existing: set[str]) -> str:
@@ -1030,29 +1139,31 @@ def emit_jsonl(path: Path, results: list[InstanceResult], sources: dict[str, dic
                 if run.generation is None:
                     continue
                 trace_id = next_rerun_id(result.source_trace_id, existing)
-                graph_state = dict(base["input"]["graph_state"])
-                graph_state["covered_aspects"] = run.generation.covered_aspects
-                graph_state["turn_count"] = run.generation.turn_count
-                graph_state["turn_analysis"] = run.generation.turn_analysis
+                meta = {
+                    "model": llm.model_name,
+                    "prompt_version": PROMPT_VERSION,
+                    "prompt_fingerprint": PROMPT_FINGERPRINT,
+                    "params": {"temperature": llm.temperature},
+                }
+                # input は元レコードのものをそのまま引き継ぐ（生成後の値を書くと、この行を
+                # 再度 regression にかけたとき coverage が二重に入る）。忠実度の印も引き継ぐ。
+                if captured_by := base["meta"].get("captured_by"):
+                    meta["captured_by"] = captured_by
                 record = {
                     "id": trace_id,
                     "schema_version": base["schema_version"],
-                    "source": "synthetic",
+                    "source": "rerun",
                     "session": base["session"],
                     "dialogue_session_id": None,
                     "turn": base["turn"],
                     "captured_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "meta": {
-                        "model": llm.model_name,
-                        "prompt_version": PROMPT_VERSION,
-                        "prompt_fingerprint": PROMPT_FINGERPRINT,
-                        "params": {"temperature": llm.temperature},
-                    },
+                    "meta": meta,
                     "input": {
                         "conversation_history": base["input"]["conversation_history"],
-                        "graph_state": graph_state,
+                        "graph_state": base["input"]["graph_state"],
                     },
                     "output": run.generation.output,
+                    "turn_decision": run.generation.turn_decision(),
                     "pass": None,
                     "first_failure": None,
                     "note": f"regression 再実行（{result.source_trace_id} の入力を再利用）。未 annotate",
@@ -1065,8 +1176,14 @@ def emit_jsonl(path: Path, results: list[InstanceResult], sources: dict[str, dic
 
 
 async def run(
-    mode: str, runs: int, judge: BaseChatModel, *, confirm_judge: BaseChatModel | None = None
-) -> tuple[list[InstanceResult], list[str], dict[str, str], JudgeUsage]:
+    mode: str,
+    runs: int,
+    judge: BaseChatModel,
+    *,
+    confirm_judge: BaseChatModel | None = None,
+    allow_unfaithful: bool = False,
+    replay_mode: str = "full",
+) -> tuple[list[InstanceResult], list[str], dict[str, str], JudgeUsage, list[dict[str, str]]]:
     fingerprints = validate_check_fingerprints()
     records = list(load_golden_records())
     validate_human_verdicts(records)
@@ -1075,6 +1192,7 @@ async def run(
 
     results: list[InstanceResult] = []
     errors: list[str] = []
+    skipped: list[dict[str, str]] = []
     for record in records:
         seen_inputs: set[str] = set()
         for instance in record["instances"]:
@@ -1087,6 +1205,17 @@ async def run(
                 continue
 
             if mode == "regression":
+                blocker = replay_blocker(trace, replay_mode)
+                if blocker is not None and not allow_unfaithful:
+                    print(f"skip {label}: {blocker}")
+                    skipped.append(
+                        {
+                            "failure_mode": record["failure_mode"],
+                            "source_trace_id": instance["source_trace_id"],
+                            "reason": blocker,
+                        }
+                    )
+                    continue
                 fingerprint = json.dumps(trace.input, ensure_ascii=False, sort_keys=True)
                 if fingerprint in seen_inputs:
                     print(f"skip {label}: 同一 input の instance を再生成済み")
@@ -1095,7 +1224,15 @@ async def run(
 
             try:
                 result = await evaluate_instance(
-                    record, instance, trace, judge, mode=mode, runs=runs, confirm_judge=confirm_judge, usage=usage
+                    record,
+                    instance,
+                    trace,
+                    judge,
+                    mode=mode,
+                    runs=runs,
+                    confirm_judge=confirm_judge,
+                    usage=usage,
+                    replay_mode=replay_mode,
                 )
             except Exception as exc:
                 logger.exception("instance failed: %s", label)
@@ -1103,7 +1240,7 @@ async def run(
                 continue
             print_instance(result)
             results.append(result)
-    return results, errors, fingerprints, usage
+    return results, errors, fingerprints, usage, skipped
 
 
 def parse_args() -> argparse.Namespace:
@@ -1113,6 +1250,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=None, help="レポートの出力先（既定は evals/reports/）")
     parser.add_argument("--emit-jsonl", type=Path, default=None, help="regression の生成を正本 jsonl へ追記する")
     parser.add_argument("--emit-instance", default=None, help="trace id を指定して golden 用の写しを出力する")
+    parser.add_argument(
+        "--list-unannotated", action="store_true", help="正本 jsonl の未 annotate レコードを一覧して終了する"
+    )
+    parser.add_argument(
+        "--replay-mode",
+        choices=("full", "pinned"),
+        default="full",
+        help="regression の再実行方法。full=事前分析込み（分析の揺れも入る）/ "
+        "pinned=保存済みの turn_decision を注入して応答生成だけ再実行（プロンプト改訂の効果を分離）",
+    )
+    parser.add_argument(
+        "--allow-unfaithful",
+        action="store_true",
+        help="regression で、本番のターンを忠実に再現できないインスタンス（capture 由来でない入力）も再生成する",
+    )
     parser.add_argument(
         "--judge-model",
         default=None,
@@ -1146,6 +1298,11 @@ async def main() -> None:
         print(dump_copy_block(load_source_records()[args.emit_instance]), end="")
         return
 
+    if args.list_unannotated:
+        for trace_id in unannotated_ids(load_source_records()):
+            print(trace_id)
+        return
+
     judge = resolve_judge(args.judge_model)
     confirm_judge = resolve_confirm_judge(args.confirm_judge_model, cascade=not args.no_cascade)
     print(f"mode={args.mode} model={llm.model_name} temperature={llm.temperature}")
@@ -1155,7 +1312,14 @@ async def main() -> None:
         f"prompt_version={PROMPT_VERSION} prompt_fingerprint={PROMPT_FINGERPRINT}\n"
     )
 
-    results, errors, fingerprints, usage = await run(args.mode, args.runs, judge, confirm_judge=confirm_judge)
+    results, errors, fingerprints, usage, skipped = await run(
+        args.mode,
+        args.runs,
+        judge,
+        confirm_judge=confirm_judge,
+        allow_unfaithful=args.allow_unfaithful,
+        replay_mode=args.replay_mode,
+    )
     report = build_report(
         results,
         errors,
@@ -1165,6 +1329,8 @@ async def main() -> None:
         judge=judge,
         confirm_judge=confirm_judge,
         usage=usage,
+        skipped=skipped,
+        replay_mode=args.replay_mode,
     )
     print_summary(report)
 

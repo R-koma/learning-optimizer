@@ -78,7 +78,7 @@ instances:
     created_at: 2026-07-14
 
   - source_trace_id: 2026-07-14-os-process__t1-exemplar
-    source: synthetic
+    source: handwritten
     meta:
       model: human-authored
       prompt_version: null

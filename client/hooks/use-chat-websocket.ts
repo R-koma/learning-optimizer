@@ -33,6 +33,7 @@ interface ServerMessage {
     | "session_ended"
     | "cancel_last_message_success"
     | "cancel_last_message_error"
+    | "pending_message_rolled_back"
     | "error";
   content?: string;
   detail?: string;
@@ -291,6 +292,11 @@ export function useChatWebSocket(): UseChatWebSocketReturn {
           pendingTextRef.current = "";
           setMessages((prev) => prev.slice(0, -2));
           setEditingMessage(data.cancelled_content ?? "");
+          break;
+
+        case "pending_message_rolled_back":
+          setMessages((prev) => prev.slice(0, -1));
+          setEditingMessage(data.content ?? "");
           break;
 
         case "cancel_last_message_error":

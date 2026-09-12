@@ -15,6 +15,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 
 from api.websocket import auth as ws_auth
 from api.websocket import chat
+from graph.version import GRAPH_VERSION
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -122,6 +123,34 @@ async def _insert_session(session_id: UUID, user_id: str, graph_version: int) ->
         await conn.close()
 
 
+async def _insert_messages(session_id: UUID, rows: list[tuple[str, str]]) -> None:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        for order, (role, content) in enumerate(rows, start=1):
+            await conn.execute(
+                "INSERT INTO dialogue_messages (id, dialogue_session_id, role, content, message_order) "
+                "VALUES (gen_random_uuid(), $1, $2, $3, $4)",
+                str(session_id),
+                role,
+                content,
+                order,
+            )
+    finally:
+        await conn.close()
+
+
+async def _fetch_messages(session_id: UUID) -> list[asyncpg.Record]:
+    conn = await asyncpg.connect(TEST_DATABASE_URL)
+    try:
+        return await conn.fetch(
+            "SELECT role, content, message_order FROM dialogue_messages "
+            "WHERE dialogue_session_id = $1 ORDER BY message_order",
+            str(session_id),
+        )
+    finally:
+        await conn.close()
+
+
 async def _fetch_session(session_id: UUID) -> asyncpg.Record | None:
     conn = await asyncpg.connect(TEST_DATABASE_URL)
     try:
@@ -184,6 +213,23 @@ def _start_learning(ws: Any, topic: str = "二分探索") -> str:
     assert ws.receive_json()["type"] == "assistant_message_chunk"
     assert ws.receive_json()["type"] == "assistant_message_end"
     return str(started["session_id"])
+
+
+def _resume_and_collect(ws_env: SimpleNamespace, session_id: UUID) -> list[dict[str, Any]]:
+    """resume を送り、session_ended までに届いたメッセージを順に返す。
+
+    特定の型を receive_json で待ち伏せると、送られなくなった回帰でテストが固まる（落ちない）。
+    """
+    received: list[dict[str, Any]] = []
+    with TestClient(ws_env.app) as client, client.websocket_connect("/ws/chat") as ws:
+        _authenticate(ws)
+        ws.send_json({"type": "resume_session", "session_id": str(session_id)})
+        ws.send_json({"type": "end_session"})
+        while True:
+            message = ws.receive_json()
+            received.append(message)
+            if message["type"] in ("session_ended", "error"):
+                return received
 
 
 def _drain_assistant_turn(ws: Any) -> None:
@@ -334,6 +380,71 @@ def test_resume_with_stale_graph_version_is_rejected(ws_env: SimpleNamespace) ->
     row = _run(_fetch_session(session_id))
     assert row is not None
     assert row["status"] == "abandoned"
+
+
+def test_resume_rolls_back_a_user_message_left_without_a_response(ws_env: SimpleNamespace) -> None:
+    """応答生成中に切断されたターンは、再開時に state と DB から取り消される。
+
+    残したままだとユーザーは同じ内容を再送するしかなく、履歴に同一発言が二重に残る。
+    """
+    session_id = uuid4()
+    _run(_insert_session(session_id, ws_env.user_id, graph_version=GRAPH_VERSION))
+    _run(_insert_messages(session_id, [("user", "プロセス"), ("assistant", "話してみて"), ("user", "実行単位です")]))
+    pending = HumanMessage(content="実行単位です")
+    pending.id = "pending-1"
+    ws_env.graph.state_values = {
+        "should_generate_note": False,
+        "turn_count": 1,
+        "messages": [HumanMessage(content="プロセス"), AIMessage(content="話してみて"), pending],
+    }
+
+    received = _resume_and_collect(ws_env, session_id)
+
+    rolled_back = [m for m in received if m["type"] == "pending_message_rolled_back"]
+    assert rolled_back == [{"type": "pending_message_rolled_back", "content": "実行単位です"}]
+    assert [(r["role"], r["message_order"]) for r in _run(_fetch_messages(session_id))] == [
+        ("user", 1),
+        ("assistant", 2),
+    ]
+    removals = [values for values, _ in ws_env.graph.update_calls if "messages" in values]
+    assert removals and removals[0]["messages"][0].id == "pending-1"
+    assert all("turn_count" not in values for values, _ in ws_env.graph.update_calls)
+
+
+def test_resume_rolls_back_a_row_missing_from_state(ws_env: SimpleNamespace) -> None:
+    """state への反映前に落ちた場合は DB 側にだけ残るので、そこも取り消す。"""
+    session_id = uuid4()
+    _run(_insert_session(session_id, ws_env.user_id, graph_version=GRAPH_VERSION))
+    _run(_insert_messages(session_id, [("user", "プロセス"), ("assistant", "話してみて"), ("user", "実行単位です")]))
+    ws_env.graph.state_values = {
+        "should_generate_note": False,
+        "turn_count": 1,
+        "messages": [HumanMessage(content="プロセス"), AIMessage(content="話してみて")],
+    }
+
+    received = _resume_and_collect(ws_env, session_id)
+
+    assert [m["type"] for m in received if m["type"] == "pending_message_rolled_back"] == [
+        "pending_message_rolled_back"
+    ]
+    assert [r["message_order"] for r in _run(_fetch_messages(session_id))] == [1, 2]
+    assert all("messages" not in values for values, _ in ws_env.graph.update_calls)
+
+
+def test_resume_keeps_a_completed_turn_untouched(ws_env: SimpleNamespace) -> None:
+    session_id = uuid4()
+    _run(_insert_session(session_id, ws_env.user_id, graph_version=GRAPH_VERSION))
+    _run(_insert_messages(session_id, [("user", "プロセス"), ("assistant", "話してみて")]))
+    ws_env.graph.state_values = {
+        "should_generate_note": False,
+        "turn_count": 1,
+        "messages": [HumanMessage(content="プロセス"), AIMessage(content="話してみて")],
+    }
+
+    received = _resume_and_collect(ws_env, session_id)
+
+    assert [m["type"] for m in received] == ["session_resumed", "session_ended"]
+    assert [r["message_order"] for r in _run(_fetch_messages(session_id))] == [1, 2]
 
 
 @pytest.mark.asyncio(loop_scope="session")

@@ -14,6 +14,11 @@
 - 2 件しか golden が無い現段階では検証できない項目がある。**Section D** に隔離し、false-green を防ぐ。
 - 最終判定は **Section E（executable acceptance）**。ここが満たされて初めて「最小構成が実装できた」と言える。
 
+> **現況（2026-09-14）**: Section A / B / C / E は全て満たした。**最小構成は実装完了**。
+> Section D は件数が閾値に届いていないため意図的に未達のまま。
+> ここから先に何をするかは **Section 10「次の一手」** に移した
+> （作業用メモだった `next-steps.md` は役目を終えたので削除済み）。
+
 ---
 
 ## 1. スコープ
@@ -219,3 +224,60 @@ TNR。scoring の校正ゲートは `stage="screen"` の TPR も出すので、�
 - `a2` の criterion 自体は変更していない（文面調整では直らないことを確認済みのため）
 - judge は temperature 0 でも判定が揺れる（同一入力で `a2` が fail/fail/pass/pass と反転した実測あり）。
   **1〜2 ラベルの差を読まない**
+
+---
+
+## 10. 次の一手 — 最小構成の次（コードではなくデータ）
+
+最小構成は実装し終えた。ここから先に足りないのは機能ではなく、**忠実に測れるデータ**。
+
+### regression は今 0 件を回している
+
+`uv run python -m evals.eval --mode regression` は golden の 4 instance すべてを
+`replay_blocker` でスキップする（どれも capture 由来でないため `conversation_history` が
+本番の `messages` と 1:1 になっていない）。
+
+Section E #5 は 2026-09-05 の時点で実データ（2 レコード × N 回生成）で確認済みで、
+**0 件になったのはその後に忠実度ゲート（A-3）を入れたから**。不具合ではなく、
+「忠実に測れるデータがまだ無い」ことが数字に出ている正しい状態。
+
+つまり今 eval が言えるのは「judge が人間ラベルと一致している（20/20・final 校正ゲート PASS）」
+までで、**現行プロンプトの品質は一度も測っていない**。`--allow-unfaithful` を付ければ数字は出るが、
+それは本番と 1 文字違う入力に対する数字なので、比較のベースラインにしてはいけない。
+
+### この順で 1 サイクル回すと regression が動き出す
+
+1. **実質的な説明を含む 3〜4 ターンの学習セッションを 1 本回す**（本番の client / server で）
+2. セッション直後に `uv run python -m evals.tools.capture --session-id <uuid>` で正本 jsonl へ追記。
+   **遡らないこと** — `meta`（model / prompt_version / prompt_fingerprint）は実行時点のコードの値で、
+   後から出すとセッション実施時点とずれる（Langfuse の trace は Hobby プランで 30 日で切れる）
+3. `uv run python -m evals.eval --list-unannotated` で拾い、`pass` / `first_failure` を人手で付ける
+4. 既存の failure_mode に当たるなら `--emit-instance <trace_id>` で写しを生成して golden の
+   `instances` に足す。当たらないなら `evals/taxonomy.py` に failure_mode を足してから新ファイル
+5. `--mode regression --runs 5` が実際に回るようになる。`coverage_stability` も同時に読む
+
+### この 1 サイクルが同時に片付けるもの
+
+- **観点語彙を固定すべきかの判断材料（C-2）**。今観測できている観点名のドリフトは
+  *同じ 1 ターン目を 2 回回した run 間*のもので、本当のリスクである「セッション内で
+  多ターンにまたがって観点名が維持されるか」は未観測（多ターンのレコードが 1 件しか無い）。
+  多ターンのセッションを capture して `coverage_stability`（run 間の観点名集合の平均 Jaccard）を
+  見れば決まる。**維持されていれば着手しない** — 語彙固定は事前分析プロンプトを変えるので
+  `PROMPT_FINGERPRINT` が動き、scoring の 20 ラベルが陳腐化する。未観測のリスクのために
+  ベースラインを捨てることになる
+- **Section D の 3 項目**。judge の信頼性・失敗モード率の統計的意味・taxonomy の網羅性は
+  すべて件数が閾値（20〜30 件・~100 trace）に届いていないことが理由で、件数は capture でしか増えない
+- **pydantic スキーマ + loader**（2026-09-14 に意図的に見送り）。golden 2 ファイル・4 instance の今は
+  キー集合・値空間・写しのバイト一致・deterministic の実装ハッシュを
+  `validate_human_verdicts()` / `validate_check_fingerprints()` と `tests/unit/evals/` が
+  実データに対して強制しており、pydantic はこれらを置き換えない。
+  **着手のトリガーは golden を 20〜30 件へ増やす直前** — instance を機械的に量産し始めると
+  人間が目視できる件数を超え、型が最後の砦になる
+- **共通 invariant（rubric）の着手ライン**。`a5` の criterion は既に 2 ファイルで一字一句同じなので、
+  3 ファイル目が生まれた瞬間が着手シグナル（§9 の後ろの表と同じ基準）
+
+### 増やし方について決めてあること
+
+- **jsonl を手で書いて増やさない**。capture が潰すべき作業で、推測フィールドが再混入する。
+  増やしたいなら実セッションを回して溜める
+- **`observed_output` は撮り直さない**。judge 校正用の人間ラベルが全部無効になる

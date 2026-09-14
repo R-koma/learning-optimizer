@@ -82,6 +82,30 @@ def test_failed_records_name_the_failure_mode() -> None:
     assert not problems, "\n".join(problems)
 
 
+def test_golden_pass_matches_the_canonical_label() -> None:
+    """instance の `pass` は jsonl と golden で同じ値でなければならない。
+
+    `pass` は写し（`evals.golden_yaml.COPY_KEYS`）に含まれず両方に人が書くので、片方だけ直しても
+    もう片方は無変更で通る。ずれると jsonl 側の台帳（`--list-unannotated` / `first_failure` の集計）と
+    golden 側の採点（`record_agreement` / 校正ゲートの正例判定）が別のラベルを見る。
+
+    jsonl に無い instance はここでは飛ばす（`test_every_instance_resolves_to_a_source_trace` の担当）。
+    """
+    by_id = {record["id"]: record for record in _records()}
+    problems: list[str] = []
+    for path, data in _golden_files():
+        for instance in data["instances"]:
+            source = by_id.get(instance["source_trace_id"])
+            if source is None:
+                continue
+            if instance.get("pass") != source["pass"]:
+                problems.append(
+                    f"{path}: instance={instance['source_trace_id']} "
+                    f"golden.pass={instance.get('pass')!r} jsonl.pass={source['pass']!r}"
+                )
+    assert not problems, "\n".join(problems)
+
+
 def test_capture_derived_history_is_the_complete_prefix() -> None:
     """capture 由来レコードの履歴は本番の `messages` と 1:1 になっている。
 

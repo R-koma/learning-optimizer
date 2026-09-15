@@ -99,7 +99,7 @@ server/
 ├── storage/                   # 対話添付のオブジェクトストレージ抽象（local 実装、S3 は #128 で追加）
 ├── services/review_scheduler.py
 ├── migrations/                # Alembic（env.py, versions/）
-├── evals/                     # eval.py（scoring / regression）・checks.py・golden_yaml.py・taxonomy.py・tools/capture.py + datasets/
+├── evals/                     # eval.py（scoring / regression）・checks.py・golden_yaml.py・taxonomy.py・tools/capture.py + datasets/ + README.md（golden の規約・judge の決定）
 └── tests/
     ├── unit/                  # pytest + 実 DB（モック禁止）
     └── integration/

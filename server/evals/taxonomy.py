@@ -4,7 +4,7 @@
 どちらも自由文字列で、表記ゆれが入ると集計が静かに割れる。ここを唯一の値空間にして
 `tests/unit/evals/test_dataset_invariants.py` が強制する。
 
-網羅的な taxonomy を今作らないのは意図的（`todo.md` Section D: error analysis が ~100 trace で
+網羅的な taxonomy を今作らないのは意図的（`README.md` の規約: error analysis が ~100 trace で
 saturation してから）。ここは「今ある値を固定し、追加を PR レビューに通す」ためだけにある。
 """
 

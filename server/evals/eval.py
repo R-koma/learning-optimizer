@@ -757,7 +757,7 @@ def escalation_summary(results: list[InstanceResult]) -> dict[str, Any]:
     """カスケードで screen から confirm に回った judge assertion の内訳。
 
     overturned（screen=fail → confirm=pass）は Haiku と Opus が割れた箇所そのもので、
-    criterion レビューの入力になる（todo.md 規約6: 割れたら criterion の曖昧さを疑う）。
+    criterion レビューの入力になる（README.md の規約: 割れたら criterion の曖昧さを疑う）。
     """
     judged = [
         (r, o) for r in results for run in r.runs for o in run.outcomes if o.assertion_type == "judge" and o.applicable

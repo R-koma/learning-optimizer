@@ -67,6 +67,9 @@
 - **`input` / `observed_output` / `meta` / `source` は正本 jsonl からの写しで、手で書かない。**
   `evals.golden_yaml.dump_copy_block` で生成する。`tests/unit/evals/test_golden_copy_matches_source.py`
   がバイト一致を保証し、落ちたら写しを再生成する一択。
+- **annotate で書き換えてよいのは `pass` / `first_failure` / `note` / `annotated_at` の 4 つだけ。**
+  `input` / `output` / `meta` / `turn_decision` は golden の写しとバイト比較されるので触らない。
+  UI（`evals.tools.annotate`）もこの 4 つしか書かない。
 - **jsonl を手で書いて増やさない。** capture が潰すべき作業で、推測フィールドが再混入する。
   増やしたいなら実セッションを回して溜める。
 - **`observed_output` は撮り直さない。** judge 校正用の人間ラベルが全部無効になる。

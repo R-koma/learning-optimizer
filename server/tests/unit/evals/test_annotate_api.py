@@ -99,6 +99,12 @@ def test_listing_puts_unannotated_records_first(client: TestClient) -> None:
     assert records[1]["annotated"] is True
 
 
+def test_listing_carries_the_session_topic(client: TestClient) -> None:
+    records = client.get("/api/records").json()["records"]
+
+    assert {r["topic"] for r in records} == {"トピック"}
+
+
 def test_detail_carries_everything_needed_to_judge(client: TestClient) -> None:
     body = client.get("/api/records/rec-todo").json()
 
@@ -106,6 +112,7 @@ def test_detail_carries_everything_needed_to_judge(client: TestClient) -> None:
     assert body["conversation_history"][-1]["content"] == "プロセスとは実行単位です"
     assert body["turn_decision"]["selected_aspect"] == "実行単位"
     assert body["record"]["meta"]["prompt_version"] == "generate_question@v4"
+    assert body["record"]["topic"] == "トピック"
     assert [m["key"] for m in body["failure_modes"]] == sorted(m["key"] for m in body["failure_modes"])
     assert body["assertions"]["self_answered_question"][0]["id"] == "a1"
 

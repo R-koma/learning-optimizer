@@ -42,6 +42,7 @@ def _summary(record: dict[str, Any], promoted_to: str | None) -> dict[str, Any]:
     return {
         "id": record["id"],
         "session": record["session"],
+        "topic": record["input"]["graph_state"].get("topic"),
         "turn": record["turn"],
         "source": record["source"],
         "pass": record["pass"],

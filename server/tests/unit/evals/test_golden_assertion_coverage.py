@@ -5,6 +5,9 @@
 
 未充足のものは `_KNOWN_SINGLE_DIRECTION` に列挙する。充足したのに列挙が残っている場合も
 落とすので、負債が解消されたら必ず外れる。
+
+rubric の assertion は全 failure_mode に適用されるため、両方向は golden 全体で満たせばよい
+（failure_mode ごとに要求すると、その観点が出ない失敗モードで必ず落ちる）。
 """
 
 from __future__ import annotations
@@ -15,6 +18,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+from evals.rubric import RUBRIC_SCOPE, load_rubric, merge_assertions
 
 _GOLDEN_DIR = Path(__file__).resolve().parents[3] / "evals" / "datasets" / "golden"
 
@@ -31,11 +36,15 @@ def _judge_verdicts_by_assertion() -> dict[tuple[str, str], set[str]]:
             continue
         with open(path, encoding="utf-8") as f:
             data: dict[str, Any] = yaml.safe_load(f)
-        judge_ids = {a["id"] for a in data["assertions"] if a["type"] == "judge"}
+        assertions = merge_assertions(data["assertions"], load_rubric())
+        judge = {a["id"]: a for a in assertions if a["type"] == "judge"}
         for instance in data["instances"]:
             for assertion_id, verdict in instance["human_verdicts"].items():
-                if assertion_id in judge_ids:
-                    verdicts[data["failure_mode"], assertion_id].add(verdict)
+                if assertion_id not in judge:
+                    continue
+                # rubric は failure_mode をまたいで適用されるので、カバレッジも全体で 1 つと数える
+                owner = RUBRIC_SCOPE if judge[assertion_id]["scope"] == RUBRIC_SCOPE else data["failure_mode"]
+                verdicts[owner, assertion_id].add(verdict)
     return verdicts
 
 

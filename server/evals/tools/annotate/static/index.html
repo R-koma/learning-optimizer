@@ -725,8 +725,10 @@
             button.addEventListener("click", () => onPick(assertion.id, verdict));
             return button;
           });
+          const label = [assertion.id, assertion.type, assertion.polarity];
+          if (assertion.scope === "rubric") label.push("共通");
           return el("div", { className: "assertion" }, [
-            el("code", { textContent: `${assertion.id} · ${assertion.type} · ${assertion.polarity}` }),
+            el("code", { textContent: label.join(" · ") }),
             el("p", { textContent: assertion.criterion }),
             assertion.applies_when
               ? el("p", { className: "meta", textContent: `applies_when: ${assertion.applies_when}` })

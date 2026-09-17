@@ -85,6 +85,13 @@ def _golden(tmp_path: Path, instances: str) -> Path:
 
 
 @pytest.fixture
+def rubric_dir(tmp_path: Path) -> Path:
+    directory = tmp_path / "rubric"
+    directory.mkdir(exist_ok=True)
+    return directory
+
+
+@pytest.fixture
 def golden_dir(tmp_path: Path) -> Path:
     return _golden(
         tmp_path,
@@ -113,19 +120,21 @@ def _promotion(**overrides: Any) -> Promotion:
 
 
 def test_promotion_appends_without_touching_existing_content(
-    jsonl_path: Path, golden_dir: Path, tmp_path: Path
+    jsonl_path: Path, golden_dir: Path, rubric_dir: Path
 ) -> None:
     path = golden_dir / "self_answered_question.yaml"
     before = path.read_text(encoding="utf-8")
 
-    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), today=_TODAY)
+    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     after = path.read_text(encoding="utf-8")
     assert after.startswith(before)
 
 
-def test_promoted_instance_round_trips_as_a_copy_of_the_source(jsonl_path: Path, golden_dir: Path) -> None:
-    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), today=_TODAY)
+def test_promoted_instance_round_trips_as_a_copy_of_the_source(
+    jsonl_path: Path, golden_dir: Path, rubric_dir: Path
+) -> None:
+    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     data = yaml.safe_load((golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8"))
     instance = data["instances"][-1]
@@ -139,28 +148,40 @@ def test_promoted_instance_round_trips_as_a_copy_of_the_source(jsonl_path: Path,
     assert data["assertions"][0]["id"] == "a1"
 
 
-def test_multiline_rationale_is_written_as_a_block_scalar(jsonl_path: Path, golden_dir: Path) -> None:
-    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(rationale="1 行目。\n2 行目。"), today=_TODAY)
+def test_multiline_rationale_is_written_as_a_block_scalar(
+    jsonl_path: Path, golden_dir: Path, rubric_dir: Path
+) -> None:
+    promote_to_golden(
+        jsonl_path,
+        golden_dir,
+        "rec-fail",
+        _promotion(rationale="1 行目。\n2 行目。"),
+        rubric_dir=rubric_dir,
+        today=_TODAY,
+    )
 
     text = (golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8")
     assert "    rationale: |-\n      1 行目。\n      2 行目。\n" in text
 
 
-def test_promotion_works_on_a_file_with_no_instances_yet(jsonl_path: Path, tmp_path: Path) -> None:
+def test_promotion_works_on_a_file_with_no_instances_yet(jsonl_path: Path, tmp_path: Path, rubric_dir: Path) -> None:
     golden_dir = _golden(tmp_path, "instances: []\n")
 
-    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), today=_TODAY)
+    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     data = yaml.safe_load((golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8"))
     assert [i["source_trace_id"] for i in data["instances"]] == ["rec-fail"]
 
 
-def test_a_positive_record_may_be_promoted_with_no_failing_verdict(jsonl_path: Path, golden_dir: Path) -> None:
+def test_a_positive_record_may_be_promoted_with_no_failing_verdict(
+    jsonl_path: Path, golden_dir: Path, rubric_dir: Path
+) -> None:
     promote_to_golden(
         jsonl_path,
         golden_dir,
         "rec-good",
         _promotion(human_verdicts={"a1": "pass", "a2": "na"}, rationale="正例。"),
+        rubric_dir=rubric_dir,
         today=_TODAY,
     )
 
@@ -184,35 +205,35 @@ def test_a_positive_record_may_be_promoted_with_no_failing_verdict(jsonl_path: P
     ],
 )
 def test_invalid_promotions_are_rejected(
-    jsonl_path: Path, golden_dir: Path, trace_id: str, promotion: Promotion, expected: str
+    jsonl_path: Path, golden_dir: Path, rubric_dir: Path, trace_id: str, promotion: Promotion, expected: str
 ) -> None:
     path = golden_dir / "self_answered_question.yaml"
     before = path.read_bytes()
 
     with pytest.raises((PromotionError, LookupError)) as exc:
-        promote_to_golden(jsonl_path, golden_dir, trace_id, promotion, today=_TODAY)
+        promote_to_golden(jsonl_path, golden_dir, trace_id, promotion, rubric_dir=rubric_dir, today=_TODAY)
 
     problems = getattr(exc.value, "problems", [str(exc.value)])
     assert any(expected in problem for problem in problems), problems
     assert path.read_bytes() == before
 
 
-def test_an_unannotated_record_cannot_be_promoted(tmp_path: Path, golden_dir: Path) -> None:
+def test_an_unannotated_record_cannot_be_promoted(tmp_path: Path, golden_dir: Path, rubric_dir: Path) -> None:
     jsonl_path = tmp_path / "unannotated.jsonl"
     record = _record("rec-todo", **{"pass": None, "first_failure": None, "annotated_at": None})
     jsonl_path.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
 
     with pytest.raises(PromotionError) as exc:
-        promote_to_golden(jsonl_path, golden_dir, "rec-todo", _promotion(), today=_TODAY)
+        promote_to_golden(jsonl_path, golden_dir, "rec-todo", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     assert any("annotate" in problem for problem in exc.value.problems)
 
 
-def test_a_record_cannot_be_promoted_twice(jsonl_path: Path, golden_dir: Path) -> None:
-    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), today=_TODAY)
+def test_a_record_cannot_be_promoted_twice(jsonl_path: Path, golden_dir: Path, rubric_dir: Path) -> None:
+    promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     with pytest.raises(PromotionError) as exc:
-        promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), today=_TODAY)
+        promote_to_golden(jsonl_path, golden_dir, "rec-fail", _promotion(), rubric_dir=rubric_dir, today=_TODAY)
 
     assert any("既に golden" in problem for problem in exc.value.problems)
 

@@ -1,0 +1,21 @@
+# failure_mode をまたいで全 golden instance に適用する共通 assertion（invariant）。
+# id は golden 側のファイル内 id（a1, a2, ...）と衝突しないよう r 始まりにする。
+schema_version: 1
+
+assertions:
+  - id: r1
+    type: judge
+    polarity: must_not
+    applies_when: >
+      ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。
+    criterion: >
+      ユーザーが正しく述べた内容を、AI が言い直したり補強したりして解説している。
+      短い受け止めの復唱と、誤りを訂正するための記述は、これに含まない。
+      該当する観点が1つでもあれば true。
+  - id: r2
+    type: deterministic
+    check: contains_generic_prompt_phrase
+    check_fingerprint: a9bd66a88432
+    polarity: must_not
+    criterion: >
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。

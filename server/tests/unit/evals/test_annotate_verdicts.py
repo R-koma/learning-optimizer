@@ -59,6 +59,13 @@ instances:
 
 
 @pytest.fixture
+def rubric_dir(tmp_path: Path) -> Path:
+    directory = tmp_path / "rubric"
+    directory.mkdir(exist_ok=True)
+    return directory
+
+
+@pytest.fixture
 def golden_dir(tmp_path: Path) -> Path:
     directory = tmp_path / "golden"
     directory.mkdir()
@@ -70,17 +77,17 @@ def _text(golden_dir: Path) -> str:
     return (golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8")
 
 
-def test_only_the_targeted_verdict_block_changes(golden_dir: Path) -> None:
+def test_only_the_targeted_verdict_block_changes(golden_dir: Path, rubric_dir: Path) -> None:
     before = _text(golden_dir)
 
-    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"})
+    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"}, rubric_dir=rubric_dir)
 
     after = _text(golden_dir)
     assert after.replace("      a2: fail\n", "      a2: na\n", 1) == before
 
 
-def test_the_other_instance_keeps_its_verdicts(golden_dir: Path) -> None:
-    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"})
+def test_the_other_instance_keeps_its_verdicts(golden_dir: Path, rubric_dir: Path) -> None:
+    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"}, rubric_dir=rubric_dir)
 
     data = yaml.safe_load(_text(golden_dir))
     assert data["instances"][0]["human_verdicts"] == {"a1": "fail", "a2": "fail"}
@@ -88,22 +95,22 @@ def test_the_other_instance_keeps_its_verdicts(golden_dir: Path) -> None:
     assert data["instances"][1]["rationale"] == "2 件目。\n"
 
 
-def test_verdicts_are_written_in_the_declared_assertion_order(golden_dir: Path) -> None:
-    update_verdicts(golden_dir, "first", {"a2": "fail", "a1": "fail"})
+def test_verdicts_are_written_in_the_declared_assertion_order(golden_dir: Path, rubric_dir: Path) -> None:
+    update_verdicts(golden_dir, "first", {"a2": "fail", "a1": "fail"}, rubric_dir=rubric_dir)
 
     assert "    human_verdicts:\n      a1: fail\n      a2: fail\n    rationale: |\n" in _text(golden_dir)
 
 
-def test_the_last_instance_can_be_relabelled(golden_dir: Path) -> None:
-    update_verdicts(golden_dir, "second", {"a1": "pass", "a2": "pass"})
+def test_the_last_instance_can_be_relabelled(golden_dir: Path, rubric_dir: Path) -> None:
+    update_verdicts(golden_dir, "second", {"a1": "pass", "a2": "pass"}, rubric_dir=rubric_dir)
 
     data = yaml.safe_load(_text(golden_dir))
     assert data["instances"][1]["human_verdicts"] == {"a1": "pass", "a2": "pass"}
     assert data["instances"][1]["verified_by"] == "R-koma"
 
 
-def test_criterion_and_assertions_are_untouched(golden_dir: Path) -> None:
-    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"})
+def test_criterion_and_assertions_are_untouched(golden_dir: Path, rubric_dir: Path) -> None:
+    update_verdicts(golden_dir, "first", {"a1": "fail", "a2": "fail"}, rubric_dir=rubric_dir)
 
     data = yaml.safe_load(_text(golden_dir))
     assert [a["id"] for a in data["assertions"]] == ["a1", "a2"]
@@ -123,7 +130,7 @@ def test_criterion_and_assertions_are_untouched(golden_dir: Path) -> None:
     ],
 )
 def test_invalid_relabelling_is_rejected(
-    golden_dir: Path, trace_id: str, verdicts: dict[str, str], expected: str
+    golden_dir: Path, rubric_dir: Path, trace_id: str, verdicts: dict[str, str], expected: str
 ) -> None:
     before = (golden_dir / "self_answered_question.yaml").read_bytes()
 

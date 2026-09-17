@@ -5,6 +5,9 @@
 
 判定対象は jsonl（正本）の `output`。golden YAML の `observed_output` は人間が読むための写しで、
 runner もこのテストも参照しない。
+
+deterministic assertion は rubric 側にあるので、runner と同じく合流させてから検査する
+（golden ファイルだけを見ると検査対象が 0 件になり、テストが静かに空回りする）。
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from typing import Any
 import yaml
 
 from evals.checks import check_fingerprint, run_check
+from evals.rubric import load_rubric, merge_assertions
 
 _DATASETS_DIR = Path(__file__).resolve().parents[3] / "evals" / "datasets"
 _GOLDEN_DIR = _DATASETS_DIR / "golden"
@@ -45,6 +49,7 @@ def _load_golden_files() -> list[dict[str, Any]]:
             continue
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
+        data["assertions"] = merge_assertions(data["assertions"], load_rubric())
         data["_path"] = path
         files.append(data)
     return files

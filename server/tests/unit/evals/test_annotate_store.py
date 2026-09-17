@@ -222,12 +222,16 @@ def test_golden_instances_skip_underscore_files(golden_dir: Path) -> None:
     assert instances["rec-c"].verdict is False
 
 
-def test_assertions_are_grouped_by_failure_mode(golden_dir: Path) -> None:
-    assertions = assertions_by_failure_mode(golden_dir)
+def test_assertions_are_grouped_by_failure_mode(golden_dir: Path, tmp_path: Path) -> None:
+    empty_rubric = tmp_path / "rubric"
+    empty_rubric.mkdir()
+
+    assertions = assertions_by_failure_mode(golden_dir, empty_rubric)
 
     assert set(assertions) == {"self_answered_question"}
     a1, a5 = assertions["self_answered_question"]
     assert a1 == {
+        "scope": "failure_mode",
         "id": "a1",
         "type": "judge",
         "polarity": "must_not",

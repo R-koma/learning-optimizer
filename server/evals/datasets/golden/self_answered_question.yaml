@@ -9,12 +9,6 @@ assertions:
     criterion: >
       ユーザーへの質問に対する答えの中核を、AI が同じ応答内で既に述べている。
       細部が述べられていなくても、中核が述べられていれば含まれる。
-  - id: a2
-    type: judge
-    polarity: must_not
-    criterion: >
-      ユーザーが正しく述べた内容を、AI が言い直したり補強したりして解説している。
-      短い受け止めの復唱と、誤りを訂正するための記述は、これに含まない。
   - id: a3
     type: judge
     polarity: must
@@ -28,14 +22,6 @@ assertions:
       ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。
     criterion: >
       ユーザー発言に含まれる不正確な表現を、訂正せずそのまま追認・復唱している。
-  - id: a5
-    type: deterministic
-    check: contains_generic_prompt_phrase
-    check_fingerprint: a9bd66a88432
-    polarity: must_not
-    criterion: >
-      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。
-
 instances:
   - source_trace_id: 2026-07-14-os-process__t1
     source: real
@@ -59,10 +45,10 @@ instances:
     pass: false
     human_verdicts:
       a1: fail
-      a2: fail
       a3: fail
       a4: fail
-      a5: fail
+      r1: na
+      r2: fail
     rationale: |
       ユーザーは単一観点（プロセスの定義）を自分の言葉で述べた段階。ここで AI は
       (1) 定義を言い換え・増強して解説し直し（アドレス空間・コード・データ・スタック、
@@ -103,10 +89,10 @@ instances:
     pass: true
     human_verdicts:
       a1: pass
-      a2: pass
       a3: pass
       a4: pass
-      a5: pass
+      r1: na
+      r2: pass
     rationale: |
       負例と同じ入力に対する正しい応答。誤り（「OSから独立した」）を訂正した上で、
       その訂正が開いた「他のプロセスからの隔離」の仕組みを問うている。仕組み自体は
@@ -161,10 +147,10 @@ instances:
     pass: false
     human_verdicts:
       a1: fail
-      a2: fail
       a3: fail
       a4: na
-      a5: pass
+      r1: fail
+      r2: pass
     rationale: |-
       ユーザーはカーネルの役割を3つ（ハードウェアの管理・プロセスの管理・アプリの仲介）挙げた段階で、
       誤りは無い。AI は (1)「ハードウェアの管理」の中身を抽象化・制御・割り当てと解説し直し、

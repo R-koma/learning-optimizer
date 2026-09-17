@@ -34,6 +34,7 @@ from evals.eval import (
     print_summary,
     record_agreement,
     replay_blocker,
+    rubric_pass_rates,
     should_escalate,
     to_state,
     to_turn_plan,
@@ -42,6 +43,7 @@ from evals.eval import (
     validate_human_verdicts,
     wilson_interval,
 )
+from evals.rubric import FAILURE_MODE_SCOPE, RUBRIC_SCOPE
 from graph.llm import llm_judge
 
 
@@ -55,6 +57,7 @@ def outcome(
     decided_by: str = "check",
     screen_holds: bool | None = None,
     screen_detail: str = "",
+    scope: str = FAILURE_MODE_SCOPE,
 ) -> AssertionOutcome:
     return AssertionOutcome(
         assertion_id=assertion_id,
@@ -67,6 +70,7 @@ def outcome(
         decided_by=decided_by,
         screen_holds=screen_holds,
         screen_detail=screen_detail,
+        scope=scope,
     )
 
 
@@ -627,3 +631,66 @@ def test_print_summary_runs_for_both_modes(mode: str, capsys: pytest.CaptureFixt
     out = capsys.readouterr().out
     assert "boom" in out
     assert report["meta"]["mode"] == mode
+
+
+class TestRubricPassRates:
+    def test_rubric_assertions_are_pooled_across_failure_modes(self) -> None:
+        results = [
+            instance(
+                "accurate_multi_concept_overexplain",
+                "t1",
+                False,
+                [RunResult(0, "out", [outcome("a1"), outcome("r2", verdict="fail", scope=RUBRIC_SCOPE)])],
+            ),
+            instance(
+                "self_answered_question",
+                "t2",
+                True,
+                [RunResult(0, "out", [outcome("a1"), outcome("r2", scope=RUBRIC_SCOPE)])],
+            ),
+        ]
+
+        rates = rubric_pass_rates(results)
+
+        assert [r["assertion_id"] for r in rates] == ["r2"]
+        assert rates[0] == {
+            "assertion_id": "r2",
+            "runs": 2,
+            "not_applicable": 0,
+            "passed": 1,
+            "pass_rate": 0.5,
+        }
+
+    def test_not_applicable_leaves_the_denominator(self) -> None:
+        results = [
+            instance(
+                "self_answered_question",
+                "t1",
+                False,
+                [RunResult(0, "out", [outcome("r1", verdict="na", scope=RUBRIC_SCOPE)])],
+            )
+        ]
+
+        rates = rubric_pass_rates(results)
+
+        assert rates[0]["not_applicable"] == 1
+        assert rates[0]["pass_rate"] is None
+
+    def test_failure_mode_assertions_are_excluded(self) -> None:
+        results = [instance("self_answered_question", "t1", False, [RunResult(0, "out", [outcome("a1")])])]
+
+        assert rubric_pass_rates(results) == []
+
+    def test_per_assertion_rates_carry_the_scope(self) -> None:
+        results = [
+            instance(
+                "self_answered_question",
+                "t1",
+                False,
+                [RunResult(0, "out", [outcome("a1"), outcome("r1", scope=RUBRIC_SCOPE)])],
+            )
+        ]
+
+        scopes = {r["assertion_id"]: r["scope"] for r in assertion_pass_rates(results)}
+
+        assert scopes == {"a1": FAILURE_MODE_SCOPE, "r1": RUBRIC_SCOPE}

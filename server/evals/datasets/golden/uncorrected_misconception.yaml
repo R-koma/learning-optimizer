@@ -1,0 +1,253 @@
+failure_mode: uncorrected_misconception
+schema_version: 2
+status: active
+
+assertions:
+  - id: a1
+    type: judge
+    polarity: must_not
+    applies_when: >
+      ユーザーの直前の説明に、訂正を要する誤りまたは混同（手段と結果の取り違え、
+      問いの一部だけで全体に答える等）が含まれている。
+    criterion: >
+      ユーザー発言に含まれる不正確な表現を、訂正も指摘もしないまま次の質問・次の話題へ進んでいる。
+      明示的に追認・復唱する場合も、触れずに通り過ぎる場合も、これに含む。
+      誤りの一部でも訂正・指摘していれば、これに含まない。
+  - id: a2
+    type: judge
+    polarity: must
+    criterion: >
+      訂正した点について、その正しい内容をユーザー自身の言葉で説明させる質問を出している。
+  - id: a3
+    type: deterministic
+    check: contains_generic_prompt_phrase
+    check_fingerprint: a9bd66a88432
+    polarity: must_not
+    criterion: >
+      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。
+
+instances:
+  - source_trace_id: 2026-09-17-0f43b9c0__t8
+    source: real
+    meta:
+      model: gpt-4.1-nano
+      prompt_version: generate_question@v4
+      prompt_fingerprint: 2938fcca04e7
+      params:
+        temperature: 0.7
+      captured_by: capture
+    input:
+      conversation_history:
+      - role: user
+        content: Linuxのしくみ
+      - role: assistant
+        content: "Linuxのしくみについて興味を持たれているんですね。  \nもし学習ゴールや特に焦点を当てたい部分があれば教えてください。  \nでは、Linuxのしくみについて、まずあなたが今知っていることを自由に話してみてください。"
+      - role: user
+        content: |-
+          Linuxの概要としてプログラムとプロセスやカーネルがある。
+          プログラムは、コンピュータ上で動作する一連の命令、およびデータをひとまとめにしたもの。そして、動作中のプログラムのことをプロセスと呼ぶ。
+      - role: assistant
+        content: "カーネルについて、もう少し具体的な仕組みや動作原理を教えてもらえますか？  \n例えば、カーネルはどのようにハードウェアと通信し、プログラムにリソースを割り当てるのか、イメージしてみてください。"
+      - role: user
+        content: カーネルとは、コンピュータのOS（オペレーティングシステム）の中心となるソフトウェアのことであり、ハードウェアの管理、プロセスの管理、アプリの仲介などを行う。
+      - role: assistant
+        content: ハードウェアの管理について、ハードウェアのリソース（CPUやメモリ、ストレージなど）を抽象化し、効率的に制御・割り当てる仕組みが含まれますね。例えば、カーネルはCPUの時間をスケジューリングし、必要に応じてメモリを割り当てることで、複数のプログラムが同時に動作できるようにしています。これらの管理がどう動いているのか、具体的な仕組みの一端について教えてもらえますか？
+      - role: user
+        content: これらの並行処理と並列処理を駆使して動いています。
+      graph_state:
+        topic: Linuxのしくみ
+        learning_goal: null
+        focus_aspects: []
+        covered_aspects:
+        - aspect: プログラム
+          reached_depth: defined
+        - aspect: プロセス
+          reached_depth: defined
+        - aspect: カーネル
+          reached_depth: defined
+        - aspect: ハードウェアの管理
+          reached_depth: mentioned
+        - aspect: プロセスの管理
+          reached_depth: mentioned
+        - aspect: アプリの仲介
+          reached_depth: mentioned
+        turn_count: 3
+        turn_analysis:
+          response_mode: expand
+          selected_aspect: ハードウェアの管理
+          error_summary: ''
+    observed_output: あなたの説明から、プロセスの管理について重要なポイントを押さえていますね。プロセスの管理の中で、特にどのように複数のプロセスが同時に動いているのか、その仕組みや動作原理について、もう少し具体的に考えてみてもらえますか？
+    pass: false
+    human_verdicts:
+      a1: fail
+      a2: fail
+      a3: pass
+    rationale: |-
+      直前のユーザー発話「これらの並行処理と並列処理を駆使して動いています」は訂正を要する。
+      並行処理・並列処理は資源管理の結果として実現される状態であって管理の手段ではなく（手段は
+      タイマー割り込み・スケジューラ・コンテキストスイッチ）、手段と結果が逆になっている。加えて
+      問いが含んでいたメモリの割り当ては並行・並列では説明できない（仮想アドレス空間・ページテーブル・MMU）。
+
+      AI は第一文「あなたの説明から、プロセスの管理について重要なポイントを押さえていますね」で
+      この混同をそのまま追認し、訂正しないまま次の質問へ進んだ（a1）。訂正が無いので、訂正した点を
+      ユーザーに言い直させる質問も存在しない（a2）。良い応答は 2026-09-17-0f43b9c0__t8-exemplar を参照。
+
+      この発話は直前ターン（2026-09-17-0f43b9c0__t6）の自己回答が生んだもので、AI の
+      「複数のプログラムが同時に動作できるように」を専門用語に言い換えた復唱に過ぎない。
+      追認の対象が AI 自身の言葉の写しだった、という因果はこの instance だけで見える。
+
+      a3 は pass。末尾の「もう少し具体的に考えてみてもらえますか」は「もっと詳しく」の族に見えるが、
+      `contains_generic_prompt_phrase` の語彙はこの語形を持たず、deterministic の人間ラベルは check と
+      一致させる規約（`test_golden_deterministic_consistency`）なので pass を採った。語彙に
+      「もう少し具体的に」の族を足すなら fail に変わる（check_fingerprint の再転記を伴う）。
+
+      この応答のもう 1 つの欠陥（t6 の質問をほぼ同じ言葉で再提示し、ユーザーが新しく出した
+      「並行処理」「並列処理」という足がかりを引用していない）は、この failure_mode の守備範囲外。
+      別の failure_mode として assertion を起草してから扱う。
+    verified_by: R-koma
+    created_at: 2026-09-18
+
+  - source_trace_id: 2026-09-17-0f43b9c0__t8-exemplar
+    source: handwritten
+    meta:
+      model: human-authored
+      prompt_version: null
+      params: {}
+    input:
+      conversation_history:
+      - role: user
+        content: Linuxのしくみ
+      - role: assistant
+        content: "Linuxのしくみについて興味を持たれているんですね。  \nもし学習ゴールや特に焦点を当てたい部分があれば教えてください。  \nでは、Linuxのしくみについて、まずあなたが今知っていることを自由に話してみてください。"
+      - role: user
+        content: |-
+          Linuxの概要としてプログラムとプロセスやカーネルがある。
+          プログラムは、コンピュータ上で動作する一連の命令、およびデータをひとまとめにしたもの。そして、動作中のプログラムのことをプロセスと呼ぶ。
+      - role: assistant
+        content: "カーネルについて、もう少し具体的な仕組みや動作原理を教えてもらえますか？  \n例えば、カーネルはどのようにハードウェアと通信し、プログラムにリソースを割り当てるのか、イメージしてみてください。"
+      - role: user
+        content: カーネルとは、コンピュータのOS（オペレーティングシステム）の中心となるソフトウェアのことであり、ハードウェアの管理、プロセスの管理、アプリの仲介などを行う。
+      - role: assistant
+        content: ハードウェアの管理について、ハードウェアのリソース（CPUやメモリ、ストレージなど）を抽象化し、効率的に制御・割り当てる仕組みが含まれますね。例えば、カーネルはCPUの時間をスケジューリングし、必要に応じてメモリを割り当てることで、複数のプログラムが同時に動作できるようにしています。これらの管理がどう動いているのか、具体的な仕組みの一端について教えてもらえますか？
+      - role: user
+        content: これらの並行処理と並列処理を駆使して動いています。
+      graph_state:
+        topic: Linuxのしくみ
+        learning_goal: null
+        focus_aspects: []
+        covered_aspects:
+        - aspect: プログラム
+          reached_depth: defined
+        - aspect: プロセス
+          reached_depth: defined
+        - aspect: カーネル
+          reached_depth: defined
+        - aspect: ハードウェアの管理
+          reached_depth: mentioned
+        - aspect: プロセスの管理
+          reached_depth: mentioned
+        - aspect: アプリの仲介
+          reached_depth: mentioned
+        turn_count: 3
+        turn_analysis:
+          response_mode: expand
+          selected_aspect: ハードウェアの管理
+          error_summary: ''
+    observed_output: 並行処理と並列処理という言葉で捉えられていますね。一点だけ正確に言うと、その 2 つはカーネルが CPU を割り当てた結果として成り立つ状態であって、割り当ての仕組みそのものではありません。では、CPU が 1 コアしか無いとき、複数のプロセスが同時に動いているように見せるために、カーネルは何をしていると思いますか？
+    pass: true
+    human_verdicts:
+      a1: pass
+      a2: pass
+      a3: pass
+    rationale: |-
+      負例（2026-09-17-0f43b9c0__t8）と同じ入力に対する正しい応答。誤りの箇所だけを 1 文で訂正し
+      （並行・並列は割り当ての結果であって仕組みではない）、訂正で開いた「割り当ての仕組み」の側を、
+      1 コアという条件で絞って問うている。仕組み自体（タイマー割り込みや切り替え）は述べていないので、
+      ユーザーは復唱では答えられない。
+
+      メモリの割り当てを並行・並列で説明できない点は訂正していない。訂正は誤りの主因 1 つに絞り、
+      質問も 1 つにするため（プロンプトのモード A の手順と同じ判断）。両方を訂正して両方を問うと
+      焦点が割れる。判断が割れうるので明記しておく。
+    verified_by: R-koma
+    created_at: 2026-09-18
+
+  - source_trace_id: 2026-07-14-os-process__t1-rerun01
+    source: rerun
+    meta:
+      model: gpt-4.1-nano
+      prompt_version: generate_question@v4
+      prompt_fingerprint: 2938fcca04e7
+      params:
+        temperature: 0.7
+    input:
+      conversation_history:
+      - role: user
+        content: プロセスとは、OSから独立したメモリ空間を割り当てられて動く、プログラムの実行単位である。
+      graph_state:
+        topic: プロセス
+        learning_goal: null
+        focus_aspects: []
+    observed_output: 「プロセス」についてのご説明ですね。動作原理や具体的な仕組みを理解するために、もう少し具体例を挙げてもらえますか？例えば、どのような場面やプログラムで「プロセス」が動いているのか、具体的なシチュエーションを教えてください。
+    pass: false
+    human_verdicts:
+      a1: fail
+      a2: fail
+      a3: pass
+    rationale: |-
+      2026-07-14-os-process__t1 と同じ入力に対する、現行プロンプト（@v4 / fingerprint 2938fcca04e7）での再生成。
+      ユーザーの「OSから独立したメモリ空間」は訂正を要する。メモリ空間は OS が各プロセスに割り当てた上で
+      他のプロセスから隔離されるのであって、OS から独立してはいない（割り当てる主体が OS である以上、
+      「割り当てられて」と「OSから独立した」は同じ文の中で矛盾している）。
+
+      **この instance は a1 の「沈黙型」を代表する。** 応答の第一文「『プロセス』についてのご説明ですね」は
+      受け取りを示すだけで、正しさを認める文言も内容の復唱も無い。それでも誤りに一度も触れないまま
+      具体例の質問へ進むので、ユーザーの誤解はそのまま残る。a1 の criterion を「訂正も指摘もしないまま
+      次へ進んでいる」へ広げたのは、この型を明示的に含めるため（2026-09-18）。明示的な追認の型は
+      同ファイルの 2026-09-17-0f43b9c0__t8 を参照。
+
+      a2: 訂正が無い以上、訂正した点を言い直させる質問も存在しない。
+      a3: 「もう少し具体例を挙げてもらえますか」は check の語彙に一致しない。質問の中身自体は未説明の側面
+      （具体例）を狙っており、この failure_mode では問題にしない。
+
+      nano がこの訂正を落とす件は self_answered_question.yaml の 2026-07-14-os-process__t1 の rationale に
+      記録がある（@v1 の 3 生成・@v3 の 6 生成すべてで訂正なし、mini は 3 回中 1 回訂正）。
+      本 instance と rerun02 で @v4 の 2 生成が加わる。プロンプト改訂で pass に転じることを期待する
+      assertion ではなく、モデル差の監視対象として扱う。
+    verified_by: R-koma
+    created_at: 2026-09-18
+
+  - source_trace_id: 2026-07-14-os-process__t1-rerun02
+    source: rerun
+    meta:
+      model: gpt-4.1-nano
+      prompt_version: generate_question@v4
+      prompt_fingerprint: 2938fcca04e7
+      params:
+        temperature: 0.7
+    input:
+      conversation_history:
+      - role: user
+        content: プロセスとは、OSから独立したメモリ空間を割り当てられて動く、プログラムの実行単位である。
+      graph_state:
+        topic: プロセス
+        learning_goal: null
+        focus_aspects: []
+    observed_output: 「プロセス」についての説明をありがとうございます。ご自身の言葉で、どのように動いているのか、またその仕組みや具体例についてもう少し深く考えてみませんか？例えば、日常の中で「プロセス」がどこに現れると感じるかや、それがどのように動いているのかを考えてみると良いでしょう。
+    pass: false
+    human_verdicts:
+      a1: fail
+      a2: fail
+      a3: fail
+    rationale: |-
+      rerun01 と同じ入力・同じプロンプトの別生成。訂正が無い点（a1 / a2）は rerun01 と同一で、
+      同一条件でも欠陥が再現することを示す。
+
+      rerun01 との違いは末尾の促しだけで、「もう少し深く考えてみませんか」が
+      `contains_generic_prompt_phrase` の語彙に一致するため a3 が fail になる。
+      **同じ入力・同じプロンプトでも、一般化フレーズの有無は生成ごとに振れる。** a3 の pass 率を
+      1〜2 件の差で読まない根拠として、この 2 件を並べて置いておく。
+
+      「ご自身の言葉で、どのように動いているのか、またその仕組みや具体例について」と問いが 3 方向に
+      割れている点は、この failure_mode の assertion では扱わない（焦点の割れは別の契約）。
+    verified_by: R-koma
+    created_at: 2026-09-18

@@ -13,6 +13,7 @@ from __future__ import annotations
 FAILURE_MODES: dict[str, str] = {
     "accurate_multi_concept_overexplain": "誤りのない複数観点の列挙に対し、AI が全観点へ解説を被せる",
     "self_answered_question": "AI が自分の質問の答えを同じ応答内で先に述べてしまう",
+    "uncorrected_misconception": "訂正を要する誤り・混同を含むユーザー説明を、AI が訂正せず追認して次へ進む",
 }
 
 # jsonl レコードの `source`。real = 本番 LLM の実出力、rerun = eval の regression 再実行、

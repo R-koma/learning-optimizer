@@ -91,12 +91,20 @@ def test_index_is_served(client: TestClient) -> None:
     assert "annotate" in response.text.lower()
 
 
-def test_listing_puts_unannotated_records_first(client: TestClient) -> None:
-    records = client.get("/api/records").json()["records"]
+def test_listing_groups_by_session_in_turn_order(tmp_path: Path, dataset: tuple[Path, Path]) -> None:
+    jsonl_path, golden_dir = dataset
+    records = [
+        _record("b__t6", session="2026-09-17-b", turn=6),
+        _record("a__t4", session="2026-09-01-a", turn=4, **{"pass": True, "annotated_at": "2026-09-01T00:00:00Z"}),
+        _record("b__t4", session="2026-09-17-b", turn=4, **{"pass": False, "annotated_at": "2026-09-17T00:00:00Z"}),
+        _record("a__t6", session="2026-09-01-a", turn=6),
+    ]
+    jsonl_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+    client = TestClient(create_app(jsonl_path=jsonl_path, golden_dir=golden_dir))
 
-    assert [r["id"] for r in records] == ["rec-todo", "rec-done"]
-    assert records[0]["annotated"] is False
-    assert records[1]["annotated"] is True
+    listed = client.get("/api/records").json()["records"]
+
+    assert [r["id"] for r in listed] == ["a__t4", "a__t6", "b__t4", "b__t6"]
 
 
 def test_listing_carries_the_session_topic(client: TestClient) -> None:

@@ -75,7 +75,7 @@ def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFA
             _summary(record, promoted[record["id"]].failure_mode if record["id"] in promoted else None)
             for record in load_records(jsonl_path)
         ]
-        return {"records": sorted(summaries, key=lambda s: bool(s["annotated"]))}
+        return {"records": sorted(summaries, key=lambda s: (s["session"], s["turn"], s["id"]))}
 
     @app.get("/api/records/{trace_id}")
     def get_record(trace_id: str) -> dict[str, Any]:

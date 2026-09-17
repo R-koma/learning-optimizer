@@ -8,15 +8,6 @@ assertions:
     polarity: must
     criterion: >
       列挙された複数概念のうち1つだけに焦点を絞って質問している。
-  - id: a2
-    type: judge
-    polarity: must_not
-    applies_when: >
-      ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。
-    criterion: >
-      ユーザーが正しく述べた内容を、AI が言い直したり補強したりして解説している。
-      短い受け止めの復唱と、誤りを訂正するための記述は、これに含まない。
-      該当する観点が1つでもあれば true。
   - id: a3
     type: judge
     polarity: must_not
@@ -28,14 +19,6 @@ assertions:
     criterion: >
       「もし A なら〜 / B が気になる場合は〜」のような条件付きオファーを複数並べて
       ユーザーに方針を選ばせている（メニュー化）。
-  - id: a5
-    type: deterministic
-    check: contains_generic_prompt_phrase
-    check_fingerprint: a9bd66a88432
-    polarity: must_not
-    criterion: >
-      「もっと詳しく」「掘り下げてみませんか」のような、対象を特定しない一般化した促しを含んでいる。
-
 instances:
   - source_trace_id: 2026-07-08-ddia-ch1-perf__t3
     source: real
@@ -58,10 +41,10 @@ instances:
     pass: false
     human_verdicts:
       a1: pass
-      a2: fail
       a3: fail
       a4: pass
-      a5: pass
+      r1: fail
+      r2: pass
     rationale: |
       3観点（スループット / レイテンシ / レスポンスタイム）の定義はすべて正確で、訂正すべき
       誤りがない。ここで AI が全観点に定義+具体例の解説を被せると、ユーザーが自分の言葉で
@@ -92,10 +75,10 @@ instances:
     pass: true
     human_verdicts:
       a1: pass
-      a2: pass
       a3: pass
       a4: pass
-      a5: pass
+      r1: pass
+      r2: pass
     rationale: |
       負例と同じ入力に対する正しい応答。3観点の正確さを1文で受け止めるだけに留め、
       レスポンスタイム1つに絞って「ばらつきの原因」——定義の暗記では答えられず、

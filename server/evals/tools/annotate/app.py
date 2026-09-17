@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from evals.rubric import RUBRIC_DIR
 from evals.taxonomy import FAILURE_MODES
 from evals.tools.annotate.store import (
     DEFAULT_GOLDEN_DIR,
@@ -76,7 +77,12 @@ def _summary(record: dict[str, Any], promoted_to: str | None) -> dict[str, Any]:
     }
 
 
-def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFAULT_GOLDEN_DIR) -> FastAPI:
+def create_app(
+    *,
+    jsonl_path: Path = DEFAULT_JSONL_PATH,
+    golden_dir: Path = DEFAULT_GOLDEN_DIR,
+    rubric_dir: Path = RUBRIC_DIR,
+) -> FastAPI:
     app = FastAPI(title="eval annotate", docs_url=None, redoc_url=None)
 
     def _find(trace_id: str) -> dict[str, Any]:
@@ -109,7 +115,7 @@ def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFA
             "output": record["output"],
             "turn_decision": record.get("turn_decision"),
             "failure_modes": [{"key": key, "description": FAILURE_MODES[key]} for key in sorted(FAILURE_MODES)],
-            "assertions": assertions_by_failure_mode(golden_dir),
+            "assertions": assertions_by_failure_mode(golden_dir, rubric_dir),
             "deterministic_outcomes": [asdict(o) for o in deterministic_outcomes(record["output"], golden_dir)],
             "default_verified_by": default_verified_by(golden_dir),
             "promoted_verdicts": promoted.human_verdicts if promoted else {},
@@ -129,6 +135,7 @@ def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFA
                     rationale=payload.rationale,
                     verified_by=payload.verified_by,
                 ),
+                rubric_dir=rubric_dir,
             )
         except PromotionError as exc:
             raise HTTPException(status_code=422, detail={"problems": exc.problems}) from exc
@@ -144,7 +151,7 @@ def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFA
     def put_verdicts(trace_id: str, payload: VerdictsPayload) -> dict[str, Any]:
         _find(trace_id)
         try:
-            path = update_verdicts(golden_dir, trace_id, payload.human_verdicts)
+            path = update_verdicts(golden_dir, trace_id, payload.human_verdicts, rubric_dir=rubric_dir)
         except VerdictError as exc:
             raise HTTPException(status_code=422, detail={"problems": exc.problems}) from exc
         return {

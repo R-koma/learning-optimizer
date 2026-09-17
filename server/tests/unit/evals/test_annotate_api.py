@@ -46,7 +46,7 @@ def _record(trace_id: str, **overrides: Any) -> dict[str, Any]:
 
 
 @pytest.fixture
-def dataset(tmp_path: Path) -> tuple[Path, Path]:
+def dataset(tmp_path: Path) -> tuple[Path, Path, Path]:
     jsonl_path = tmp_path / "generate_questions.jsonl"
     records = [
         _record("rec-done", **{"pass": True, "note": "正例", "annotated_at": "2026-09-01T00:00:00Z"}),
@@ -76,13 +76,26 @@ def dataset(tmp_path: Path) -> tuple[Path, Path]:
         "instances: []\n",
         encoding="utf-8",
     )
-    return jsonl_path, golden_dir
+
+    rubric_dir = tmp_path / "rubric"
+    rubric_dir.mkdir()
+    (rubric_dir / "common.yaml").write_text(
+        "schema_version: 1\n"
+        "assertions:\n"
+        "  - id: r1\n"
+        "    type: judge\n"
+        "    polarity: must_not\n"
+        "    criterion: >\n"
+        "      正しく述べた内容に解説を被せている。\n",
+        encoding="utf-8",
+    )
+    return jsonl_path, golden_dir, rubric_dir
 
 
 @pytest.fixture
-def client(dataset: tuple[Path, Path]) -> TestClient:
-    jsonl_path, golden_dir = dataset
-    return TestClient(create_app(jsonl_path=jsonl_path, golden_dir=golden_dir))
+def client(dataset: tuple[Path, Path, Path]) -> TestClient:
+    jsonl_path, golden_dir, rubric_dir = dataset
+    return TestClient(create_app(jsonl_path=jsonl_path, golden_dir=golden_dir, rubric_dir=rubric_dir))
 
 
 def test_index_is_served(client: TestClient) -> None:
@@ -92,8 +105,8 @@ def test_index_is_served(client: TestClient) -> None:
     assert "annotate" in response.text.lower()
 
 
-def test_listing_groups_by_session_in_turn_order(tmp_path: Path, dataset: tuple[Path, Path]) -> None:
-    jsonl_path, golden_dir = dataset
+def test_listing_groups_by_session_in_turn_order(tmp_path: Path, dataset: tuple[Path, Path, Path]) -> None:
+    jsonl_path, golden_dir, rubric_dir = dataset
     records = [
         _record("b__t6", session="2026-09-17-b", turn=6),
         _record("a__t4", session="2026-09-01-a", turn=4, **{"pass": True, "annotated_at": "2026-09-01T00:00:00Z"}),
@@ -101,7 +114,7 @@ def test_listing_groups_by_session_in_turn_order(tmp_path: Path, dataset: tuple[
         _record("a__t6", session="2026-09-01-a", turn=6),
     ]
     jsonl_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
-    client = TestClient(create_app(jsonl_path=jsonl_path, golden_dir=golden_dir))
+    client = TestClient(create_app(jsonl_path=jsonl_path, golden_dir=golden_dir, rubric_dir=rubric_dir))
 
     listed = client.get("/api/records").json()["records"]
 
@@ -137,8 +150,8 @@ def test_unknown_record_is_404(client: TestClient) -> None:
     assert client.put("/api/records/missing/annotation", json={"pass": True, "note": ""}).status_code == 404
 
 
-def test_saving_updates_the_jsonl(client: TestClient, dataset: tuple[Path, Path]) -> None:
-    jsonl_path, _ = dataset
+def test_saving_updates_the_jsonl(client: TestClient, dataset: tuple[Path, Path, Path]) -> None:
+    jsonl_path, _, _ = dataset
 
     response = client.put(
         "/api/records/rec-todo/annotation",
@@ -154,9 +167,9 @@ def test_saving_updates_the_jsonl(client: TestClient, dataset: tuple[Path, Path]
 
 
 def test_invalid_annotation_is_rejected_without_touching_the_file(
-    client: TestClient, dataset: tuple[Path, Path]
+    client: TestClient, dataset: tuple[Path, Path, Path]
 ) -> None:
-    jsonl_path, _ = dataset
+    jsonl_path, _, _ = dataset
     before = jsonl_path.read_bytes()
 
     response = client.put("/api/records/rec-todo/annotation", json={"pass": False, "note": ""})
@@ -172,15 +185,15 @@ def test_unknown_payload_fields_are_rejected(client: TestClient) -> None:
     assert response.status_code == 422
 
 
-def test_promotion_appends_the_instance_to_golden(client: TestClient, dataset: tuple[Path, Path]) -> None:
-    _, golden_dir = dataset
+def test_promotion_appends_the_instance_to_golden(client: TestClient, dataset: tuple[Path, Path, Path]) -> None:
+    _, golden_dir, _ = dataset
     client.put("/api/records/rec-todo/annotation", json={"pass": True, "note": "正例"})
 
     response = client.post(
         "/api/records/rec-todo/promote",
         json={
             "failure_mode": "self_answered_question",
-            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "human_verdicts": {"a1": "pass", "a5": "pass", "r1": "pass"},
             "rationale": "1観点に絞った質問になっている。",
             "verified_by": "R-koma",
         },
@@ -190,18 +203,18 @@ def test_promotion_appends_the_instance_to_golden(client: TestClient, dataset: t
     assert response.json()["record"]["promoted_to"] == "self_answered_question"
     data = yaml.safe_load((golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8"))
     assert [i["source_trace_id"] for i in data["instances"]] == ["rec-todo"]
-    assert data["instances"][0]["human_verdicts"] == {"a1": "pass", "a5": "pass"}
+    assert data["instances"][0]["human_verdicts"] == {"a1": "pass", "a5": "pass", "r1": "pass"}
 
 
-def test_promoting_an_unannotated_record_is_rejected(client: TestClient, dataset: tuple[Path, Path]) -> None:
-    _, golden_dir = dataset
+def test_promoting_an_unannotated_record_is_rejected(client: TestClient, dataset: tuple[Path, Path, Path]) -> None:
+    _, golden_dir, _ = dataset
     before = (golden_dir / "self_answered_question.yaml").read_bytes()
 
     response = client.post(
         "/api/records/rec-todo/promote",
         json={
             "failure_mode": "self_answered_question",
-            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "human_verdicts": {"a1": "pass", "a5": "pass", "r1": "pass"},
             "rationale": "根拠",
             "verified_by": "R-koma",
         },
@@ -216,28 +229,30 @@ def test_detail_suggests_the_existing_reviewer(client: TestClient) -> None:
     assert client.get("/api/records/rec-todo").json()["default_verified_by"] == ""
 
 
-def test_relabelling_a_promoted_instance(client: TestClient, dataset: tuple[Path, Path]) -> None:
-    _, golden_dir = dataset
+def test_relabelling_a_promoted_instance(client: TestClient, dataset: tuple[Path, Path, Path]) -> None:
+    _, golden_dir, _ = dataset
     client.put("/api/records/rec-todo/annotation", json={"pass": True, "note": "正例"})
     client.post(
         "/api/records/rec-todo/promote",
         json={
             "failure_mode": "self_answered_question",
-            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "human_verdicts": {"a1": "pass", "a5": "pass", "r1": "pass"},
             "rationale": "正例",
             "verified_by": "R-koma",
         },
     )
 
-    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": {"a1": "pass", "a5": "pass"}})
+    verdicts = {"a1": "pass", "a5": "pass", "r1": "pass"}
+    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": verdicts})
 
     assert response.status_code == 200
-    assert response.json()["human_verdicts"] == {"a1": "pass", "a5": "pass"}
-    assert client.get("/api/records/rec-todo").json()["promoted_verdicts"] == {"a1": "pass", "a5": "pass"}
+    assert response.json()["human_verdicts"] == verdicts
+    assert client.get("/api/records/rec-todo").json()["promoted_verdicts"] == verdicts
 
 
 def test_relabelling_a_record_that_is_not_in_golden_is_rejected(client: TestClient) -> None:
-    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": {"a1": "pass", "a5": "pass"}})
+    verdicts = {"a1": "pass", "a5": "pass", "r1": "pass"}
+    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": verdicts})
 
     assert response.status_code == 422
     assert "golden に無い" in " ".join(response.json()["detail"]["problems"])

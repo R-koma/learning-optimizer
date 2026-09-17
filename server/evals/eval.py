@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from evals.checks import check_fingerprint, run_check
 from evals.golden_yaml import dump_copy_block
+from evals.rubric import FAILURE_MODE_SCOPE, RUBRIC_SCOPE, load_rubric, merge_assertions
 from evals.tools.capture import CAPTURED_BY
 from graph.llm import llm, llm_judge
 from graph.nodes.learning_dialogue import TurnPlan, learning_dialogue, respond
@@ -119,6 +120,7 @@ class AssertionOutcome:
     decided_by: str = "check"
     screen_holds: bool | None = None
     screen_detail: str = ""
+    scope: str = FAILURE_MODE_SCOPE
 
     @property
     def applicable(self) -> bool:
@@ -230,12 +232,15 @@ class JudgeUsage:
 
 
 def load_golden_records() -> Iterator[dict[str, Any]]:
+    """active な golden を、共通 assertion（rubric）を混ぜた状態で返す。"""
+    rubric = load_rubric()
     for path in sorted(_GOLDEN_DIR.glob("*.yaml")):
         if path.name.startswith("_"):
             continue
         with path.open(encoding="utf-8") as f:
             record = yaml.safe_load(f)
         if record.get("status") == "active":
+            record["assertions"] = merge_assertions(record["assertions"], rubric)
             yield record
 
 
@@ -513,6 +518,7 @@ async def evaluate_assertion(
             human_verdict=human_verdict,
             detail=f"applies_when: {assertion.get('applies_when', '').strip()}",
             decided_by=_NOT_APPLICABLE,
+            scope=assertion.get("scope", FAILURE_MODE_SCOPE),
         )
 
     screen_holds: bool | None = None
@@ -541,6 +547,7 @@ async def evaluate_assertion(
         decided_by=decided_by,
         screen_holds=screen_holds,
         screen_detail=screen_detail,
+        scope=assertion.get("scope", FAILURE_MODE_SCOPE),
     )
 
 
@@ -638,9 +645,11 @@ def assertion_pass_rates(results: list[InstanceResult]) -> list[dict[str, Any]]:
     rates: list[dict[str, Any]] = []
     for result in results:
         by_assertion: dict[str, list[str]] = {}
+        scopes: dict[str, str] = {}
         for run in result.runs:
             for outcome in run.outcomes:
                 by_assertion.setdefault(outcome.assertion_id, []).append(outcome.verdict)
+                scopes[outcome.assertion_id] = outcome.scope
         for assertion_id, verdicts in by_assertion.items():
             scored = [v for v in verdicts if v != _NOT_APPLICABLE]
             rates.append(
@@ -648,12 +657,36 @@ def assertion_pass_rates(results: list[InstanceResult]) -> list[dict[str, Any]]:
                     "failure_mode": result.failure_mode,
                     "source_trace_id": result.source_trace_id,
                     "assertion_id": assertion_id,
+                    "scope": scopes[assertion_id],
                     "runs": len(verdicts),
                     "not_applicable": len(verdicts) - len(scored),
                     "passed": sum(1 for v in scored if v == "pass"),
                     "pass_rate": (sum(1 for v in scored if v == "pass") / len(scored)) if scored else None,
                 }
             )
+    return rates
+
+
+def rubric_pass_rates(results: list[InstanceResult]) -> list[dict[str, Any]]:
+    """共通 assertion の pass 率。failure_mode をまたぐので instance 単位では束ねない。"""
+    by_assertion: dict[str, list[str]] = {}
+    for result in results:
+        for run in result.runs:
+            for outcome in run.outcomes:
+                if outcome.scope == RUBRIC_SCOPE:
+                    by_assertion.setdefault(outcome.assertion_id, []).append(outcome.verdict)
+    rates: list[dict[str, Any]] = []
+    for assertion_id, verdicts in sorted(by_assertion.items()):
+        scored = [v for v in verdicts if v != _NOT_APPLICABLE]
+        rates.append(
+            {
+                "assertion_id": assertion_id,
+                "runs": len(verdicts),
+                "not_applicable": len(verdicts) - len(scored),
+                "passed": sum(1 for v in scored if v == "pass"),
+                "pass_rate": (sum(1 for v in scored if v == "pass") / len(scored)) if scored else None,
+            }
+        )
     return rates
 
 
@@ -1091,6 +1124,7 @@ def build_report(
         ],
         "aggregate": {
             "assertion_pass_rates": assertion_pass_rates(results),
+            "rubric_pass_rates": rubric_pass_rates(results),
             "failure_mode_pass_rates": failure_mode_pass_rates(results),
             "coverage_stability": coverage_stability(results),
         },

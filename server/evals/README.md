@@ -64,6 +64,15 @@
   瞬間に使えなくなる。instance 固有の事実は `rationale` に置く。
   `a4` は「（「OSから独立したメモリ空間」——正しくは…）」と誤りの正解を criterion に埋めていたが、
   外しても judge は自力で不正確な箇所を特定できた（**judge に答えを渡す必要は無かった**）。
+- **failure_mode をまたぐ assertion は `datasets/rubric/` に置き、golden 側に複製しない。**
+  id は `r` 始まりにしてファイル内 id（`a1`, `a2`, ...）と衝突させない。合流は
+  `evals.rubric.merge_assertions` が `record["assertions"]` の一点で行い、由来を `scope` に残す。
+  複製を放置すると片方だけ直したときに静かに食い違う（実際「一般化した促し」は 3 ファイルに
+  同じ文面で存在し、`uncorrected_misconception` だけ id が `a3` とずれていた）。
+  rubric の assertion は全 instance に適用されるので、**両方向カバレッジは golden 全体で満たせばよい**
+  （failure_mode ごとに要求すると、その観点が出ない失敗モードで必ず落ちる）。
+- **golden から assertion を抜いたら、残った id は詰めない。** 欠番のまま残す。詰めると既存の
+  `human_verdicts` が別の assertion を指すようになり、付け直しの履歴を辿れなくなる。
 - **`input` / `observed_output` / `meta` / `source` は正本 jsonl からの写しで、手で書かない。**
   `evals.golden_yaml.dump_copy_block` で生成する。`tests/unit/evals/test_golden_copy_matches_source.py`
   がバイト一致を保証し、落ちたら写しを再生成する一択。

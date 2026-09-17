@@ -24,6 +24,7 @@ import yaml
 
 from evals.checks import run_check
 from evals.golden_yaml import dump_instance_block
+from evals.rubric import RUBRIC_DIR, load_rubric, merge_assertions
 from evals.taxonomy import FAILURE_MODES
 
 _EVALS_DIR = Path(__file__).resolve().parents[2]
@@ -33,7 +34,7 @@ DEFAULT_GOLDEN_DIR = _EVALS_DIR / "datasets" / "golden"
 ANNOTATION_KEYS = ("pass", "first_failure", "note", "annotated_at")
 
 _TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-_ASSERTION_KEYS = ("id", "type", "polarity", "criterion", "applies_when", "check")
+_ASSERTION_KEYS = ("id", "type", "polarity", "criterion", "applies_when", "check", "scope")
 
 _NOT_APPLICABLE = "na"
 _VALID_VERDICTS = frozenset({"pass", "fail", _NOT_APPLICABLE})
@@ -121,11 +122,14 @@ def golden_instances(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> dict[str, GoldenI
     }
 
 
-def assertions_by_failure_mode(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> dict[str, list[dict[str, Any]]]:
+def assertions_by_failure_mode(
+    golden_dir: Path = DEFAULT_GOLDEN_DIR, rubric_dir: Path = RUBRIC_DIR
+) -> dict[str, list[dict[str, Any]]]:
+    rubric = load_rubric(rubric_dir)
     return {
         data["failure_mode"]: [
             {key: _clean(assertion[key]) for key in _ASSERTION_KEYS if key in assertion}
-            for assertion in data["assertions"]
+            for assertion in merge_assertions(data["assertions"], rubric)
         ]
         for _, data in _golden_files(golden_dir)
     }
@@ -255,7 +259,9 @@ def validate_verdicts(
     return problems
 
 
-def update_verdicts(golden_dir: Path, trace_id: str, verdicts: dict[str, str]) -> Path:
+def update_verdicts(
+    golden_dir: Path, trace_id: str, verdicts: dict[str, str], *, rubric_dir: Path = RUBRIC_DIR
+) -> Path:
     """昇格済み instance の `human_verdicts` ブロックだけを差し替える。
 
     criterion は folded scalar で折り返しが原文に依存するため、ここでは触らない。差し替えるのは
@@ -265,7 +271,7 @@ def update_verdicts(golden_dir: Path, trace_id: str, verdicts: dict[str, str]) -
     if instance is None:
         raise VerdictError([f"{trace_id} は golden に無いので付け直せない（先に昇格する）"])
 
-    assertions = assertions_by_failure_mode(golden_dir)[instance.failure_mode]
+    assertions = assertions_by_failure_mode(golden_dir, rubric_dir)[instance.failure_mode]
     if problems := validate_verdicts(instance.verdict, verdicts, assertions):
         raise VerdictError(problems)
 
@@ -340,6 +346,7 @@ def promote_to_golden(
     trace_id: str,
     promotion: Promotion,
     *,
+    rubric_dir: Path = RUBRIC_DIR,
     today: date | None = None,
 ) -> Path:
     """正本のレコードを golden の `instances:` へ 1 件追記する。
@@ -351,7 +358,7 @@ def promote_to_golden(
     if record is None:
         raise LookupError(f"unknown trace id: {trace_id} not in {jsonl_path}")
 
-    assertions = assertions_by_failure_mode(golden_dir).get(promotion.failure_mode)
+    assertions = assertions_by_failure_mode(golden_dir, rubric_dir).get(promotion.failure_mode)
     problems = validate_promotion(
         record, promotion, assertions, already_promoted=golden_instances(golden_dir).get(trace_id)
     )

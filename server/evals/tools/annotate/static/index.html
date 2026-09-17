@@ -391,16 +391,20 @@
         if (target) await openRecord(target);
       }
 
-      function visibleRecords() {
-        const records = state.filter === "all" ? state.records : state.records.filter((r) => !r.annotated);
+      function orderedRecords(records) {
+        const sessionsWithTodo = new Set(records.filter((r) => !r.annotated).map((r) => r.session));
         const sessionRank = new Map();
         for (const record of records) {
           if (!sessionRank.has(record.session)) sessionRank.set(record.session, sessionRank.size);
         }
-        return records
-          .map((record, index) => ({ record, index }))
-          .sort((a, b) => sessionRank.get(a.record.session) - sessionRank.get(b.record.session) || a.index - b.index)
-          .map((entry) => entry.record);
+        const rank = (r) => (sessionsWithTodo.has(r.session) ? 0 : 1) * sessionRank.size + sessionRank.get(r.session);
+        return [...records].sort(
+          (a, b) => rank(a) - rank(b) || a.turn - b.turn || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+        );
+      }
+
+      function visibleRecords() {
+        return orderedRecords(state.filter === "all" ? state.records : state.records.filter((r) => !r.annotated));
       }
 
       function renderList() {
@@ -656,7 +660,7 @@
       }
 
       function nextTodoId() {
-        const todo = state.records.filter((r) => !r.annotated && r.id !== state.current);
+        const todo = orderedRecords(state.records).filter((r) => !r.annotated && r.id !== state.current);
         return todo.length ? todo[0].id : null;
       }
 

@@ -117,3 +117,75 @@ instances:
       a2 が禁じているのは訂正ではなく、正しい部分の言い換え・肉付けだと解して pass とした。
     verified_by: R-koma
     created_at: 2026-08-31
+
+  - source_trace_id: 2026-09-17-0f43b9c0__t6
+    source: real
+    meta:
+      model: gpt-4.1-nano
+      prompt_version: generate_question@v4
+      prompt_fingerprint: 2938fcca04e7
+      params:
+        temperature: 0.7
+      captured_by: capture
+    input:
+      conversation_history:
+      - role: user
+        content: Linuxのしくみ
+      - role: assistant
+        content: "Linuxのしくみについて興味を持たれているんですね。  \nもし学習ゴールや特に焦点を当てたい部分があれば教えてください。  \nでは、Linuxのしくみについて、まずあなたが今知っていることを自由に話してみてください。"
+      - role: user
+        content: |-
+          Linuxの概要としてプログラムとプロセスやカーネルがある。
+          プログラムは、コンピュータ上で動作する一連の命令、およびデータをひとまとめにしたもの。そして、動作中のプログラムのことをプロセスと呼ぶ。
+      - role: assistant
+        content: "カーネルについて、もう少し具体的な仕組みや動作原理を教えてもらえますか？  \n例えば、カーネルはどのようにハードウェアと通信し、プログラムにリソースを割り当てるのか、イメージしてみてください。"
+      - role: user
+        content: カーネルとは、コンピュータのOS（オペレーティングシステム）の中心となるソフトウェアのことであり、ハードウェアの管理、プロセスの管理、アプリの仲介などを行う。
+      graph_state:
+        topic: Linuxのしくみ
+        learning_goal: null
+        focus_aspects: []
+        covered_aspects:
+        - aspect: プログラム
+          reached_depth: defined
+        - aspect: プロセス
+          reached_depth: defined
+        - aspect: カーネル
+          reached_depth: mentioned
+        turn_count: 2
+        turn_analysis:
+          response_mode: deepen
+          selected_aspect: カーネル
+          error_summary: ''
+    observed_output: ハードウェアの管理について、ハードウェアのリソース（CPUやメモリ、ストレージなど）を抽象化し、効率的に制御・割り当てる仕組みが含まれますね。例えば、カーネルはCPUの時間をスケジューリングし、必要に応じてメモリを割り当てることで、複数のプログラムが同時に動作できるようにしています。これらの管理がどう動いているのか、具体的な仕組みの一端について教えてもらえますか？
+    pass: false
+    human_verdicts:
+      a1: fail
+      a2: fail
+      a3: fail
+      a4: na
+      a5: pass
+    rationale: |-
+      ユーザーはカーネルの役割を3つ（ハードウェアの管理・プロセスの管理・アプリの仲介）挙げた段階で、
+      誤りは無い。AI は (1)「ハードウェアの管理」の中身を抽象化・制御・割り当てと解説し直し、
+      (2) 続けて「カーネルは CPU の時間をスケジューリングし、必要に応じてメモリを割り当てることで
+      複数のプログラムが同時に動作できるようにしている」と仕組みの中核まで述べた上で、
+      (3) 「これらの管理がどう動いているのか、具体的な仕組みの一端」を質問した。
+      質問の答えは AI 自身が直前に述べた内容であり、ユーザーに残るのは復唱だけになる。
+
+      self-answer の害が「応答 1 回の見栄え」に留まらないことが、このセッションでは実データで見える。
+      次ターンのユーザー発話は「これらの並行処理と並列処理を駆使して動いています」の一文で、
+      AI の「複数のプログラムが同時に動作できるように」を専門用語に言い換えた復唱に過ぎない。
+      答えを先に渡されたため、想起・生成を伴う説明の余地が残っていなかった。
+
+      a2: 正しく述べられた「ハードウェアの管理」を言い直し・補強して解説しており、短い受け止めの範囲を超える。
+      a3: 質問の対象が「これらの管理」（CPU のスケジューリングとメモリの割り当ての 2 つ）に割れており、
+      1 つに絞れていない。2026-07-14-os-process__t1 の「仕組み『や』管理方法」と同じ形の焦点の割れ。
+      a4: 直前のユーザー説明に誤りが無いので適用外。
+      a5: 「もっと詳しく」系の一般化した促しは含まない。
+
+      事前分析の判断も外している（turn_decision は expand / ハードウェアの管理）。直前のユーザー発話は
+      3 観点を名前だけ挙げた mentioned 止まりで、expand の条件「各観点に最低限の定義あり」を満たさない。
+    verified_by: R-koma
+    created_at: 2026-09-18
+

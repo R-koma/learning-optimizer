@@ -11,16 +11,19 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
+from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from evals.checks import run_check
+from evals.golden_yaml import dump_instance_block
 from evals.taxonomy import FAILURE_MODES
 
 _EVALS_DIR = Path(__file__).resolve().parents[2]
@@ -31,6 +34,12 @@ ANNOTATION_KEYS = ("pass", "first_failure", "note", "annotated_at")
 
 _TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 _ASSERTION_KEYS = ("id", "type", "polarity", "criterion", "applies_when", "check")
+
+_NOT_APPLICABLE = "na"
+_VALID_VERDICTS = frozenset({"pass", "fail", _NOT_APPLICABLE})
+_EMPTY_INSTANCES = re.compile(r"^instances:[ \t]*(\[[ \t]*\])?[ \t]*$\n?", re.MULTILINE)
+_INSTANCE_MARKER = "  - source_trace_id:"
+_VERDICT_INDENT = 4
 
 
 @dataclass(frozen=True)
@@ -45,6 +54,7 @@ class GoldenInstance:
     failure_mode: str
     path: Path
     verdict: bool | None
+    human_verdicts: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -56,10 +66,30 @@ class DeterministicOutcome:
     detail: str
 
 
-class AnnotationError(ValueError):
+@dataclass(frozen=True)
+class Promotion:
+    failure_mode: str
+    human_verdicts: dict[str, str]
+    rationale: str
+    verified_by: str
+
+
+class _ProblemsError(ValueError):
     def __init__(self, problems: list[str]) -> None:
         super().__init__(" / ".join(problems))
         self.problems = problems
+
+
+class AnnotationError(_ProblemsError):
+    pass
+
+
+class PromotionError(_ProblemsError):
+    pass
+
+
+class VerdictError(_ProblemsError):
+    pass
 
 
 def load_records(path: Path = DEFAULT_JSONL_PATH) -> list[dict[str, Any]]:
@@ -81,7 +111,10 @@ def _golden_files(golden_dir: Path) -> Iterator[tuple[Path, dict[str, Any]]]:
 def golden_instances(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> dict[str, GoldenInstance]:
     return {
         instance["source_trace_id"]: GoldenInstance(
-            failure_mode=data["failure_mode"], path=path, verdict=instance.get("pass")
+            failure_mode=data["failure_mode"],
+            path=path,
+            verdict=instance.get("pass"),
+            human_verdicts=instance.get("human_verdicts") or {},
         )
         for path, data in _golden_files(golden_dir)
         for instance in data["instances"]
@@ -177,6 +210,176 @@ def save_annotation(
     lines[index] = json.dumps(updated, ensure_ascii=False) + "\n"
     _write_atomically(path, "".join(lines))
     return updated
+
+
+def default_verified_by(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> str:
+    reviewers = Counter(
+        instance["verified_by"]
+        for _, data in _golden_files(golden_dir)
+        for instance in data["instances"] or []
+        if instance.get("verified_by")
+    )
+    return reviewers.most_common(1)[0][0] if reviewers else ""
+
+
+def validate_verdicts(
+    instance_pass: bool | None,
+    verdicts: dict[str, str],
+    assertions: list[dict[str, Any]],
+) -> list[str]:
+    declared = {assertion["id"]: assertion for assertion in assertions}
+    problems: list[str] = []
+    if missing := sorted(set(declared) - set(verdicts)):
+        problems.append(f"human_verdicts にラベルが無い assertion: {', '.join(missing)}")
+    if extra := sorted(set(verdicts) - set(declared)):
+        problems.append(f"assertions に無い id へのラベル: {', '.join(extra)}")
+    problems.extend(
+        f"{assertion_id}: 不正な verdict {verdict!r}（{'/'.join(sorted(_VALID_VERDICTS))} のみ）"
+        for assertion_id, verdict in sorted(verdicts.items())
+        if verdict not in _VALID_VERDICTS
+    )
+    problems.extend(
+        f"{assertion_id}: applies_when を持たない assertion に na は付けられない"
+        for assertion_id, verdict in sorted(verdicts.items())
+        if verdict == _NOT_APPLICABLE and assertion_id in declared and not declared[assertion_id].get("applies_when")
+    )
+
+    scored = [v for v in verdicts.values() if v in {"pass", "fail"}]
+    if instance_pass is True and "fail" in scored:
+        problems.append("pass=true のレコードに fail の verdict は付けられない")
+    if instance_pass is False and scored and "fail" not in scored:
+        problems.append(
+            "pass=false なのに fail が 1 つも無い。この失敗を捉える assertion が無いので、"
+            "別の failure_mode を選ぶか assertion を先に足す"
+        )
+    return problems
+
+
+def update_verdicts(golden_dir: Path, trace_id: str, verdicts: dict[str, str]) -> Path:
+    """昇格済み instance の `human_verdicts` ブロックだけを差し替える。
+
+    criterion は folded scalar で折り返しが原文に依存するため、ここでは触らない。差し替えるのは
+    `human_verdicts:` の直下の行だけで、instance の他のフィールドと他の instance は動かさない。
+    """
+    instance = golden_instances(golden_dir).get(trace_id)
+    if instance is None:
+        raise VerdictError([f"{trace_id} は golden に無いので付け直せない（先に昇格する）"])
+
+    assertions = assertions_by_failure_mode(golden_dir)[instance.failure_mode]
+    if problems := validate_verdicts(instance.verdict, verdicts, assertions):
+        raise VerdictError(problems)
+
+    lines = instance.path.read_text(encoding="utf-8").splitlines(keepends=True)
+    start, stop = _verdict_span(lines, trace_id, instance.path)
+    block = [f"{' ' * _VERDICT_INDENT}human_verdicts:\n"]
+    block += [f"{' ' * (_VERDICT_INDENT + 2)}{a['id']}: {verdicts[a['id']]}\n" for a in assertions]
+    _write_atomically(instance.path, "".join(lines[:start] + block + lines[stop:]))
+    return instance.path
+
+
+def _verdict_span(lines: list[str], trace_id: str, path: Path) -> tuple[int, int]:
+    """`human_verdicts:` の行から、同じかより浅いインデントの次の行までの範囲。"""
+    start = next(
+        (
+            i
+            for i, line in enumerate(lines)
+            if line.startswith(f"{' ' * _VERDICT_INDENT}human_verdicts:") and _owning_trace_id(lines, i) == trace_id
+        ),
+        None,
+    )
+    if start is None:
+        raise VerdictError([f"{path.name}: {trace_id} の human_verdicts ブロックを見つけられない"])
+    stop = next(
+        (
+            i
+            for i in range(start + 1, len(lines))
+            if lines[i].strip() and len(lines[i]) - len(lines[i].lstrip(" ")) <= _VERDICT_INDENT
+        ),
+        len(lines),
+    )
+    return start, stop
+
+
+def _owning_trace_id(lines: list[str], index: int) -> str | None:
+    for line in reversed(lines[: index + 1]):
+        if line.startswith(_INSTANCE_MARKER):
+            return line[len(_INSTANCE_MARKER) :].strip().strip("\"'")
+    return None
+
+
+def validate_promotion(
+    record: dict[str, Any],
+    promotion: Promotion,
+    assertions: list[dict[str, Any]] | None,
+    *,
+    already_promoted: GoldenInstance | None,
+) -> list[str]:
+    problems: list[str] = []
+    if record["pass"] is None:
+        problems.append("まだ annotate されていないレコードは昇格できない（pass を先に決める）")
+    if already_promoted is not None:
+        problems.append(f"既に golden にある（{already_promoted.path.name}）")
+    if assertions is None:
+        problems.append(
+            f"failure_mode={promotion.failure_mode!r} の golden ファイルが無い。"
+            "assertion の起草は人手の作業なので、`_TEMPLATE.yaml` を元に先にファイルを作る"
+        )
+        return problems
+
+    problems.extend(validate_verdicts(record["pass"], promotion.human_verdicts, assertions))
+    if not promotion.rationale.strip():
+        problems.append("rationale は必須（なぜ失敗か / なぜ良いかを人間の言葉で残す）")
+    if not promotion.verified_by.strip():
+        problems.append("verified_by は必須")
+    return problems
+
+
+def promote_to_golden(
+    jsonl_path: Path,
+    golden_dir: Path,
+    trace_id: str,
+    promotion: Promotion,
+    *,
+    today: date | None = None,
+) -> Path:
+    """正本のレコードを golden の `instances:` へ 1 件追記する。
+
+    YAML は読み込んで書き直さず末尾へ足すだけにする。pyyaml の round-trip は `>` の折り返しと
+    コメントを落とすため、既存の assertion 定義と他の instance を壊す。
+    """
+    record = next((r for r in load_records(jsonl_path) if r["id"] == trace_id), None)
+    if record is None:
+        raise LookupError(f"unknown trace id: {trace_id} not in {jsonl_path}")
+
+    assertions = assertions_by_failure_mode(golden_dir).get(promotion.failure_mode)
+    problems = validate_promotion(
+        record, promotion, assertions, already_promoted=golden_instances(golden_dir).get(trace_id)
+    )
+    if problems:
+        raise PromotionError(problems)
+
+    path = golden_dir / f"{promotion.failure_mode}.yaml"
+    text = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(text)
+    if (last_key := list(data)[-1]) != "instances":
+        raise PromotionError([f"{path.name}: `instances` が最後のキーでない（末尾は {last_key!r}）ので追記できない"])
+
+    block = dump_instance_block(
+        record,
+        human_verdicts=promotion.human_verdicts,
+        rationale=promotion.rationale.strip(),
+        verified_by=promotion.verified_by.strip(),
+        created_at=today or datetime.now(UTC).date(),
+    )
+    if data["instances"]:
+        updated = f"{text}\n{block}"
+    else:
+        empty = _EMPTY_INSTANCES.search(text)
+        if empty is None:
+            raise PromotionError([f"{path.name}: 空の `instances:` 行を見つけられないので追記できない"])
+        updated = text[: empty.start()] + "instances:\n" + block
+    _write_atomically(path, updated)
+    return path
 
 
 def _index_of(lines: list[str], trace_id: str, path: Path) -> int:

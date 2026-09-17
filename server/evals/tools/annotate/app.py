@@ -20,11 +20,17 @@ from evals.tools.annotate.store import (
     DEFAULT_JSONL_PATH,
     Annotation,
     AnnotationError,
+    Promotion,
+    PromotionError,
+    VerdictError,
     assertions_by_failure_mode,
+    default_verified_by,
     deterministic_outcomes,
     golden_instances,
     load_records,
+    promote_to_golden,
     save_annotation,
+    update_verdicts,
 )
 
 _INDEX = Path(__file__).parent / "static" / "index.html"
@@ -36,6 +42,21 @@ class AnnotationPayload(BaseModel):
     verdict: bool | None = Field(default=None, alias="pass")
     first_failure: str | None = None
     note: str = ""
+
+
+class PromotionPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    failure_mode: str
+    human_verdicts: dict[str, str]
+    rationale: str
+    verified_by: str
+
+
+class VerdictsPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    human_verdicts: dict[str, str]
 
 
 def _summary(record: dict[str, Any], promoted_to: str | None) -> dict[str, Any]:
@@ -90,6 +111,46 @@ def create_app(*, jsonl_path: Path = DEFAULT_JSONL_PATH, golden_dir: Path = DEFA
             "failure_modes": [{"key": key, "description": FAILURE_MODES[key]} for key in sorted(FAILURE_MODES)],
             "assertions": assertions_by_failure_mode(golden_dir),
             "deterministic_outcomes": [asdict(o) for o in deterministic_outcomes(record["output"], golden_dir)],
+            "default_verified_by": default_verified_by(golden_dir),
+            "promoted_verdicts": promoted.human_verdicts if promoted else {},
+        }
+
+    @app.post("/api/records/{trace_id}/promote")
+    def promote(trace_id: str, payload: PromotionPayload) -> dict[str, Any]:
+        _find(trace_id)
+        try:
+            path = promote_to_golden(
+                jsonl_path,
+                golden_dir,
+                trace_id,
+                Promotion(
+                    failure_mode=payload.failure_mode,
+                    human_verdicts=payload.human_verdicts,
+                    rationale=payload.rationale,
+                    verified_by=payload.verified_by,
+                ),
+            )
+        except PromotionError as exc:
+            raise HTTPException(status_code=422, detail={"problems": exc.problems}) from exc
+        record = _find(trace_id)
+        promoted = golden_instances(golden_dir).get(trace_id)
+        return {
+            "record": _summary(record, promoted.failure_mode if promoted else None),
+            "written_to": path.name,
+            "next_step": "uv run pytest tests/unit/evals -q で写しの一致と両方向カバレッジを確認する",
+        }
+
+    @app.put("/api/records/{trace_id}/verdicts")
+    def put_verdicts(trace_id: str, payload: VerdictsPayload) -> dict[str, Any]:
+        _find(trace_id)
+        try:
+            path = update_verdicts(golden_dir, trace_id, payload.human_verdicts)
+        except VerdictError as exc:
+            raise HTTPException(status_code=422, detail={"problems": exc.problems}) from exc
+        return {
+            "written_to": path.name,
+            "human_verdicts": golden_instances(golden_dir)[trace_id].human_verdicts,
+            "next_step": "uv run pytest tests/unit/evals -q で両方向カバレッジを確認する",
         }
 
     @app.put("/api/records/{trace_id}/annotation")

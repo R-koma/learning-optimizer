@@ -309,6 +309,43 @@
         margin: 3px 0 0;
         line-height: 1.65;
       }
+      .echo {
+        margin-bottom: 14px;
+      }
+      .echo summary {
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+        margin-bottom: 6px;
+      }
+      .echo .output,
+      .echo .msg {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .echo .msg {
+        white-space: pre-wrap;
+      }
+      .segmented.verdicts {
+        margin-top: 7px;
+      }
+      .segmented.verdicts button {
+        padding: 3px 12px;
+        font-size: 12px;
+      }
+      .segmented button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      input[type="text"] {
+        width: 100%;
+        font: inherit;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--panel);
+        color: var(--text);
+      }
       .note-box {
         border-radius: 8px;
         padding: 10px 12px;
@@ -359,7 +396,7 @@
     </main>
 
     <script>
-      const state = { records: [], filter: "todo", current: null, detail: null, draft: null };
+      const state = { records: [], filter: "todo", current: null, detail: null, draft: null, promotion: null, relabel: null };
 
       const el = (tag, props = {}, children = []) => {
         const node = Object.assign(document.createElement(tag), props);
@@ -450,6 +487,18 @@
           note: record.note || "",
           message: null,
         };
+        state.relabel = {
+          human_verdicts: { ...state.detail.promoted_verdicts },
+          message: null,
+        };
+        state.promotion = {
+          failure_mode: record.first_failure || Object.keys(state.detail.assertions)[0] || null,
+          human_verdicts: {},
+          rationale: record.note || "",
+          verified_by: state.detail.default_verified_by || "",
+          open: false,
+          message: null,
+        };
         renderList();
         renderDetail();
       }
@@ -461,6 +510,7 @@
           readingCard(record, conversation_history, output),
           decisionCard(turn_decision, graph_state),
           formCard(record),
+          promotionCard(record),
         );
       }
 
@@ -611,7 +661,7 @@
           ]),
         ]);
 
-        const assertions = state.detail.assertions[draft.first_failure];
+        const assertions = state.promotion && state.promotion.open ? null : state.detail.assertions[draft.first_failure];
         const right = el("div", {}, [
           el("h2", { textContent: assertions ? `${draft.first_failure} の assertion` : "assertion" }),
           assertions
@@ -630,11 +680,216 @@
                   ]),
                 ),
               )
-            : el("p", { className: "meta", textContent: "first_failure を選ぶと、その失敗モードの assertion を表示します。" }),
+            : el("p", {
+                className: "meta",
+                textContent:
+                  state.promotion && state.promotion.open
+                    ? "assertion は下の昇格フォームに表示しています。"
+                    : "first_failure を選ぶと、その失敗モードの assertion を表示します。",
+              }),
         ]);
 
         card.append(...boxes, el("div", { className: "form-grid" }, [left, right]));
         return card;
+      }
+
+      function outputEcho() {
+        const lastUser = [...state.detail.conversation_history].reverse().find((m) => m.role === "user");
+        return el("details", { className: "echo", open: true }, [
+          el("summary", { textContent: "直前のユーザー発話と評価対象の AI 応答" }),
+          lastUser
+            ? el("div", { className: "msg user last-user" }, [
+                el("span", { className: "role", textContent: "ユーザー（直前）" }),
+                document.createTextNode(lastUser.content),
+              ])
+            : null,
+          el("div", { className: "output" }, [
+            el("span", { className: "role", textContent: "AI 応答（評価対象）" }),
+            document.createTextNode(state.detail.output),
+          ]),
+        ]);
+      }
+
+      function verdictRows(assertions, verdicts, onPick) {
+        return assertions.map((assertion) => {
+          const buttons = ["pass", "fail", "na"].map((verdict) => {
+            const disabled = verdict === "na" && !assertion.applies_when;
+            const button = el("button", {
+              type: "button",
+              textContent: verdict,
+              disabled,
+              title: disabled ? "applies_when を持たない assertion に na は付けられません" : "",
+            });
+            button.dataset.verdict = verdict === "na" ? "null" : String(verdict === "pass");
+            button.setAttribute("aria-pressed", String(verdicts[assertion.id] === verdict));
+            button.addEventListener("click", () => onPick(assertion.id, verdict));
+            return button;
+          });
+          return el("div", { className: "assertion" }, [
+            el("code", { textContent: `${assertion.id} · ${assertion.type} · ${assertion.polarity}` }),
+            el("p", { textContent: assertion.criterion }),
+            assertion.applies_when
+              ? el("p", { className: "meta", textContent: `applies_when: ${assertion.applies_when}` })
+              : null,
+            el("div", { className: "segmented verdicts" }, buttons),
+          ]);
+        });
+      }
+
+      function relabelCard(record) {
+        const relabel = state.relabel;
+        const card = el("section", { className: "card" });
+        card.append(el("h2", { textContent: `golden 昇格済み · ${record.promoted_to}.yaml` }));
+        if (relabel.message) {
+          card.append(el("div", { className: `note-box ${relabel.message.kind}`, textContent: relabel.message.text }));
+        }
+        card.append(
+          el("p", {
+            className: "meta",
+            textContent:
+              "human_verdicts だけ付け直せます。criterion・rationale の変更はエディタで行ってください（判定の基準そのものなので PR レビューを通す）。",
+          }),
+        );
+        const assertions = state.detail.assertions[record.promoted_to] || [];
+        const rows = verdictRows(assertions, relabel.human_verdicts, (id, verdict) => {
+          relabel.human_verdicts[id] = verdict;
+          relabel.message = null;
+          renderDetail();
+        });
+        const save = el("button", { type: "button", className: "primary", textContent: "verdict を保存する" });
+        save.addEventListener("click", () => saveVerdicts());
+        const changed = assertions.some((a) => relabel.human_verdicts[a.id] !== state.detail.promoted_verdicts[a.id]);
+        save.disabled = !changed;
+        card.append(
+          el("div", { className: "form-grid" }, [
+            el("div", {}, [outputEcho(), el("div", { className: "actions" }, [save])]),
+            el("div", {}, [el("h2", { textContent: "human_verdicts" }), el("div", {}, rows)]),
+          ]),
+        );
+        return card;
+      }
+
+      async function saveVerdicts() {
+        try {
+          const result = await api(`/api/records/${encodeURIComponent(state.current)}/verdicts`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ human_verdicts: state.relabel.human_verdicts }),
+          });
+          await openRecord(state.current);
+          state.relabel.message = { kind: "info", text: `${result.written_to} を更新しました。${result.next_step}` };
+          renderDetail();
+        } catch (error) {
+          state.relabel.message = { kind: "error", text: `保存できません: ${error.message}` };
+          renderDetail();
+        }
+      }
+
+      function promotionCard(record) {
+        const promotion = state.promotion;
+        const card = el("section", { className: "card" });
+        card.append(el("h2", { textContent: "golden へ昇格" }));
+
+        if (record.promoted_to) {
+          return relabelCard(record);
+        }
+        if (!record.annotated) {
+          card.append(el("p", { className: "meta", textContent: "pass を決めると昇格できます。" }));
+          return card;
+        }
+        if (!promotion.open) {
+          const open = el("button", { type: "button", className: "primary", textContent: "昇格フォームを開く" });
+          open.addEventListener("click", () => {
+            promotion.open = true;
+            renderDetail();
+          });
+          card.append(open);
+          return card;
+        }
+
+        if (promotion.message) {
+          card.append(el("div", { className: `note-box ${promotion.message.kind}`, textContent: promotion.message.text }));
+        }
+
+        const targets = Object.keys(state.detail.assertions);
+        const select = el("select");
+        for (const mode of targets) {
+          const option = el("option", { value: mode, textContent: mode });
+          if (promotion.failure_mode === mode) option.selected = true;
+          select.append(option);
+        }
+        select.addEventListener("change", () => {
+          promotion.failure_mode = select.value;
+          promotion.human_verdicts = {};
+          renderDetail();
+        });
+
+        const assertions = state.detail.assertions[promotion.failure_mode] || [];
+        const rows = verdictRows(assertions, promotion.human_verdicts, (id, verdict) => {
+          promotion.human_verdicts[id] = verdict;
+          promotion.message = null;
+          renderDetail();
+        });
+
+        const rationale = el("textarea", {
+          placeholder: "なぜ失敗か（なぜ良いか）を人間の言葉で。instance 固有の事実はここに置き、criterion には書かない。",
+          value: promotion.rationale,
+        });
+        rationale.addEventListener("input", () => {
+          promotion.rationale = rationale.value;
+        });
+
+        const verifiedBy = el("input", { type: "text", value: promotion.verified_by });
+        verifiedBy.addEventListener("input", () => {
+          promotion.verified_by = verifiedBy.value;
+        });
+
+        const submit = el("button", { type: "button", className: "primary", textContent: "golden に追記する" });
+        submit.addEventListener("click", () => promote());
+
+        card.append(
+          el("div", { className: "form-grid" }, [
+            el("div", {}, [
+              outputEcho(),
+              el("fieldset", {}, [el("legend", { textContent: "昇格先の failure_mode" }), select]),
+              el("fieldset", {}, [el("legend", { textContent: "rationale" }), rationale]),
+              el("fieldset", {}, [el("legend", { textContent: "verified_by" }), verifiedBy]),
+              el("div", { className: "actions" }, [
+                submit,
+                el("span", {
+                  className: "meta",
+                  textContent: `pass=${record.pass} は正本の値をそのまま写します`,
+                }),
+              ]),
+            ]),
+            el("div", {}, [el("h2", { textContent: "human_verdicts" }), el("div", {}, rows)]),
+          ]),
+        );
+        return card;
+      }
+
+      async function promote() {
+        const promotion = state.promotion;
+        try {
+          const result = await api(`/api/records/${encodeURIComponent(state.current)}/promote`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              failure_mode: promotion.failure_mode,
+              human_verdicts: promotion.human_verdicts,
+              rationale: promotion.rationale,
+              verified_by: promotion.verified_by,
+            }),
+          });
+          state.records = (await api("/api/records")).records;
+          await openRecord(state.current);
+          state.promotion.message = { kind: "info", text: `${result.written_to} に追記しました。${result.next_step}` };
+          renderList();
+          renderDetail();
+        } catch (error) {
+          promotion.message = { kind: "error", text: `昇格できません: ${error.message}` };
+          renderDetail();
+        }
       }
 
       async function save() {

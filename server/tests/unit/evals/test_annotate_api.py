@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from evals.tools.annotate.app import create_app
@@ -169,3 +170,74 @@ def test_unknown_payload_fields_are_rejected(client: TestClient) -> None:
     response = client.put("/api/records/rec-todo/annotation", json={"pass": True, "note": "", "output": "書換"})
 
     assert response.status_code == 422
+
+
+def test_promotion_appends_the_instance_to_golden(client: TestClient, dataset: tuple[Path, Path]) -> None:
+    _, golden_dir = dataset
+    client.put("/api/records/rec-todo/annotation", json={"pass": True, "note": "正例"})
+
+    response = client.post(
+        "/api/records/rec-todo/promote",
+        json={
+            "failure_mode": "self_answered_question",
+            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "rationale": "1観点に絞った質問になっている。",
+            "verified_by": "R-koma",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["record"]["promoted_to"] == "self_answered_question"
+    data = yaml.safe_load((golden_dir / "self_answered_question.yaml").read_text(encoding="utf-8"))
+    assert [i["source_trace_id"] for i in data["instances"]] == ["rec-todo"]
+    assert data["instances"][0]["human_verdicts"] == {"a1": "pass", "a5": "pass"}
+
+
+def test_promoting_an_unannotated_record_is_rejected(client: TestClient, dataset: tuple[Path, Path]) -> None:
+    _, golden_dir = dataset
+    before = (golden_dir / "self_answered_question.yaml").read_bytes()
+
+    response = client.post(
+        "/api/records/rec-todo/promote",
+        json={
+            "failure_mode": "self_answered_question",
+            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "rationale": "根拠",
+            "verified_by": "R-koma",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "annotate" in " ".join(response.json()["detail"]["problems"])
+    assert (golden_dir / "self_answered_question.yaml").read_bytes() == before
+
+
+def test_detail_suggests_the_existing_reviewer(client: TestClient) -> None:
+    assert client.get("/api/records/rec-todo").json()["default_verified_by"] == ""
+
+
+def test_relabelling_a_promoted_instance(client: TestClient, dataset: tuple[Path, Path]) -> None:
+    _, golden_dir = dataset
+    client.put("/api/records/rec-todo/annotation", json={"pass": True, "note": "正例"})
+    client.post(
+        "/api/records/rec-todo/promote",
+        json={
+            "failure_mode": "self_answered_question",
+            "human_verdicts": {"a1": "pass", "a5": "pass"},
+            "rationale": "正例",
+            "verified_by": "R-koma",
+        },
+    )
+
+    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": {"a1": "pass", "a5": "pass"}})
+
+    assert response.status_code == 200
+    assert response.json()["human_verdicts"] == {"a1": "pass", "a5": "pass"}
+    assert client.get("/api/records/rec-todo").json()["promoted_verdicts"] == {"a1": "pass", "a5": "pass"}
+
+
+def test_relabelling_a_record_that_is_not_in_golden_is_rejected(client: TestClient) -> None:
+    response = client.put("/api/records/rec-todo/verdicts", json={"human_verdicts": {"a1": "pass", "a5": "pass"}})
+
+    assert response.status_code == 422
+    assert "golden に無い" in " ".join(response.json()["detail"]["problems"])

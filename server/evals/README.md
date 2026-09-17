@@ -67,6 +67,14 @@
 - **`input` / `observed_output` / `meta` / `source` は正本 jsonl からの写しで、手で書かない。**
   `evals.golden_yaml.dump_copy_block` で生成する。`tests/unit/evals/test_golden_copy_matches_source.py`
   がバイト一致を保証し、落ちたら写しを再生成する一択。
+- **golden の YAML は読み込んで書き直さない。** `>` の折り返しとコメントが落ち、assertion 定義と
+  他の instance が壊れる。`evals.tools.annotate` が書けるのは、`instances:` の末尾への追記
+  （昇格）と、1 つの instance の `human_verdicts` ブロックの差し替え（付け直し）だけ。
+  criterion・rationale・assertion の変更はエディタで行う。**criterion は判定の基準そのもの**なので、
+  摩擦を残して git diff と PR レビューを通す。
+- **`pass: false` の instance は `fail` の verdict を 1 つ以上持つ。** どの assertion も fail にならない
+  負例は、その失敗を検出する契約がどこにも無いということなので、別の failure_mode を選ぶか
+  assertion を先に足す。`na` を付けてよいのは `applies_when` を持つ assertion だけ。
 - **annotate で書き換えてよいのは `pass` / `first_failure` / `note` / `annotated_at` の 4 つだけ。**
   `input` / `output` / `meta` / `turn_decision` は golden の写しとバイト比較されるので触らない。
   UI（`evals.tools.annotate`）もこの 4 つしか書かない。

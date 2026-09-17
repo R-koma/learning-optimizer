@@ -38,7 +38,7 @@ uv run python -m evals.tools.capture --list                   # 直近の learni
 uv run python -m evals.tools.capture --latest --dry-run       # 直近セッションの生成レコードを表示（追記しない）
 uv run python -m evals.tools.capture --session-id <uuid>      # 指定セッションを正本 jsonl へ追記（id 重複はスキップ）
 
-uv run python -m evals.tools.annotate                         # 正本 jsonl の annotate UI（http://127.0.0.1:8100）
+uv run python -m evals.tools.annotate                         # annotate と golden 昇格の UI（http://127.0.0.1:8100）
 ```
 
 > **Note:** jsonl の `input.graph_state` は**生成直前**の state（再実行の入力）で、`turn_decision` は

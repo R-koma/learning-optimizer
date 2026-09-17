@@ -77,9 +77,22 @@
         padding: 8px 0 24px;
       }
       .session-label {
-        padding: 10px 14px 4px;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 14px 4px;
         font-size: 11px;
         color: var(--muted);
+      }
+      .session-topic {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .record-id {
+        margin: 0 0 14px;
+        font-size: 12px;
+        color: var(--muted);
+        user-select: all;
       }
       .item {
         width: 100%;
@@ -402,7 +415,12 @@
         for (const record of records) {
           if (record.session !== session) {
             session = record.session;
-            list.append(el("div", { className: "session-label", textContent: session }));
+            list.append(
+              el("div", { className: "session-label" }, [
+                el("span", { className: "session-topic", textContent: record.topic || "（トピック不明）" }),
+                el("span", { textContent: session }),
+              ]),
+            );
           }
           const dot = el("span", { className: "dot" });
           if (record.pass === true) dot.classList.add("pass");
@@ -456,7 +474,7 @@
         const meta = record.meta || {};
         return el("section", { className: "card" }, [
           el("div", { className: "head-row" }, [
-            el("h1", { textContent: record.id }),
+            el("h1", { textContent: record.topic || "（トピック不明）" }),
             el("span", { className: "tag", textContent: record.source }),
             record.promoted_to
               ? el("span", { className: "tag", textContent: `golden: ${record.promoted_to}` })
@@ -468,6 +486,7 @@
                 .join(" · "),
             }),
           ]),
+          el("p", { className: "record-id", textContent: `${record.id} · t${record.turn}` }),
           el("h2", { textContent: "会話履歴" }),
           el("div", {}, messages),
           el("h2", { textContent: "評価対象の AI 応答" }),

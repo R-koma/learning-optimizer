@@ -90,6 +90,10 @@
 - **jsonl を手で書いて増やさない。** capture が潰すべき作業で、推測フィールドが再混入する。
   増やしたいなら実セッションを回して溜める。
 - **`observed_output` は撮り直さない。** judge 校正用の人間ラベルが全部無効になる。
+- **failure_mode は golden ファイルを持たなくてよい。** instance が両方向揃うまでは `taxonomy.py` の
+  ラベルとしてだけ使い、検出は rubric や他モードの assertion に委ねる。ファイルを先に作ると
+  「両方向の instance が揃うまで judge assertion を足さない」規約を最初から破ることになる。
+  `overexplained_correct_content` がこの状態で、検出は rubric の `r1` が担っている。
 - **`failure_mode` / `first_failure` の値空間は `taxonomy.py` が正本。** 網羅的な taxonomy を今作らないのは
   意図的で、error analysis が ~100 trace で saturation してから。追加は PR レビューに通す。
 

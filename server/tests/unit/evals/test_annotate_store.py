@@ -88,6 +88,12 @@ def golden_dir(tmp_path: Path) -> Path:
     return directory
 
 
+def _empty_rubric(tmp_path: Path) -> Path:
+    directory = tmp_path / "rubric"
+    directory.mkdir(exist_ok=True)
+    return directory
+
+
 def _lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines(keepends=True)
 
@@ -223,10 +229,7 @@ def test_golden_instances_skip_underscore_files(golden_dir: Path) -> None:
 
 
 def test_assertions_are_grouped_by_failure_mode(golden_dir: Path, tmp_path: Path) -> None:
-    empty_rubric = tmp_path / "rubric"
-    empty_rubric.mkdir()
-
-    assertions = assertions_by_failure_mode(golden_dir, empty_rubric)
+    assertions = assertions_by_failure_mode(golden_dir, _empty_rubric(tmp_path))
 
     assert set(assertions) == {"self_answered_question"}
     a1, a5 = assertions["self_answered_question"]
@@ -240,14 +243,38 @@ def test_assertions_are_grouped_by_failure_mode(golden_dir: Path, tmp_path: Path
     assert a5["check"] == "contains_generic_prompt_phrase"
 
 
-def test_deterministic_outcomes_report_whether_the_output_fails(golden_dir: Path) -> None:
-    outcomes = deterministic_outcomes("もっと詳しく教えてください", golden_dir)
+def test_deterministic_outcomes_report_whether_the_output_fails(golden_dir: Path, tmp_path: Path) -> None:
+    outcomes = deterministic_outcomes("もっと詳しく教えてください", golden_dir, _empty_rubric(tmp_path))
 
     assert [(o.assertion_id, o.fails) for o in outcomes] == [("a5", True)]
     assert "もっと詳しく" in outcomes[0].detail
 
 
-def test_deterministic_outcomes_pass_for_a_specific_question(golden_dir: Path) -> None:
-    outcomes = deterministic_outcomes("その仕組みはどう動きますか？", golden_dir)
+def test_deterministic_outcomes_pass_for_a_specific_question(golden_dir: Path, tmp_path: Path) -> None:
+    outcomes = deterministic_outcomes("その仕組みはどう動きますか？", golden_dir, _empty_rubric(tmp_path))
 
     assert [o.fails for o in outcomes] == [False]
+
+
+def test_deterministic_outcomes_include_rubric_assertions(golden_dir: Path, tmp_path: Path) -> None:
+    """rubric へ移した check が UI の食い違い警告から落ちないことを固定する。
+
+    golden 側だけを見る実装に戻すと、deterministic assertion が 0 件になり警告が静かに死ぬ。
+    """
+    rubric_dir = tmp_path / "rubric"
+    rubric_dir.mkdir(exist_ok=True)
+    (rubric_dir / "common.yaml").write_text(
+        "schema_version: 1\n"
+        "assertions:\n"
+        "  - id: r2\n"
+        "    type: deterministic\n"
+        "    check: contains_generic_prompt_phrase\n"
+        "    polarity: must_not\n"
+        "    criterion: >\n"
+        "      一般化した促し。\n",
+        encoding="utf-8",
+    )
+
+    outcomes = deterministic_outcomes("もっと詳しく教えてください", golden_dir, rubric_dir)
+
+    assert [(o.assertion_id, o.fails) for o in outcomes] == [("r2", True)]

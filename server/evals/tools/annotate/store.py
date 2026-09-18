@@ -24,7 +24,7 @@ import yaml
 
 from evals.checks import run_check
 from evals.golden_yaml import dump_instance_block
-from evals.rubric import RUBRIC_DIR, load_rubric, merge_assertions
+from evals.rubric import RUBRIC_DIR, RUBRIC_SCOPE, load_rubric, merge_assertions
 from evals.taxonomy import FAILURE_MODES
 
 _EVALS_DIR = Path(__file__).resolve().parents[2]
@@ -139,16 +139,18 @@ def _clean(value: Any) -> Any:
     return value.strip() if isinstance(value, str) else value
 
 
-def deterministic_outcomes(output: str, golden_dir: Path = DEFAULT_GOLDEN_DIR) -> list[DeterministicOutcome]:
-    """golden の deterministic assertion をこの出力に適用した結果。
+def deterministic_outcomes(
+    output: str, golden_dir: Path = DEFAULT_GOLDEN_DIR, rubric_dir: Path = RUBRIC_DIR
+) -> list[DeterministicOutcome]:
+    """deterministic assertion をこの出力に適用した結果。rubric 側も含める。
 
     UI は人間が `pass` を選ぶまでこれを表示しない。判定を先に見せると、人間ラベルが実装の写しに
     なり、混同行列（deterministic の outcome も含む）の一致率が自明に 100% になる。
     """
     outcomes: list[DeterministicOutcome] = []
     seen: set[tuple[str, str]] = set()
-    for _, data in _golden_files(golden_dir):
-        for assertion in data["assertions"]:
+    for owner, assertions in _all_assertions(golden_dir, rubric_dir):
+        for assertion in assertions:
             if assertion["type"] != "deterministic":
                 continue
             key = (assertion["check"], assertion["polarity"])
@@ -159,13 +161,19 @@ def deterministic_outcomes(output: str, golden_dir: Path = DEFAULT_GOLDEN_DIR) -
             outcomes.append(
                 DeterministicOutcome(
                     assertion_id=assertion["id"],
-                    failure_mode=data["failure_mode"],
+                    failure_mode=owner,
                     check=assertion["check"],
                     fails=result.holds if assertion["polarity"] == "must_not" else not result.holds,
                     detail=result.detail,
                 )
             )
     return outcomes
+
+
+def _all_assertions(golden_dir: Path, rubric_dir: Path) -> list[tuple[str, list[dict[str, Any]]]]:
+    """(所属, assertion 群) の列。rubric は failure_mode に属さないので先頭に 1 度だけ置く。"""
+    owned = [(data["failure_mode"], data["assertions"]) for _, data in _golden_files(golden_dir)]
+    return [(RUBRIC_SCOPE, load_rubric(rubric_dir)), *owned]
 
 
 def validate_annotation(annotation: Annotation, golden: GoldenInstance | None) -> list[str]:

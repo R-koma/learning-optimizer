@@ -89,3 +89,41 @@ instances:
       広すぎることになる。
     verified_by: R-koma
     created_at: 2026-08-31
+
+  - source_trace_id: 2026-09-17-0f43b9c0__t4
+    source: real
+    meta:
+      model: gpt-4.1-nano
+      prompt_version: generate_question@v4
+      prompt_fingerprint: 2938fcca04e7
+      params:
+        temperature: 0.7
+      captured_by: capture
+    input:
+      conversation_history:
+      - role: user
+        content: Linuxのしくみ
+      - role: assistant
+        content: "Linuxのしくみについて興味を持たれているんですね。  \nもし学習ゴールや特に焦点を当てたい部分があれば教えてください。  \nでは、Linuxのしくみについて、まずあなたが今知っていることを自由に話してみてください。"
+      - role: user
+        content: |-
+          Linuxの概要としてプログラムとプロセスやカーネルがある。
+          プログラムは、コンピュータ上で動作する一連の命令、およびデータをひとまとめにしたもの。そして、動作中のプログラムのことをプロセスと呼ぶ。
+      graph_state:
+        topic: Linuxのしくみ
+        learning_goal: null
+        focus_aspects: []
+        covered_aspects: []
+        turn_count: 1
+        turn_analysis: null
+    observed_output: "カーネルについて、もう少し具体的な仕組みや動作原理を教えてもらえますか？  \n例えば、カーネルはどのようにハードウェアと通信し、プログラムにリソースを割り当てるのか、イメージしてみてください。"
+    pass: true
+    human_verdicts:
+      a1: pass
+      a3: pass
+      a4: pass
+      r1: pass
+      r2: pass
+    rationale: 観点をカーネル一つに絞れており、先行して説明などしておらず、適切な質問となっている。
+    verified_by: R-koma
+    created_at: 2026-09-18

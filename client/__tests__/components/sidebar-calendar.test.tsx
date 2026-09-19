@@ -136,6 +136,20 @@ describe("SidebarCalendar", () => {
     expect(screen.getByText(currentLabel)).toBeInTheDocument();
   });
 
+  it("highlights today even without any notes or reviews", async () => {
+    mockData([], []);
+    render(<SidebarCalendar />);
+
+    // 前後月の同じ日付表示（薄色）と区別するため、当月表示のセルだけを対象にする
+    const candidates = await screen.findAllByText(String(now.getDate()), {
+      selector: "button",
+    });
+    const todayCell = candidates.find(
+      (el) => !el.className.includes("text-muted-foreground/40"),
+    );
+    expect(todayCell).toHaveClass("bg-blue-500/10");
+  });
+
   it("fetches both notes and upcoming reviews", async () => {
     mockData([], []);
     render(<SidebarCalendar />);

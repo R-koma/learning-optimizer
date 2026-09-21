@@ -326,11 +326,14 @@ export function SidebarCalendar() {
                 "relative mx-auto flex aspect-square w-full items-center justify-center rounded-full text-xs text-muted-foreground transition-all duration-150 @[17rem]:text-sm",
                 !inCurrentMonth && "text-muted-foreground/40",
                 isInteractive ? "cursor-pointer" : "cursor-default",
-                // 今日（未選択）: ソフトなブルーの塗りつぶしで区別する
-                isInteractive &&
-                  !isSelected &&
+                // 今日（未選択）: 記録の有無やクリック可否に関わらず常にソフトなブルーの塗りつぶしで区別する
+                !isSelected &&
+                  isToday &&
+                  "bg-blue-500/10 font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+                !isSelected &&
+                  isInteractive &&
                   (isToday
-                    ? "bg-blue-500/10 font-semibold text-blue-600 hover:scale-110 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:hover:bg-blue-500/30"
+                    ? "hover:scale-110 hover:bg-blue-500/20 dark:hover:bg-blue-500/30"
                     : "hover:scale-110 hover:bg-muted"),
                 isSelected &&
                   "bg-blue-500 font-semibold text-white shadow-sm shadow-blue-500/30 hover:bg-blue-600",

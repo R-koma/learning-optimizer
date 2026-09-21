@@ -17,7 +17,8 @@ assertions:
     type: judge
     polarity: must
     criterion: >
-      訂正した点について、その正しい内容をユーザー自身の言葉で説明させる質問を出している。
+      ユーザー発言の誤りを訂正し、かつその訂正した内容をユーザー自身の言葉で説明させる質問を出している。
+      訂正を行っていない応答は、質問だけが当てはまってもこれに含まない。
 instances:
   - source_trace_id: 2026-09-17-0f43b9c0__t8
     source: real

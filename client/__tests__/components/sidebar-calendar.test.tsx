@@ -136,6 +136,21 @@ describe("SidebarCalendar", () => {
     expect(screen.getByText(currentLabel)).toBeInTheDocument();
   });
 
+  it("shows a loading skeleton by default while data is in flight", () => {
+    fetchAPI.mockImplementation(() => new Promise(() => {})); // 解決しない=読み込み中を維持
+    render(<SidebarCalendar />);
+
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+  });
+
+  it("renders nothing while loading when showSkeleton is false", () => {
+    fetchAPI.mockImplementation(() => new Promise(() => {}));
+    const { container } = render(<SidebarCalendar showSkeleton={false} />);
+
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("fetches both notes and upcoming reviews", async () => {
     mockData([], []);
     render(<SidebarCalendar />);

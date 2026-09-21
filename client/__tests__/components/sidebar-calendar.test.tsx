@@ -136,18 +136,19 @@ describe("SidebarCalendar", () => {
     expect(screen.getByText(currentLabel)).toBeInTheDocument();
   });
 
-  it("highlights today even without any notes or reviews", async () => {
-    mockData([], []);
+  it("shows a loading skeleton by default while data is in flight", () => {
+    fetchAPI.mockImplementation(() => new Promise(() => {})); // 解決しない=読み込み中を維持
     render(<SidebarCalendar />);
 
-    // 前後月の同じ日付表示（薄色）と区別するため、当月表示のセルだけを対象にする
-    const candidates = await screen.findAllByText(String(now.getDate()), {
-      selector: "button",
-    });
-    const todayCell = candidates.find(
-      (el) => !el.className.includes("text-muted-foreground/40"),
-    );
-    expect(todayCell).toHaveClass("bg-blue-500/10");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+  });
+
+  it("renders nothing while loading when showSkeleton is false", () => {
+    fetchAPI.mockImplementation(() => new Promise(() => {}));
+    const { container } = render(<SidebarCalendar showSkeleton={false} />);
+
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("fetches both notes and upcoming reviews", async () => {

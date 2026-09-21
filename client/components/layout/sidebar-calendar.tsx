@@ -42,7 +42,11 @@ interface DayEntry {
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
-export function SidebarCalendar() {
+interface SidebarCalendarProps {
+  showSkeleton?: boolean;
+}
+
+export function SidebarCalendar({ showSkeleton = true }: SidebarCalendarProps) {
   const [notes, setNotes] = useState<CalendarNote[]>([]);
   const [reviews, setReviews] = useState<CalendarReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,6 +166,7 @@ export function SidebarCalendar() {
   );
 
   if (isLoading) {
+    if (!showSkeleton) return null;
     return (
       <div className="@container mx-auto w-full max-w-[280px] rounded-xl bg-muted/40 p-3">
         <div className="mb-3 flex items-center justify-between px-1">

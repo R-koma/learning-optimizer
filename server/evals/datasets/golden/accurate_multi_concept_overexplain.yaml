@@ -8,6 +8,7 @@ assertions:
     polarity: must
     criterion: >
       列挙された複数概念のうち1つだけに焦点を絞って質問している。
+      絞った焦点を掘り下げるために複数の側面や例を挙げていても、焦点は1つと数える。
   - id: a3
     type: judge
     polarity: must_not

@@ -15,6 +15,9 @@ FAILURE_MODES: dict[str, str] = {
     "self_answered_question": "AI が自分の質問の答えを同じ応答内で先に述べてしまう",
     "uncorrected_misconception": "訂正を要する誤り・混同を含むユーザー説明を、AI が訂正せず追認して次へ進む",
     "overexplained_correct_content": "誤りのないユーザー説明に、AI が言い直し・補強の解説を被せる",
+    "over_deepened_single_aspect": "AI が同じ観点を掘り下げ続け、他の観点へ戻らないまま学習者の知識の外まで降りる",
+    "undirected_followup": "AI が「もう少し詳しく」のような定型句で促し、学習者に考える手がかりを渡さない",
+    "repeated_answered_question": "学習者が直前に答えた問いを、AI がその回答に触れないままほぼ同じ形で出し直す",
 }
 
 # jsonl レコードの `source`。real = 本番 LLM の実出力、rerun = eval の regression 再実行、

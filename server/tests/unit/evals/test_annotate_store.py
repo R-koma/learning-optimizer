@@ -18,6 +18,7 @@ from evals.tools.annotate.store import (
     Annotation,
     AnnotationError,
     assertions_by_failure_mode,
+    default_verified_by,
     deterministic_outcomes,
     golden_instances,
     load_records,
@@ -226,6 +227,22 @@ def test_golden_instances_skip_underscore_files(golden_dir: Path) -> None:
     assert set(instances) == {"rec-c"}
     assert instances["rec-c"].failure_mode == "self_answered_question"
     assert instances["rec-c"].verdict is False
+
+
+def test_a_golden_file_with_no_instances_yet_is_readable(golden_dir: Path, tmp_path: Path) -> None:
+    """起票直後の golden ファイルは `instances:` が None になる。
+
+    新しい failure_mode はファイルを作ってから 1 件目を昇格する順序なので、この状態は
+    必ず通る。読み取り側が None のまま回すと一覧が TypeError で落ち、UI 全体が使えなくなる。
+    """
+    (golden_dir / "premature_definition.yaml").write_text(
+        "failure_mode: premature_definition\nschema_version: 2\nstatus: active\nassertions: []\ninstances:\n",
+        encoding="utf-8",
+    )
+
+    assert set(golden_instances(golden_dir)) == {"rec-c"}
+    assert assertions_by_failure_mode(golden_dir, _empty_rubric(tmp_path))["premature_definition"] == []
+    assert default_verified_by(golden_dir) == ""
 
 
 def test_assertions_are_grouped_by_failure_mode(golden_dir: Path, tmp_path: Path) -> None:

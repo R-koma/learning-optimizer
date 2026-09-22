@@ -106,7 +106,10 @@ def _golden_files(golden_dir: Path) -> Iterator[tuple[Path, dict[str, Any]]]:
         if path.name.startswith("_"):
             continue
         with path.open(encoding="utf-8") as f:
-            yield path, yaml.safe_load(f)
+            data = yaml.safe_load(f)
+        # instance がまだ 1 件も無いファイルは `instances:` が None になる（起票直後の状態）
+        data["instances"] = data["instances"] or []
+        yield path, data
 
 
 def golden_instances(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> dict[str, GoldenInstance]:
@@ -228,7 +231,7 @@ def default_verified_by(golden_dir: Path = DEFAULT_GOLDEN_DIR) -> str:
     reviewers = Counter(
         instance["verified_by"]
         for _, data in _golden_files(golden_dir)
-        for instance in data["instances"] or []
+        for instance in data["instances"]
         if instance.get("verified_by")
     )
     return reviewers.most_common(1)[0][0] if reviewers else ""

@@ -59,7 +59,7 @@ def test_every_instance_resolves_to_a_source_trace() -> None:
     outputs = _load_source_outputs()
     missing: list[str] = []
     for data in _load_golden_files():
-        for instance in data["instances"]:
+        for instance in data["instances"] or []:
             if instance["source_trace_id"] not in outputs:
                 missing.append(
                     f"{data['_path']}: source_trace_id={instance['source_trace_id']!r} not in {_JSONL_PATH}"
@@ -74,7 +74,7 @@ def test_deterministic_assertions_match_human_verdicts() -> None:
         deterministic = {a["id"]: a for a in data["assertions"] if a["type"] == "deterministic"}
         if not deterministic:
             continue
-        for instance in data["instances"]:
+        for instance in data["instances"] or []:
             observed_output = outputs[instance["source_trace_id"]]
             for assertion_id, assertion in deterministic.items():
                 actual = instance["human_verdicts"][assertion_id]

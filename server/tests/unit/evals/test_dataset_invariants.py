@@ -94,7 +94,7 @@ def test_golden_pass_matches_the_canonical_label() -> None:
     by_id = {record["id"]: record for record in _records()}
     problems: list[str] = []
     for path, data in _golden_files():
-        for instance in data["instances"]:
+        for instance in data["instances"] or []:
             source = by_id.get(instance["source_trace_id"])
             if source is None:
                 continue

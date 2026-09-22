@@ -50,7 +50,7 @@ def test_golden_copy_matches_source() -> None:
     sources = _load_source_records()
     mismatches: list[str] = []
     for data in _load_golden_files():
-        for instance in data["instances"]:
+        for instance in data["instances"] or []:
             expected = copy_fields(sources[instance["source_trace_id"]])
             for key in COPY_KEYS:
                 if instance.get(key) != expected[key]:

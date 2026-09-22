@@ -241,6 +241,8 @@ def load_golden_records() -> Iterator[dict[str, Any]]:
             record = yaml.safe_load(f)
         if record.get("status") == "active":
             record["assertions"] = merge_assertions(record["assertions"], rubric)
+            # instance がまだ 1 件も無いファイルは `instances:` が None になる（起票直後の状態）
+            record["instances"] = record["instances"] or []
             yield record
 
 

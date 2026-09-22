@@ -38,7 +38,7 @@ def _judge_verdicts_by_assertion() -> dict[tuple[str, str], set[str]]:
             data: dict[str, Any] = yaml.safe_load(f)
         assertions = merge_assertions(data["assertions"], load_rubric())
         judge = {a["id"]: a for a in assertions if a["type"] == "judge"}
-        for instance in data["instances"]:
+        for instance in data["instances"] or []:
             for assertion_id, verdict in instance["human_verdicts"].items():
                 if assertion_id not in judge:
                     continue

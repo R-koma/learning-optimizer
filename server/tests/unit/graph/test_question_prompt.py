@@ -1,7 +1,7 @@
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from graph.output_schemas import DialogueTurnAnalysis
+from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
 from graph.prompts import question
 from graph.prompts.question import (
     MODE_DIALOGUE,
@@ -168,13 +168,13 @@ class TestPredecidedMode:
         assert intent == "dialogue"
         assert "応答モードの判定原則（最初にこれで分岐する）" in prompt
 
-    def test_expand_includes_mode_b_and_c_without_decision_principle(self) -> None:
+    def test_expand_includes_only_mode_b_without_decision_principle(self) -> None:
         prompt, _ = _build_with(turn_analysis=self._analysis("expand"))
         assert "## 応答モード（事前分析による決定）" in prompt
         assert "「展開（モード B）」で行うと決定済み" in prompt
         assert "焦点を当てる観点: ツール呼び出し" in prompt
         assert "### モード B: 展開" in prompt
-        assert "### モード C: 深掘り / 具体化" in prompt
+        assert "### モード C: 深掘り / 具体化" not in prompt
         assert "### モード A: 誤りの訂正" not in prompt
         assert "応答モードの判定原則" not in prompt
 
@@ -229,3 +229,75 @@ class TestPromptFingerprint:
         before = question._prompt_fingerprint()
         monkeypatch.setitem(question._PREDECIDED_MODE_LABELS, "expand", "展開（モード B・改）")
         assert question._prompt_fingerprint() != before
+
+
+@pytest.mark.parametrize("mode", ["reinforce", "expand", "deepen"])
+def test_predecided_uses_only_selected_example_and_no_selection_rules(mode: ResponseMode) -> None:
+    analysis = DialogueTurnAnalysis(
+        observations=[],
+        response_mode=mode,
+        selected_aspect="ツール呼び出し",
+    )
+    prompt, _ = _build_with(turn_analysis=analysis)
+    for example_mode, example in question._MODE_EXAMPLES.items():
+        assert (example in prompt) == (example_mode == mode)
+    assert "モードと観点を再選択せず" in prompt
+    assert "観点を1つ選ぶ優先順位" not in prompt
+
+
+def test_fallback_includes_selection_rules_and_all_examples() -> None:
+    prompt, _ = _build_with()
+    assert "観点を1つ選ぶ優先順位" in prompt
+    assert all(example in prompt for example in question._MODE_EXAMPLES.values())
+
+
+@pytest.mark.parametrize("mode", [None, "reinforce", "expand", "deepen"])
+@pytest.mark.parametrize("intent", ["dialogue", "unknown_a", "unknown_b", "unknown_c", "exhausted"])
+def test_response_invariants_survive_every_routing_path(mode: ResponseMode | None, intent: str) -> None:
+    prior = HumanMessage(content="ReAct は推論と行動を組み合わせます。具体例として検索エージェントがあります。")
+    messages_by_intent: dict[str, list[BaseMessage]] = {
+        "dialogue": [prior],
+        "unknown_a": [HumanMessage(content="わかりません")],
+        "unknown_b": [prior, AIMessage(content="動作の仕組みは？"), HumanMessage(content="わかりません")],
+        "unknown_c": [HumanMessage(content="わかりません"), HumanMessage(content="わからない")],
+        "exhausted": [prior, HumanMessage(content="以上です")],
+    }
+    analysis = (
+        DialogueTurnAnalysis(
+            observations=[],
+            response_mode=mode,
+            selected_aspect="ツール呼び出し",
+        )
+        if mode
+        else None
+    )
+    prompt, actual_intent = build_question_prompt(
+        topic="ReAct",
+        recent_messages="対話履歴",
+        plan_fields=_PLAN_FIELDS,
+        messages=messages_by_intent[intent],
+        turn_analysis=analysis,
+    )
+    assert actual_intent == intent
+    for rule in (
+        "正しく説明済みの内容を、AI が不要に言い直したり解説し直したりしない",
+        "新しい知識や前提の簡潔な補足はよい",
+        "次の質問の答えの中核を、同じ応答内で先に述べない",
+        "対象も問う切り口も1つに絞る",
+        "不知への説明と誤りの訂正では、必要な答えを具体的に示してよい",
+    ):
+        assert prompt.count(rule) == 1
+
+
+@pytest.mark.parametrize("mode", ["reinforce", "expand", "deepen"])
+def test_fingerprint_tracks_mode_examples(monkeypatch: pytest.MonkeyPatch, mode: ResponseMode) -> None:
+    before = question._prompt_fingerprint()
+    monkeypatch.setitem(question._MODE_EXAMPLES, mode, "変更した応答例")
+    assert question._prompt_fingerprint() != before
+
+
+@pytest.mark.parametrize("mode", ["reinforce", "expand", "deepen"])
+def test_fingerprint_tracks_predecided_instructions(monkeypatch: pytest.MonkeyPatch, mode: ResponseMode) -> None:
+    before = question._prompt_fingerprint()
+    monkeypatch.setitem(question._PREDECIDED_MODE_BODIES, mode, ("変更した指示",))
+    assert question._prompt_fingerprint() != before

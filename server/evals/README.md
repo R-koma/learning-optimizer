@@ -71,6 +71,19 @@
   同じ文面で存在し、`uncorrected_misconception` だけ id が `a3` とずれていた）。
   rubric の assertion は全 instance に適用されるので、**両方向カバレッジは golden 全体で満たせばよい**
   （failure_mode ごとに要求すると、その観点が出ない失敗モードで必ず落ちる）。
+- **AI が「学習者からは出てこない知識」を補完することは許す（2026-09-23 決定）。** `r1` が禁じるのは
+  **言い直し**（ユーザーが自分の言葉で述べた内容の再説明・補強）だけで、ユーザーがまだ述べていない
+  内容を新たに渡すことは含まない。名前を挙げただけの観点についても、その中身を説明することは
+  「新たに渡す」側に入る。禁じる理由は学習者のターンを消費して「AI が説明し自分は聞く」形を
+  強化することなので、単独では到達できない枠組みを短く渡して次の問いを開くのはこれに当たらない。
+  golden の正例（`0f43b9c0__t8-exemplar` など）は以前から補完を行っており、それが通っていたのは
+  「誤りを訂正するため」という除外条項に当たるからだった。訂正を伴わない補完に通り道が無かったのを
+  この決定で開けた。
+- **補完を許す代わりに、自己回答（`r3`）を rubric へ置く。** 補完を無害にしている条件は
+  「直後の問いの答えを渡していないこと」で、これは `self_answered_question` 固有ではなく
+  全モードで起きる。`r1` だけを緩めて `r3` を 1 ファイルに残すと、他ファイルの instance で
+  「補完した上でその答えを聞く」応答を検出する assertion が無くなる（実際 `r1` が fail の 6 件のうち
+  4 件がその状態だった）。`self_answered_question` の `a1` を `r3` として rubric へ移し、`a1` は欠番にした。
 - **golden から assertion を抜いたら、残った id は詰めない。** 欠番のまま残す。詰めると既存の
   `human_verdicts` が別の assertion を指すようになり、付け直しの履歴を辿れなくなる。
 - **`input` / `observed_output` / `meta` / `source` は正本 jsonl からの写しで、手で書かない。**
@@ -93,7 +106,7 @@
 - **failure_mode は golden ファイルを持たなくてよい。** instance が両方向揃うまでは `taxonomy.py` の
   ラベルとしてだけ使い、検出は rubric や他モードの assertion に委ねる。ファイルを先に作ると
   「両方向の instance が揃うまで judge assertion を足さない」規約を最初から破ることになる。
-  `overexplained_correct_content` がこの状態で、検出は rubric の `r1` が担っている。
+  `overexplained_correct_content` がこの状態で、検出は rubric の `r1` と `r3` が担っている。
 - **`failure_mode` / `first_failure` の値空間は `taxonomy.py` が正本。** 網羅的な taxonomy を今作らないのは
   意図的で、error analysis が ~100 trace で saturation してから。追加は PR レビューに通す。
 

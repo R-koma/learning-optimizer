@@ -46,6 +46,7 @@ instances:
       a4: pass
       r1: fail
       r2: pass
+      r3: fail
     rationale: |
       3観点（スループット / レイテンシ / レスポンスタイム）の定義はすべて正確で、訂正すべき
       誤りがない。ここで AI が全観点に定義+具体例の解説を被せると、ユーザーが自分の言葉で
@@ -80,6 +81,7 @@ instances:
       a4: pass
       r1: pass
       r2: pass
+      r3: pass
     rationale: |
       負例と同じ入力に対する正しい応答。3観点の正確さを1文で受け止めるだけに留め、
       レスポンスタイム1つに絞って「ばらつきの原因」——定義の暗記では答えられず、
@@ -125,6 +127,7 @@ instances:
       a4: pass
       r1: pass
       r2: pass
+      r3: pass
     rationale: 観点をカーネル一つに絞れており、先行して説明などしておらず、適切な質問となっている。
     verified_by: R-koma
     created_at: 2026-09-18

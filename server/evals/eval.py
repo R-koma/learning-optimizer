@@ -352,6 +352,8 @@ def to_turn_plan(trace: SourceTrace) -> TurnPlan:
             observations=[],
             response_mode=decision["response_mode"],
             selected_aspect=decision["selected_aspect"],
+            # 改訂前に capture したレコードはこのキーを持たない（そのターンは誤り未検出として再生する）
+            has_misconception=decision.get("has_misconception", False),
             error_summary=decision["error_summary"],
         ),
     )

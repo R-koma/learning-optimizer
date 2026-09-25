@@ -29,6 +29,7 @@ def _to_record(analysis: DialogueTurnAnalysis | None) -> TurnAnalysisRecord | No
     return TurnAnalysisRecord(
         response_mode=analysis.response_mode,
         selected_aspect=analysis.selected_aspect,
+        has_misconception=analysis.has_misconception,
         error_summary=analysis.error_summary,
     )
 

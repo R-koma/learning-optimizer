@@ -23,7 +23,7 @@ from graph.output_schemas import DialogueTurnAnalysis, ResponseMode
 from graph.prompts.turn_analysis import TURN_ANALYSIS_PROMPT
 from graph.state import CoveredAspect
 
-PROMPT_VERSION = "generate_question@v5"
+PROMPT_VERSION = "generate_question@v6"
 
 UserIntent = Literal["unknown_a", "unknown_b", "unknown_c", "exhausted", "dialogue"]
 
@@ -367,7 +367,9 @@ def _prompt_fingerprint() -> str:
         _build_coverage_section(dummy_aspects),
         *(
             _build_predecided_section(
-                DialogueTurnAnalysis(observations=[], response_mode=mode, selected_aspect="A", error_summary="E")
+                DialogueTurnAnalysis(
+                    observations=[], has_misconception=True, error_summary="E", response_mode=mode, selected_aspect="A"
+                )
             )
             for mode in _PREDECIDED_MODE_BODIES
         ),

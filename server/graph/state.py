@@ -25,6 +25,7 @@ class TurnAnalysisRecord(TypedDict):
 
     response_mode: ResponseMode
     selected_aspect: str
+    has_misconception: bool
     error_summary: str
 
 

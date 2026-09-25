@@ -42,4 +42,17 @@ async def analyze_dialogue_turn(
     if not isinstance(result, DialogueTurnAnalysis):
         logger.warning("turn analysis returned unexpected type %s; falling back", type(result).__name__)
         return None
-    return result
+    return _with_mode_from_misconception(result)
+
+
+def _with_mode_from_misconception(analysis: DialogueTurnAnalysis) -> DialogueTurnAnalysis:
+    """誤りを検出したターンのモードを reinforce に揃える。
+
+    プロンプトでも指示しているが、文面だけに任せると深さの判断に引きずられて deepen / expand が
+    返る（この分析ステップが元々そう壊れていた）。訂正セクションをプロンプトへ載せる条件は
+    `response_mode == "reinforce"` なので、ここがずれると検出できても訂正が指示されない。
+    """
+    if not analysis.has_misconception or analysis.response_mode == "reinforce":
+        return analysis
+    logger.warning("turn analysis flagged a misconception but chose %s; forcing reinforce", analysis.response_mode)
+    return analysis.model_copy(update={"response_mode": "reinforce"})

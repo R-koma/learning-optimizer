@@ -33,6 +33,7 @@ uv run python -m evals.eval --list-unannotated                 # 人間ラベル
 uv run python -m evals.eval --mode regression --replay-mode pinned  # 保存済みの turn_decision を注入して応答生成だけ再実行
 uv run python -m evals.eval --mode regression --allow-unfaithful    # 忠実に再現できない入力も再生成する（既定はスキップ）
 uv run python -m evals.eval --mode regression --emit-jsonl <path>  # regression の生成を正本へ追記
+uv run python -m evals.eval --checkpoint-dir evals/reports/<name>  # 生成・採点の保存先を固定し、再開できるようにする（既定は自動生成）
 
 uv run python -m evals.tools.capture --list                   # 直近の learning セッション一覧
 uv run python -m evals.tools.capture --latest --dry-run       # 直近セッションの生成レコードを表示（追記しない）
@@ -58,6 +59,12 @@ uv run python -m evals.tools.annotate                         # annotate と gol
 > **Note:** capture は**セッション直後に実行する**。`meta`（model / prompt_version / prompt_fingerprint）は
 > 実行時点のコードの値であり、セッション実施時点の値ではない。遡及エクスポートでずれた場合の一次資料は
 > Langfuse の該当 trace（`sessionId = dialogue_session_id`）だが、Hobby プランは 30 日でデータアクセスが切れる。
+>
+> **Note:** eval は生成・採点を `--checkpoint-dir`（既定は `evals/reports/` 配下に自動生成）へ常に保存する。
+> 途中で切れても、同じディレクトリを指定して再実行すれば保存済みの run は作り直さない。実行条件
+> （プロンプト・judge・golden/rubric 本文などのハッシュ）が前回と違うディレクトリでは拒否される。
+> 接続断・レート制限は自動で再試行するが、課金枯渇（クレジット・quota 切れ）は再試行しても直らないため
+> 実行全体をその場で止める。保存済みの分はそのまま再開に使える。
 
 ### フロントエンド（`client/`）
 ```bash

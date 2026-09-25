@@ -304,3 +304,19 @@ def test_fingerprint_tracks_predecided_instructions(monkeypatch: pytest.MonkeyPa
     before = question._prompt_fingerprint()
     monkeypatch.setitem(question._PREDECIDED_MODE_BODIES, mode, ("変更した指示",))
     assert question._prompt_fingerprint() != before
+
+
+@pytest.mark.parametrize("predecided", [False, True])
+def test_correction_keeps_teaching_and_application_examples_in_both_routes(predecided: bool) -> None:
+    analysis = DialogueTurnAnalysis(
+        observations=[],
+        has_misconception=True,
+        response_mode="reinforce",
+        selected_aspect="中央値",
+        error_summary="平均値との混同",
+    )
+    prompt, _ = _build_with(turn_analysis=analysis if predecided else None)
+    assert "一般則・定義を教え、その知識を新しい事例や条件に適用・分類・判断してもらうことはよい" in prompt
+    assert "次の問いを考えるために必要な一般則や前提を教える" in prompt
+    assert "悪い応答:" in prompt and "良い応答:" in prompt
+    assert "例の計算結果は先に示していない" in prompt

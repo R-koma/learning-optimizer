@@ -638,6 +638,24 @@ def test_coverage_stability_skips_single_run_instances() -> None:
     assert coverage_stability([_run_with_coverage([["定義"]])]) == []
 
 
+def test_report_preserves_per_run_coverage_for_pinned_replay() -> None:
+    result = _run_with_coverage([["定義"], ["具体例"]])
+    report = build_report([result], [], mode="regression", runs=2, fingerprints={}, judge=llm_judge)
+    runs = report["records"][0]["runs"]
+    for index, name in enumerate(("定義", "具体例")):
+        assert runs[index]["covered_aspects"] == [{"aspect": name, "reached_depth": "defined"}]
+        trace = SourceTrace(
+            trace_id="replay",
+            turn=1,
+            meta={},
+            input={},
+            observed_output="",
+            turn_decision={**runs[index]["turn_analysis"], "covered_aspects": runs[index]["covered_aspects"]},
+            has_turn_decision=True,
+        )
+        assert to_turn_plan(trace).covered_aspects == runs[index]["covered_aspects"]
+
+
 @pytest.mark.parametrize("mode", ["scoring", "regression"])
 def test_print_summary_runs_for_both_modes(mode: str, capsys: pytest.CaptureFixture[str]) -> None:
     """レポート組み立てと表示の経路を通す（判定は他のテスト、ここは KeyError 等の検出）。"""

@@ -158,6 +158,7 @@ class TestPredecidedMode:
     def _analysis(self, mode: str, error_summary: str = "") -> DialogueTurnAnalysis:
         return DialogueTurnAnalysis(
             observations=[],
+            has_misconception=bool(error_summary),
             response_mode=mode,  # type: ignore[arg-type]
             selected_aspect="ツール呼び出し",
             error_summary=error_summary,
@@ -235,6 +236,7 @@ class TestPromptFingerprint:
 def test_predecided_uses_only_selected_example_and_no_selection_rules(mode: ResponseMode) -> None:
     analysis = DialogueTurnAnalysis(
         observations=[],
+        has_misconception=False,
         response_mode=mode,
         selected_aspect="ツール呼び出し",
     )
@@ -265,6 +267,7 @@ def test_response_invariants_survive_every_routing_path(mode: ResponseMode | Non
     analysis = (
         DialogueTurnAnalysis(
             observations=[],
+            has_misconception=False,
             response_mode=mode,
             selected_aspect="ツール呼び出し",
         )

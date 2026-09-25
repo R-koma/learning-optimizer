@@ -1,0 +1,2373 @@
+{
+  "meta": {
+    "mode": "regression",
+    "runs": 3,
+    "replay_mode": "full",
+    "generated_at": "2026-09-24T15:43:16.109495+00:00",
+    "model": "gpt-6-luna",
+    "temperature": 0.7,
+    "prompt_version": "generate_question@v5",
+    "prompt_fingerprint": "6fa2862b70d1",
+    "judge_model": "claude-haiku-4-5-20251001",
+    "judge": {
+      "screen": "claude-haiku-4-5-20251001",
+      "confirm": "claude-opus-5"
+    },
+    "judge_usage": {
+      "claude-haiku-4-5-20251001": {
+        "calls": 86,
+        "input_tokens": 175565,
+        "output_tokens": 15954,
+        "estimated_cost_usd": 0.255335
+      },
+      "claude-opus-5": {
+        "calls": 11,
+        "input_tokens": 19072,
+        "output_tokens": 2195,
+        "estimated_cost_usd": 0.150235
+      }
+    },
+    "check_fingerprints": {
+      "contains_generic_prompt_phrase": "a9bd66a88432"
+    }
+  },
+  "records": [
+    {
+      "failure_mode": "accurate_multi_concept_overexplain",
+      "source_trace_id": "2026-09-17-0f43b9c0__t4",
+      "human_pass": true,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "プログラムとプロセスの違いを整理できていますね。カーネルは名前が挙がっていましたが、まだ役割は説明されていません。たとえば、プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「カーネルはまだ役割は説明されていません」と指摘した上で、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」という質問を通じて、列挙された複数概念（プログラム、プロセス、カーネル）のうち、カーネルの役割という1つの焦点に絞って掘り下げている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「カーネルはまだ役割は説明されていません」と指摘した上で、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」という質問を通じて、列挙された複数概念（プログラム、プロセス、カーネル）のうち、カーネルの役割という1つの焦点に絞って掘り下げている。"
+            },
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の説明を肯定した後、「カーネルはまだ役割は説明されていません」と指摘し、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と新しい問いを提示しており、学習者が既に説明した内容をそのまま再度説明するよう求めていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の説明を肯定した後、「カーネルはまだ役割は説明されていません」と指摘し、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と新しい問いを提示しており、学習者が既に説明した内容をそのまま再度説明するよう求めていない。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「カーネルはどのように関わると思いますか？」という単一の質問を提示しており、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「カーネルはどのように関わると思いますか？」という単一の質問を提示しており、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の述べた内容を受け止めた後、「カーネルは名前が挙がっていましたが、まだ役割は説明されていません」と指摘し、その後「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と新たな内容（カーネルの具体的な役割）を導入している。これは学習者がまだ述べていないカーネルの役割について新たに渡すものであり、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当する。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の述べた内容を受け止めた後、「カーネルは名前が挙がっていましたが、まだ役割は説明されていません」と指摘し、その後「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と新たな内容（カーネルの具体的な役割）を導入している。これは学習者がまだ述べていないカーネルの役割について新たに渡すものであり、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当する。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルはまだ役割は説明されていません」と述べた後、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と学習者に対して質問を投げかけており、カーネルの役割についての答えの中核を AI 自身の応答内では述べていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルはまだ役割は説明されていません」と述べた後、「プログラムがファイルを読み書きするとき、カーネルはどのように関わると思いますか？」と学習者に対して質問を投げかけており、カーネルの役割についての答えの中核を AI 自身の応答内では述べていない。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "プログラムとプロセスの区別を整理できていますね。カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分ですが、たとえばプロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うか」という1つの具体的なシナリオに焦点を絞って質問しており、複数の側面や例を挙げていません。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うか」という1つの具体的なシナリオに焦点を絞って質問しており、複数の側面や例を挙げていません。"
+            },
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「プログラムとプロセスの区別を整理できていますね」とユーザーの説明を認めた後、「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と新しい情報を追加し、さらに「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」と新たな問いを提示しており、ユーザーが既に説明した内容をそのまま再度説明するよう求めていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「プログラムとプロセスの区別を整理できていますね」とユーザーの説明を認めた後、「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と新しい情報を追加し、さらに「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」と新たな問いを提示しており、ユーザーが既に説明した内容をそのまま再度説明するよう求めていない。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は、「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と説明した後、「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」と単一の質問を投げかけているのみであり、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は、「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と説明した後、「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」と単一の質問を投げかけているのみであり、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と述べており、これはユーザーが「カーネルがある」と名前を挙げただけの内容に対して、その中身を説明している。さらに「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」という新たな内容を提示しており、ユーザーがまだ述べていない内容を渡している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と述べており、これはユーザーが「カーネルがある」と名前を挙げただけの内容に対して、その中身を説明している。さらに「プロセスがファイルを読み込むとき、カーネルはどんな役割を担うと思いますか？」という新たな内容を提示しており、ユーザーがまだ述べていない内容を渡している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と述べており、ファイル読み込み時のカーネルの役割について「どんな役割を担うと思いますか？」と学習者に問い返しているだけで、その答えの中核を同じ応答内では述べていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルはプロセスの実行やメモリ、周辺機器などを管理する部分」と述べており、ファイル読み込み時のカーネルの役割について「どんな役割を担うと思いますか？」と学習者に問い返しているだけで、その答えの中核を同じ応答内では述べていない。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "プログラムとプロセスの違いを整理できていますね。カーネルにも触れていましたが、たとえばファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」という質問で、複数の概念（プログラム、プロセス、カーネル）のうち「カーネル」という1つの概念に焦点を絞り、その役割を具体的な例（ファイル読み込み）を通じて掘り下げようとしている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答は「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」という質問で、複数の概念（プログラム、プロセス、カーネル）のうち「カーネル」という1つの概念に焦点を絞り、その役割を具体的な例（ファイル読み込み）を通じて掘り下げようとしている。"
+            },
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の説明を認めた後、「カーネルはどのような役割を担うと思いますか？」と新しい質問を提示しており、学習者が既に説明した内容をそのまま再度説明するよう求めていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の説明を認めた後、「カーネルはどのような役割を担うと思いますか？」と新しい質問を提示しており、学習者が既に説明した内容をそのまま再度説明するよう求めていない。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の理解を認めた後、「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」と単一の質問を投げかけているだけであり、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「プログラムとプロセスの違いを整理できていますね」と学習者の理解を認めた後、「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」と単一の質問を投げかけているだけであり、「もし A なら〜 / B が気になる場合は〜」のような複数の条件付きオファーを並べてユーザーに方針を選ばせるメニュー化は行われていない。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「プログラムとプロセスの違いを整理できていますね」とユーザーの述べた内容を受け止めており、その後「カーネルはどのような役割を担うと思いますか？」と新たな質問を提示しています。ユーザーが述べていない「ファイル読み込み時のカーネルの役割」という新たな内容を導入しているため、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当します。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「プログラムとプロセスの違いを整理できていますね」とユーザーの述べた内容を受け止めており、その後「カーネルはどのような役割を担うと思いますか？」と新たな質問を提示しています。ユーザーが述べていない「ファイル読み込み時のカーネルの役割」という新たな内容を導入しているため、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当します。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」という質問を提示していますが、この質問に対する答えの中核をAI自身は述べていません。学習者に考えさせるための問いかけであり、カーネルの役割についての説明や答えは含まれていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「ファイルを読み込むとき、カーネルはどのような役割を担うと思いますか？」という質問を提示していますが、この質問に対する答えの中核をAI自身は述べていません。学習者に考えさせるための問いかけであり、カーネルの役割についての説明や答えは含まれていません。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "overexplained_correct_content",
+      "source_trace_id": "2026-09-21-c7718f93__t4",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "良い整理ですね。垂直スケーリングでは、CPUやRAMを増やすと、アプリケーションの処理能力はどのように変わるでしょうか。たとえば、処理が遅くなっているWebサービスを想定して説明してみてください。",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "垂直スケーリング",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「垂直スケーリングでは、CPUやRAMを増やすと、アプリケーションの処理能力はどのように変わるでしょうか」と質問を投げかけており、ユーザーが既に述べた「垂直スケーリングとは、サーバーの性能であるCPUやRAMを追加したりすることである」という内容を言い直したり補強したりして解説していない。むしろ、ユーザーがまだ詳しく述べていない「処理能力の変化」という新たな観点を導入している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「垂直スケーリングでは、CPUやRAMを増やすと、アプリケーションの処理能力はどのように変わるでしょうか」と質問を投げかけており、ユーザーが既に述べた「垂直スケーリングとは、サーバーの性能であるCPUやRAMを追加したりすることである」という内容を言い直したり補強したりして解説していない。むしろ、ユーザーがまだ詳しく述べていない「処理能力の変化」という新たな観点を導入している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「垂直スケーリングでは、CPUやRAMを増やすと、アプリケーションの処理能力はどのように変わるか」という質問を学習者に投げかけているだけであり、その答えの中核を AI 自身が述べていない。AI は学習者に考えさせるための質問を提示しているが、答えそのものは提供していない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「垂直スケーリングでは、CPUやRAMを増やすと、アプリケーションの処理能力はどのように変わるか」という質問を学習者に投げかけているだけであり、その答えの中核を AI 自身が述べていない。AI は学習者に考えさせるための質問を提示しているが、答えそのものは提供していない。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "垂直・水平スケーリングとロードバランサーを整理できていますね。垂直スケーリングでは、強化した1台のサーバーに障害が起きるとサービス全体へ影響することがありますが、サーバーを複数台に増やす場合と比べて、どんな運用上の利点があると思いますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "垂直スケーリング",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「垂直スケーリングでは、強化した1台のサーバーに障害が起きるとサービス全体へ影響することがある」と述べており、これはユーザーが述べていない新たな内容（垂直スケーリングの欠点に関する具体的な説明）を提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「垂直スケーリングでは、強化した1台のサーバーに障害が起きるとサービス全体へ影響することがある」と述べており、これはユーザーが述べていない新たな内容（垂直スケーリングの欠点に関する具体的な説明）を提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「垂直スケーリングでは、強化した1台のサーバーに障害が起きるとサービス全体へ影響することがある」と述べており、これは垂直スケーリングの運用上の課題を指摘していますが、質問で求められている「垂直スケーリングの運用上の利点」に対する答えの中核を同じ応答内では述べていません。むしろ課題を述べているだけです。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「垂直スケーリングでは、強化した1台のサーバーに障害が起きるとサービス全体へ影響することがある」と述べており、これは垂直スケーリングの運用上の課題を指摘していますが、質問で求められている「垂直スケーリングの運用上の利点」に対する答えの中核を同じ応答内では述べていません。むしろ課題を述べているだけです。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "垂直スケーリングの限界まで整理できていますね。サーバーを大きくするほど費用も増える傾向がありますが、アクセスが一時的に急増する場面では、垂直スケーリングだけに頼るとどんな課題が起きそうですか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "垂直スケーリング",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「サーバーを大きくするほど費用も増える傾向がある」と垂直スケーリングの費用面での課題を補強し、さらに「アクセスが一時的に急増する場面では、垂直スケーリングだけに頼るとどんな課題が起きそうか」と、ユーザーが述べていない新たな観点（一時的なトラフィック急増への対応の限界）を提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「サーバーを大きくするほど費用も増える傾向がある」と垂直スケーリングの費用面での課題を補強し、さらに「アクセスが一時的に急増する場面では、垂直スケーリングだけに頼るとどんな課題が起きそうか」と、ユーザーが述べていない新たな観点（一時的なトラフィック急増への対応の限界）を提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「アクセスが一時的に急増する場面では、垂直スケーリングだけに頼るとどんな課題が起きそうか」という質問を学習者に投げかけているが、その質問に対する答えの中核を AI 自身の応答内では述べていない。AI は質問を提示しているだけで、課題についての説明や示唆を含んでいない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「アクセスが一時的に急増する場面では、垂直スケーリングだけに頼るとどんな課題が起きそうか」という質問を学習者に投げかけているが、その質問に対する答えの中核を AI 自身の応答内では述べていない。AI は質問を提示しているだけで、課題についての説明や示唆を含んでいない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "overexplained_correct_content",
+      "source_trace_id": "2026-09-21-6c938091__t4",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "マスター・スレーブ構成の役割分担や、読み込み分散・可用性への効果まで整理できていますね。  \nマスターで行った書き込みがスレーブに反映されるまでには時間差が生じることがありますが、その間にスレーブからデータを読むと、どんな問題が起こり得るでしょうか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "マスター・スレーブ構成の定義",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「マスター・スレーブ構成の役割分担や、読み込み分散・可用性への効果まで整理できていますね」と、ユーザーが既に述べた内容を受け止めて復唱しており、その後「マスターで行った書き込みがスレーブに反映されるまでには時間差が生じることがあります」と、ユーザーが述べていないレプリケーション遅延という新たな観点を導入しています。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「マスター・スレーブ構成の役割分担や、読み込み分散・可用性への効果まで整理できていますね」と、ユーザーが既に述べた内容を受け止めて復唱しており、その後「マスターで行った書き込みがスレーブに反映されるまでには時間差が生じることがあります」と、ユーザーが述べていないレプリケーション遅延という新たな観点を導入しています。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「マスターで行った書き込みがスレーブに反映されるまでには時間差が生じることがある」という状況を提示した上で、「その間にスレーブからデータを読むと、どんな問題が起こり得るでしょうか？」と学習者に問いかけているが、この問いに対する答え（問題の中核）を同じ応答内では述べていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「マスターで行った書き込みがスレーブに反映されるまでには時間差が生じることがある」という状況を提示した上で、「その間にスレーブからデータを読むと、どんな問題が起こり得るでしょうか？」と学習者に問いかけているが、この問いに対する答え（問題の中核）を同じ応答内では述べていない。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "読み取りを分散する役割分担を説明できていますね。読み取り先のレプリカに更新がまだ反映されていない場合、ユーザーに古い情報を見せないために、どのような読み書きの振り分けが考えられますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "役割分担",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「読み取りを分散する役割分担を説明できていますね」とユーザーの述べた内容を受け止めた上で、「レプリカに更新がまだ反映されていない場合、ユーザーに古い情報を見せないために、どのような読み書きの振り分けが考えられますか？」と新たな課題を提示している。これはユーザーがまだ述べていない「レプリケーション遅延時の読み書き振り分け」という新たな内容を渡すことであり、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当する。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「読み取りを分散する役割分担を説明できていますね」とユーザーの述べた内容を受け止めた上で、「レプリカに更新がまだ反映されていない場合、ユーザーに古い情報を見せないために、どのような読み書きの振り分けが考えられますか？」と新たな課題を提示している。これはユーザーがまだ述べていない「レプリケーション遅延時の読み書き振り分け」という新たな内容を渡すことであり、判定基準の「ユーザーがまだ述べていない内容を新たに渡すことは、これに含まない」に該当する。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「ユーザーに古い情報を見せないために、どのような読み書きの振り分けが考えられるか」という質問に対して、答えの中核を述べていない。応答は問題提起をしているだけで、具体的な読み書き振り分けの方法（例：重要な読み取りはマスターから行う、キャッシュの一貫性戦略など）を提示していない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「ユーザーに古い情報を見せないために、どのような読み書きの振り分けが考えられるか」という質問に対して、答えの中核を述べていない。応答は問題提起をしているだけで、具体的な読み書き振り分けの方法（例：重要な読み取りはマスターから行う、キャッシュの一貫性戦略など）を提示していない。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "レプリケーションが読み取り性能や可用性に役立つ一方で、複製先への反映には遅れが生じることがあります。ユーザーが更新した直後に読み取りをスレーブへ振り分ける設計では、どんな問題が起きうるでしょうか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "データベースレプリケーション",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「複製先への反映には遅れが生じることがあります」と述べており、これはユーザーが言及していなかった「レプリケーション遅延」という新たな観点を導入しています。その後、この遅延がもたらす具体的な問題（更新直後の読み取りで古いデータを取得する可能性）を質問形式で提示していますが、これもユーザーが述べていない新たな内容です。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「複製先への反映には遅れが生じることがあります」と述べており、これはユーザーが言及していなかった「レプリケーション遅延」という新たな観点を導入しています。その後、この遅延がもたらす具体的な問題（更新直後の読み取りで古いデータを取得する可能性）を質問形式で提示していますが、これもユーザーが述べていない新たな内容です。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「複製先への反映には遅れが生じることがある」と遅延の存在を述べているが、「ユーザーが更新した直後に読み取りをスレーブへ振り分ける設計では、どんな問題が起きうるか」という質問に対して、その問題の中核（例えば、古いデータを読む可能性がある、データの一貫性が失われるなど）を同じ応答内では述べていない。質問は問題の具体的な内容を求めているが、AI は問題を提示するだけで答えを示していない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「複製先への反映には遅れが生じることがある」と遅延の存在を述べているが、「ユーザーが更新した直後に読み取りをスレーブへ振り分ける設計では、どんな問題が起きうるか」という質問に対して、その問題の中核（例えば、古いデータを読む可能性がある、データの一貫性が失われるなど）を同じ応答内では述べていない。質問は問題の具体的な内容を求めているが、AI は問題を提示するだけで答えを示していない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "self_answered_question",
+      "source_trace_id": "2026-09-17-0f43b9c0__t6",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "カーネルがハードウェアやアプリの仲介をするという整理ですね。たとえば、アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」は、ユーザーがまだ説明していない「カーネルの具体的な仲介の仕組み・動作」という1つの側面に限定して掘り下げている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」は、ユーザーがまだ説明していない「カーネルの具体的な仲介の仕組み・動作」という1つの側面に限定して掘り下げている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルがハードウェアやアプリの仲介をするという整理ですね」とユーザーの述べた内容を受け止めた後、「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」と、ユーザーがまだ述べていない具体的な場面（ファイル読み込み時のカーネルの関わり）を新たに提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルがハードウェアやアプリの仲介をするという整理ですね」とユーザーの述べた内容を受け止めた後、「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」と、ユーザーがまだ述べていない具体的な場面（ファイル読み込み時のカーネルの関わり）を新たに提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「カーネルがハードウェアやアプリの仲介をする」という学習者の整理を確認した後、「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」と質問を投げかけているだけであり、この質問に対する答えの中核をAI自身は述べていない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「カーネルがハードウェアやアプリの仲介をする」という学習者の整理を確認した後、「アプリがファイルを読み込むとき、カーネルはどのように関わると思いますか？」と質問を投げかけているだけであり、この質問に対する答えの中核をAI自身は述べていない。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "重要な役割を整理できていますね。では、アプリがファイルを読み込むとき、カーネルはどのようにアプリとハードウェアの間を仲介すると考えますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答「アプリがファイルを読み込むとき、カーネルはどのようにアプリとハードウェアの間を仲介すると考えますか？」は、ユーザーが説明していない「カーネルの仲介の具体的な仕組み・メカニズム」という1つの側面に限定して掘り下げている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答「アプリがファイルを読み込むとき、カーネルはどのようにアプリとハードウェアの間を仲介すると考えますか？」は、ユーザーが説明していない「カーネルの仲介の具体的な仕組み・メカニズム」という1つの側面に限定して掘り下げている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「アプリがファイルを読み込むとき、カーネルはどのようにアプリとハードウェアの間を仲介するか」という新たな具体的シナリオを提示しており、これはユーザーが述べた「カーネルがアプリの仲介などを行う」という抽象的な内容を言い直したり補強したりしたものではなく、ユーザーがまだ述べていない新たな内容を渡している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「アプリがファイルを読み込むとき、カーネルはどのようにアプリとハードウェアの間を仲介するか」という新たな具体的シナリオを提示しており、これはユーザーが述べた「カーネルがアプリの仲介などを行う」という抽象的な内容を言い直したり補強したりしたものではなく、ユーザーがまだ述べていない新たな内容を渡している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「カーネルはどのようにアプリとハードウェアの間を仲介するのか」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。これは学習者に考えさせるための問いかけであり、仲介の具体的な仕組みについての説明は含まれていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「カーネルはどのようにアプリとハードウェアの間を仲介するのか」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。これは学習者に考えさせるための問いかけであり、仲介の具体的な仕組みについての説明は含まれていません。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "カーネルは、アプリが必要とする処理を仲介する役割も担います。たとえば、アプリがファイルを読み込むとき、カーネルはどのようにその要求を受け取り、ストレージからデータを渡すと思いますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "カーネル",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「カーネルはどのようにその要求を受け取り、ストレージからデータを渡すと思いますか？」と問いかけており、これは「カーネルがファイル読み込み要求を処理する仕組み」という1つの側面に限定されている。ユーザーはカーネルの一般的な役割（ハードウェア管理、プロセス管理、アプリの仲介）を説明しているが、具体的なファイルI/O処理の仕組みについてはまだ説明していない。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「カーネルはどのようにその要求を受け取り、ストレージからデータを渡すと思いますか？」と問いかけており、これは「カーネルがファイル読み込み要求を処理する仕組み」という1つの側面に限定されている。ユーザーはカーネルの一般的な役割（ハードウェア管理、プロセス管理、アプリの仲介）を説明しているが、具体的なファイルI/O処理の仕組みについてはまだ説明していない。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "「カーネルは、アプリが必要とする処理を仲介する役割も担います」は、ユーザーが述べた「アプリの仲介などを行う」を短く言い換えた受け止めの範囲にとどまり、その仕組みの中身を解説してはいない。続く「アプリがファイルを読み込むとき…どのように要求を受け取り、ストレージからデータを渡すと思いますか？」も新たな問いかけであり、ユーザーの発言内容を言い直し・補強して解説しているとは言えない。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "AI の応答は「カーネルはアプリが必要とする処理を仲介する役割も担います」と述べており、これはユーザーが既に述べた「アプリの仲介などを行う」という内容を言い直して補強している。一方、「ファイルを読み込むとき、カーネルはどのようにその要求を受け取り、ストレージからデータを渡すと思いますか？」という部分は、ユーザーがまだ述べていない具体的な仲介メカニズムについて新たに提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルはアプリが必要とする処理を仲介する役割も担う」と述べており、その後「アプリがファイルを読み込むとき、カーネルはどのようにその要求を受け取り、ストレージからデータを渡すか」という質問を提示しています。しかし、この質問に対する答えの中核（カーネルがどのように要求を受け取り、データを渡すのか）は、AI の応答内では述べられていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルはアプリが必要とする処理を仲介する役割も担う」と述べており、その後「アプリがファイルを読み込むとき、カーネルはどのようにその要求を受け取り、ストレージからデータを渡すか」という質問を提示しています。しかし、この質問に対する答えの中核（カーネルがどのように要求を受け取り、データを渡すのか）は、AI の応答内では述べられていません。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "self_answered_question",
+      "source_trace_id": "2026-09-21-c7718f93__t10",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "監視指標をもとに増減を判断する流れを整理できていますね。急なアクセス増加でサーバーを追加する場合、追加が完了するまでの間に既存サーバーへ負荷が集中することがありますが、その影響を抑えるためにどんな工夫ができると思いますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "自動スケーリング",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「追加が完了するまでの間に既存サーバーへ負荷が集中することがありますが、その影響を抑えるためにどんな工夫ができると思いますか？」と問うており、これはユーザーがまだ説明していない「負荷集中を抑える工夫」という1つの側面に限定して掘り下げている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答は「追加が完了するまでの間に既存サーバーへ負荷が集中することがありますが、その影響を抑えるためにどんな工夫ができると思いますか？」と問うており、これはユーザーがまだ説明していない「負荷集中を抑える工夫」という1つの側面に限定して掘り下げている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「監視指標をもとに増減を判断する流れを整理できていますね」とユーザーの述べた内容を受け止めた後、「急なアクセス増加でサーバーを追加する場合、追加が完了するまでの間に既存サーバーへ負荷が集中することがありますが、その影響を抑えるためにどんな工夫ができると思いますか？」と、ユーザーがまだ述べていない新たな課題（スケーリング完了までの遅延時間における負荷集中の問題と対策）を提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「監視指標をもとに増減を判断する流れを整理できていますね」とユーザーの述べた内容を受け止めた後、「急なアクセス増加でサーバーを追加する場合、追加が完了するまでの間に既存サーバーへ負荷が集中することがありますが、その影響を抑えるためにどんな工夫ができると思いますか？」と、ユーザーがまだ述べていない新たな課題（スケーリング完了までの遅延時間における負荷集中の問題と対策）を提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「急なアクセス増加でサーバーを追加する場合、追加が完了するまでの間に既存サーバーへ負荷が集中することがある」という問題を提示していますが、その影響を抑えるための具体的な工夫については述べられておらず、ユーザーに対して「どんな工夫ができると思いますか？」と質問を投げかけているだけです。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「急なアクセス増加でサーバーを追加する場合、追加が完了するまでの間に既存サーバーへ負荷が集中することがある」という問題を提示していますが、その影響を抑えるための具体的な工夫については述べられておらず、ユーザーに対して「どんな工夫ができると思いますか？」と質問を投げかけているだけです。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "監視機能とロードバランサーの役割を分けて整理できていますね。垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もありますが、停止を避けにくいシステムではどのような対策が考えられますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "垂直スケーリング",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もあるが、停止を避けにくいシステムではどのような対策が考えられるか」と問うており、これは「停止時間を最小化・回避するための対策」という、ユーザーがまだ説明していない側面（具体的な対策方法）1つに限定されている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答は「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もあるが、停止を避けにくいシステムではどのような対策が考えられるか」と問うており、これは「停止時間を最小化・回避するための対策」という、ユーザーがまだ説明していない側面（具体的な対策方法）1つに限定されている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "冒頭の「監視機能とロードバランサーの役割を分けて整理できていますね」は短い受け止めの復唱にとどまり、続く「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もあります」はユーザーが述べていない新情報の提示であって、ユーザー発言の言い直し・補強による解説ではない。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もある」と述べており、これはユーザーが既に述べた垂直スケーリングの概念を補強・解説している。また「停止を避けにくいシステムではどのような対策が考えられるか」という新たな問いを提示しているが、これはユーザーが述べていない新しい内容である。判定基準では「ユーザーが自分の言葉で述べた内容を、AIが言い直したり補強したりして解説している」ことが該当条件であり、この応答はその条件を満たしている。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もある」と問題を指摘していますが、「停止を避けにくいシステムではどのような対策が考えられるか」という質問に対して、具体的な対策案（例：ホットスワップ、ローリングアップデート、冗長化など）を同じ応答内では述べていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「垂直スケーリングではサーバーを停止してCPUやメモリを増強することがあり、その間はサービスに影響する場合もある」と問題を指摘していますが、「停止を避けにくいシステムではどのような対策が考えられるか」という質問に対して、具体的な対策案（例：ホットスワップ、ローリングアップデート、冗長化など）を同じ応答内では述べていません。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "監視・スケーリング機能とロードバランサーの役割を分けて捉えられていますね。新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要だと思いますか？",
+          "turn_analysis": {
+            "response_mode": "expand",
+            "selected_aspect": "ロードバランサー",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要か」と問うており、これはユーザーがまだ説明していない「ヘルスチェック」や「準備完了の確認」といった単一の側面を掘り下げようとしている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要か」と問うており、これはユーザーがまだ説明していない「ヘルスチェック」や「準備完了の確認」といった単一の側面を掘り下げようとしている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「監視・スケーリング機能とロードバランサーの役割を分けて捉えられていますね」とユーザーの述べた内容を受け止めた後、「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要だか」という、ユーザーがまだ述べていない新たな内容を提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「監視・スケーリング機能とロードバランサーの役割を分けて捉えられていますね」とユーザーの述べた内容を受け止めた後、「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要だか」という、ユーザーがまだ述べていない新たな内容を提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要か」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。質問を投げかけるだけで、ユーザーに考えさせる形式になっており、AI 自身が答えを提供していないため、判定基準を満たしていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「新しいサーバーが起動してからロードバランサーに登録されるまでの間、そのサーバーをまだ利用者のリクエストに使わないようにするには、どんな確認が必要か」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。質問を投げかけるだけで、ユーザーに考えさせる形式になっており、AI 自身が答えを提供していないため、判定基準を満たしていません。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "self_answered_question",
+      "source_trace_id": "2026-09-21-6c938091__t6",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "大丈夫ですよ。クエリの振り分けでは、各読み取りレプリカの負荷や応答状況を見て、比較的余裕のあるサーバーへリクエストを送る方法があります。たとえば、ラウンドロビンで順番に割り当てたり、応答の遅いサーバーを一時的に振り分け先から外したりします。なお、レプリカへの反映には遅れが出ることがあり、直前に更新したデータがすぐ読めない場合もあります。\n\n使っているサービスで、更新直後に古い情報が表示されると困りそうな場面を1つ挙げられますか？思いつくものでよいです。",
+          "turn_analysis": null,
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答の質問「使っているサービスで、更新直後に古い情報が表示されると困りそうな場面を1つ挙げられますか？」は、レプリカ遅延による「具体的な問題場面」という、ユーザーがまだ説明していない側面1つに限定して掘り下げている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答の質問「使っているサービスで、更新直後に古い情報が表示されると困りそうな場面を1つ挙げられますか？」は、レプリカ遅延による「具体的な問題場面」という、ユーザーがまだ説明していない側面1つに限定して掘り下げている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「ラウンドロビンで順番に割り当てたり、応答の遅いサーバーを一時的に振り分け先から外したりします」と、ユーザーが述べていないクエリ振り分けの具体的な方法を新たに説明しており、また「レプリカへの反映には遅れが出ることがあり、直前に更新したデータがすぐ読めない場合もあります」と、ユーザーが言及していないレプリケーション遅延の問題を新たに提示しています。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「ラウンドロビンで順番に割り当てたり、応答の遅いサーバーを一時的に振り分け先から外したりします」と、ユーザーが述べていないクエリ振り分けの具体的な方法を新たに説明しており、また「レプリカへの反映には遅れが出ることがあり、直前に更新したデータがすぐ読めない場合もあります」と、ユーザーが言及していないレプリケーション遅延の問題を新たに提示しています。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI は「更新直後に古い情報が表示されると困りそうな場面を1つ挙げられますか？」という質問に対して、具体的な場面例を同じ応答内で述べていない。代わりに、レプリカ反映の遅れという背景情報のみを説明し、質問への直接的な答え（具体的な場面例）は提示していない。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI は「更新直後に古い情報が表示されると困りそうな場面を1つ挙げられますか？」という質問に対して、具体的な場面例を同じ応答内で述べていない。代わりに、レプリカ反映の遅れという背景情報のみを説明し、質問への直接的な答え（具体的な場面例）は提示していない。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "pass",
+          "output": "大丈夫ですよ。クエリの振り分けは、たとえばロードバランサーが各読み取り用DBの負荷や応答状況を見て、空いているサーバーへリクエストを送る方法があります。単純に順番に割り当てる方式もありますが、レプリカ間でデータ反映に遅れがある場合は、直前に更新したデータを読むリクエストをマスターへ送るなどの工夫も必要です。\n\nあなたが使うサービスで、更新直後に最新の内容が表示されないと困りそうな場面を1つ挙げられますか？思いつくものでよいです。",
+          "turn_analysis": null,
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は、クエリ振り分けの仕組み（ロードバランサーによる負荷判定、順番割り当て、レプリケーション遅延への対応）を説明した後、「更新直後に最新の内容が表示されないと困りそうな場面」という1つの側面に限定して質問している。問う切り口は1つ（具体例）であり、複数の側面を掘り下げようとしていない。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "直近のAI応答は、クエリ振り分けの仕組み（ロードバランサーによる負荷判定、順番割り当て、レプリケーション遅延への対応）を説明した後、「更新直後に最新の内容が表示されないと困りそうな場面」という1つの側面に限定して質問している。問う切り口は1つ（具体例）であり、複数の側面を掘り下げようとしていない。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は、ユーザーが述べていない「ロードバランサーが各読み取り用DBの負荷や応答状況を見て、空いているサーバーへリクエストを送る方法」「単純に順番に割り当てる方式」「レプリカ間でデータ反映に遅れがある場合の工夫」といった新たな内容を詳しく説明しており、ユーザーの言葉の言い直しや補強ではなく、新たな知識を提供している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は、ユーザーが述べていない「ロードバランサーが各読み取り用DBの負荷や応答状況を見て、空いているサーバーへリクエストを送る方法」「単純に順番に割り当てる方式」「レプリカ間でデータ反映に遅れがある場合の工夫」といった新たな内容を詳しく説明しており、ユーザーの言葉の言い直しや補強ではなく、新たな知識を提供している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI は「レプリカ間でデータ反映に遅れがある場合は、直前に更新したデータを読むリクエストをマスターへ送る」と一般論としてレプリケーション遅延の問題に触れてはいるが、質問は「あなたが使うサービスで、更新直後に最新の内容が表示されないと困りそうな場面」という学習者個人の具体例を求めるものであり、その答えとなる具体的なサービス・場面は応答内に挙げられていない。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "AI は「レプリカ間でデータ反映に遅れがある場合は、直前に更新したデータを読むリクエストをマスターへ送るなどの工夫も必要です」と述べており、レプリケーション遅延の問題と その対策の中核を既に説明している。その後の質問は、この中核的な概念を学習者が具体的に理解しているかを確認するための発展的な質問である。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "pass",
+          "output": "大丈夫ですよ。クエリの振り分けでは、たとえばロードバランサーが各読み取り用DBの負荷や応答状況を見て、比較的余裕のあるサーバーへリクエストを送ります。単純に順番に割り当てる方法もありますが、レプリカ間でデータ反映に遅れがあると、直前に更新した内容が読み取り先にまだ届いていない場合もあります。\n\n使っているサービスで、更新した直後に画面へ反映されないと困りそうな情報を1つ挙げられますか？思いつくものでよいです。",
+          "turn_analysis": null,
+          "assertions": [
+            {
+              "assertion_id": "a3",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答の質問「使っているサービスで、更新した直後に画面へ反映されないと困りそうな情報を1つ挙げられますか？」は、レプリケーション遅延による具体的な悪影響という、ユーザーがまだ説明していない側面（具体例）1つに限定して掘り下げようとしている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答の質問「使っているサービスで、更新した直後に画面へ反映されないと困りそうな情報を1つ挙げられますか？」は、レプリケーション遅延による具体的な悪影響という、ユーザーがまだ説明していない側面（具体例）1つに限定して掘り下げようとしている。"
+            },
+            {
+              "assertion_id": "a4",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれている。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「ロードバランサーが各読み取り用DBの負荷や応答状況を見て、比較的余裕のあるサーバーへリクエストを送ります」と、ユーザーが述べていないクエリ振り分けの具体的な仕組みを新たに説明している。また「レプリカ間でデータ反映に遅れがあると、直前に更新した内容が読み取り先にまだ届いていない場合もあります」という、ユーザーが言及していないレプリケーション遅延の問題も新たに提示している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「ロードバランサーが各読み取り用DBの負荷や応答状況を見て、比較的余裕のあるサーバーへリクエストを送ります」と、ユーザーが述べていないクエリ振り分けの具体的な仕組みを新たに説明している。また「レプリカ間でデータ反映に遅れがあると、直前に更新した内容が読み取り先にまだ届いていない場合もあります」という、ユーザーが言及していないレプリケーション遅延の問題も新たに提示している。"
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI は「更新した直後に画面へ反映されないと困りそうな情報」という質問に対して、具体的な答えを同じ応答内で述べていない。代わりに、レプリケーション遅延の仕組みについて説明した後、学習者に考えさせる質問を投げかけているだけである。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI は「更新した直後に画面へ反映されないと困りそうな情報」という質問に対して、具体的な答えを同じ応答内で述べていない。代わりに、レプリケーション遅延の仕組みについて説明した後、学習者に考えさせる質問を投げかけているだけである。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "uncorrected_misconception",
+      "source_trace_id": "2026-09-17-0f43b9c0__t8",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "fail",
+          "output": "並行処理に触れていますね。Linuxで複数のプロセスが並行して動くとき、CPUが1つしかない場合、どのように「同時に動いている」ように見せていると思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "並行処理",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": true,
+              "judged": "fail",
+              "human": null,
+              "detail": "ユーザーの「並行処理と並列処理を駆使して動いています」という漠然とした（並列処理はCPU/コアが複数ある場合に限られるという点で不正確な）説明に対し、応答は「並行処理に触れていますね」と部分的に肯定したうえで、誤りの指摘や訂正を行わずに「CPUが1つしかない場合、どのように『同時に動いている』ように見せていると思いますか？」と次の質問へ進んでいる。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "ユーザーが「並行処理と並列処理を駆使して動いています」と述べた際、AIは「並行処理に触れていますね」と述べて、その後「CPUが1つしかない場合、どのように『同時に動いている』ように見せているか」という質問を提示している。この質問は、実は並行処理と並列処理の区別（CPUが1つの場合は並行処理、複数の場合は並列処理）に関わる重要な点であるが、ユーザーの「並列処理」という表現の不正確さを指摘・訂正せず、次の質問へ進んでいる。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": false,
+              "judged": "fail",
+              "human": null,
+              "detail": "応答は「並行処理に触れていますね」とユーザー発言を肯定的に受け止めたうえで、「CPUが1つしかない場合、どのように『同時に動いている』ように見せていると思いますか？」と質問しているだけで、ユーザーの発言内容の誤りを明示的に訂正する記述はない。",
+              "decided_by": "confirm",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「並行処理に触れていますね」と学習者の発言を認めた上で、「CPUが1つしかない場合、どのように『同時に動いている』ように見せているか」という質問を提示していますが、学習者の発言内容に対する誤りの訂正は行われていません。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「CPUが1つしかない場合、どのように『同時に動いている』ように見せているのか」という質問を提示していますが、その答え自体は述べられていません。ユーザーが既に「並行処理と並列処理を駆使して動いています」と述べた内容に対して、さらに深掘りする質問を投げかけているだけです。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「CPUが1つしかない場合、どのように『同時に動いている』ように見せているのか」という質問を提示していますが、その答え自体は述べられていません。ユーザーが既に「並行処理と並列処理を駆使して動いています」と述べた内容に対して、さらに深掘りする質問を投げかけているだけです。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "fail",
+          "output": "並行処理と並列処理が、複数の処理を進めるうえで重要なのですね。ハードウェア管理の例として、メモリを複数のプロセスに割り当てるとき、カーネルはどのように各プロセスのメモリ領域を扱うと思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "ハードウェアの管理",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": true,
+              "judged": "fail",
+              "human": null,
+              "detail": "ユーザーの「これらの並行処理と並列処理を駆使して動いています」というCPU/メモリ管理の説明としては不正確で曖昧な発言に対し、応答は「並行処理と並列処理が、複数の処理を進めるうえで重要なのですね」と追認・復唱したうえで、「メモリを複数のプロセスに割り当てるとき、カーネルはどのように各プロセスのメモリ領域を扱うと思いますか？」と次の話題へ移っており、訂正や指摘は一切ない。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "ユーザーが「並行処理と並列処理を駆使して動いています」と述べた際、AI応答は「並行処理と並列処理が、複数の処理を進めるうえで重要なのですね」と述べて、この表現を明示的に追認・復唱してから次の質問へ進んでいる。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": false,
+              "judged": "fail",
+              "human": null,
+              "detail": "応答は「並行処理と並列処理が、複数の処理を進めるうえで重要なのですね」とユーザーの発言をそのまま受け止めており、誤りの指摘や訂正は行っていない。後半は「カーネルはどのように各プロセスのメモリ領域を扱うと思いますか？」という新たな問いかけのみで、訂正内容を説明させる質問にはなっていない。",
+              "decided_by": "confirm",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「並行処理と並列処理が重要」という学習者の発言を訂正していません。また、メモリ領域の扱い方について質問していますが、これは学習者の誤りを訂正した上での質問ではなく、単なる深掘り質問です。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「メモリを複数のプロセスに割り当てるとき、カーネルはどのように各プロセスのメモリ領域を扱うと思いますか？」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。質問を投げかけるだけで、メモリ管理の具体的な仕組み（例えば仮想メモリ、メモリ保護、ページング等）についての説明が含まれていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「メモリを複数のプロセスに割り当てるとき、カーネルはどのように各プロセスのメモリ領域を扱うと思いますか？」という質問を提示していますが、その答えの中核を同じ応答内では述べていません。質問を投げかけるだけで、メモリ管理の具体的な仕組み（例えば仮想メモリ、メモリ保護、ページング等）についての説明が含まれていません。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "fail",
+          "output": "並行処理と並列処理に注目したのですね。プロセス管理では、CPUを共有する複数のプロセスをカーネルが切り替えて実行します。1つのCPUコアで複数のプロセスを動かすとき、切り替えの順番はどのように決まると思いますか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "プロセスの管理",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": true,
+              "judged": "fail",
+              "human": null,
+              "detail": "ユーザーの「これらの並行処理と並列処理を駆使して動いています」という曖昧・不正確な説明に対し、応答は「並行処理と並列処理に注目したのですね」と受け止めたうえで、誤りの指摘や訂正をせずに「切り替えの順番はどのように決まると思いますか？」と次の質問へ進んでいる。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "ユーザーが「並行処理と並列処理を駆使して動いています」と述べた際、AI応答は「並行処理と並列処理に注目したのですね」と述べて、その後「1つのCPUコアで複数のプロセスを動かすとき」という並行処理の説明に進んでいる。ユーザーの発言には不正確さがあり（並行処理と並列処理は異なる概念であり、単一CPUコアでは並列処理は不可能）、AIはこれを訂正・指摘せずに次の質問へ進んでいる。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": false,
+              "judged": "fail",
+              "human": null,
+              "detail": "応答は「並行処理と並列処理に注目したのですね」と受け止めた上で、「プロセス管理では、CPUを共有する複数のプロセスをカーネルが切り替えて実行します」と補足説明し、「切り替えの順番はどのように決まると思いますか？」と問うているだけで、ユーザー発言の誤りを明示的に訂正してはいない。",
+              "decided_by": "confirm",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は「並行処理と並列処理に注目したのですね」とユーザーの発言を肯定しており、ユーザーの誤りを訂正していない。その後、「切り替えの順番はどのように決まると思いますか？」と質問を出しているが、訂正を伴わない質問のみであるため、判定基準を満たさない。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI の応答は「カーネルが切り替えて実行します」と述べており、プロセス切り替えの仕組みの中核を説明していますが、「切り替えの順番はどのように決まると思いますか？」という質問に対する答えの中核（スケジューリングアルゴリズムやスケジューラの存在など）は同じ応答内では述べられていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI の応答は「カーネルが切り替えて実行します」と述べており、プロセス切り替えの仕組みの中核を説明していますが、「切り替えの順番はどのように決まると思いますか？」という質問に対する答えの中核（スケジューリングアルゴリズムやスケジューラの存在など）は同じ応答内では述べられていません。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "failure_mode": "uncorrected_misconception",
+      "source_trace_id": "2026-09-21-c7718f93__t8",
+      "human_pass": false,
+      "runs": [
+        {
+          "run_index": 1,
+          "verdict": "pass",
+          "output": "「複数台に増やして負荷を分散する」という説明は、垂直スケーリングではなく水平スケーリングに当たります。ロードバランサーは、増えたサーバーへリクエストを振り分ける役割を担います。たとえば、あるサーバーが故障して応答できなくなったとき、ロードバランサーはどのように振る舞うとよいでしょうか？",
+          "turn_analysis": {
+            "response_mode": "deepen",
+            "selected_aspect": "ロードバランサー",
+            "error_summary": ""
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は、ユーザーの誤りを明示的に訂正しています。「『複数台に増やして負荷を分散する』という説明は、垂直スケーリングではなく水平スケーリングに当たります。」と述べており、垂直スケーリングと水平スケーリングの混同を指摘しています。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は、ユーザーの誤りを明示的に訂正しています。「『複数台に増やして負荷を分散する』という説明は、垂直スケーリングではなく水平スケーリングに当たります。」と述べており、垂直スケーリングと水平スケーリングの混同を指摘しています。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「複数台に増やして負荷を分散する」という説明が垂直スケーリングではなく水平スケーリングに当たることを明確に訂正し、その後「ロードバランサーはどのように振る舞うとよいでしょうか？」という質問を通じて、ユーザー自身にロードバランサーの役割を説明させようとしている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「複数台に増やして負荷を分散する」という説明が垂直スケーリングではなく水平スケーリングに当たることを明確に訂正し、その後「ロードバランサーはどのように振る舞うとよいでしょうか？」という質問を通じて、ユーザー自身にロードバランサーの役割を説明させようとしている。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「ロードバランサーはどのように振る舞うとよいでしょうか？」という質問を提示していますが、その答えの中核を同じ応答内で述べていません。質問を投げかけるだけで、故障したサーバーへのロードバランサーの対応方法（例：ヘルスチェック、リクエストの他サーバーへの振り替えなど）について具体的な説明がされていません。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「ロードバランサーはどのように振る舞うとよいでしょうか？」という質問を提示していますが、その答えの中核を同じ応答内で述べていません。質問を投げかけるだけで、故障したサーバーへのロードバランサーの対応方法（例：ヘルスチェック、リクエストの他サーバーへの振り替えなど）について具体的な説明がされていません。"
+            }
+          ]
+        },
+        {
+          "run_index": 2,
+          "verdict": "fail",
+          "output": "垂直スケーリングとオートスケーリングを結びつけて考えたのですね。サーバーを複数台に増やして負荷を分散するのは水平スケーリングです。垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすことです。オートスケーリングは、負荷などの条件に応じてサーバーの台数やリソースを自動で調整する仕組みを指します。\n\nたとえば、アクセスが急増したとき、サーバーを1台のまま強化する構成では、オートスケーリングは何を自動で変更するでしょうか？",
+          "turn_analysis": {
+            "response_mode": "reinforce",
+            "selected_aspect": "オートスケーリング",
+            "error_summary": "垂直スケーリングを、サーバーを複数台増やすこととして説明していますが、それは水平スケーリングの説明に該当します。"
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすことです」と垂直スケーリングの定義を明示的に訂正し、ユーザーが垂直スケーリングと水平スケーリングを混同していたことを指摘している。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "AI応答は「垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすことです」と垂直スケーリングの定義を明示的に訂正し、ユーザーが垂直スケーリングと水平スケーリングを混同していたことを指摘している。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすこと」「オートスケーリングは、負荷などの条件に応じてサーバーの台数やリソースを自動で調整する仕組み」と、ユーザーの誤りを明確に訂正している。その上で「アクセスが急増したとき、サーバーを1台のまま強化する構成では、オートスケーリングは何を自動で変更するでしょうか？」という質問を通じて、訂正内容をユーザー自身の言葉で説明させようとしている。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすこと」「オートスケーリングは、負荷などの条件に応じてサーバーの台数やリソースを自動で調整する仕組み」と、ユーザーの誤りを明確に訂正している。その上で「アクセスが急増したとき、サーバーを1台のまま強化する構成では、オートスケーリングは何を自動で変更するでしょうか？」という質問を通じて、訂正内容をユーザー自身の言葉で説明させようとしている。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": true,
+              "judged": "fail",
+              "human": null,
+              "detail": "応答は「オートスケーリングは、負荷などの条件に応じてサーバーの台数やリソースを自動で調整する仕組み」と説明しており、1台構成での問い（何を自動で変更するか＝リソース（CPUやメモリ））の答えの中核が、直前の「垂直スケーリングは、1台のサーバーのCPUやメモリなどのリソースを増やすこと」という記述と合わせて既に示されている。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "AI の応答では「オートスケーリングは、負荷などの条件に応じてサーバーの台数やリソースを自動で調整する仕組みを指します」と述べており、その後の質問「サーバーを1台のまま強化する構成では、オートスケーリングは何を自動で変更するでしょうか？」に対する答えの中核（CPUやメモリなどのリソースを自動で変更すること）が既に述べられている。"
+            }
+          ]
+        },
+        {
+          "run_index": 3,
+          "verdict": "fail",
+          "output": "垂直スケーリングについて説明しようとした点は受け取りました。  \nただ、サーバーの台数を増やして負荷を分散するのは水平スケーリングです。垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします。ロードバランサーは通信を複数台に振り分ける仕組みで、リソースの増減を自動化するオートスケーリングとは別の役割です。  \nたとえば、データベースを動かす1台のサーバーでメモリ不足が起きたとき、垂直スケーリングでどう対処するか説明できますか？",
+          "turn_analysis": {
+            "response_mode": "reinforce",
+            "selected_aspect": "垂直スケーリング",
+            "error_summary": "垂直スケーリングの説明が水平スケーリングの特徴と混同しており、リソースの増減手段を正確に区別する必要がある"
+          },
+          "assertions": [
+            {
+              "assertion_id": "a1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "直近のAI応答は、ユーザーの不正確な表現「サーバーを複数台に増やし、トラフィックの負荷を分散させることです」という垂直スケーリングの説明に対して、「ただ、サーバーの台数を増やして負荷を分散するのは水平スケーリングです。垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と明示的に訂正・指摘しており、誤りを指摘した上で正しい定義を提示しています。",
+              "decided_by": "screen",
+              "screen_holds": false,
+              "screen_detail": "直近のAI応答は、ユーザーの不正確な表現「サーバーを複数台に増やし、トラフィックの負荷を分散させることです」という垂直スケーリングの説明に対して、「ただ、サーバーの台数を増やして負荷を分散するのは水平スケーリングです。垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と明示的に訂正・指摘しており、誤りを指摘した上で正しい定義を提示しています。"
+            },
+            {
+              "assertion_id": "a2",
+              "type": "judge",
+              "polarity": "must",
+              "holds": true,
+              "judged": "pass",
+              "human": null,
+              "detail": "AI応答は「サーバーの台数を増やして負荷を分散するのは水平スケーリング」「垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と、ユーザーの誤りを明確に訂正しており、その後「データベースを動かす1台のサーバーでメモリ不足が起きたとき、垂直スケーリングでどう対処するか説明できますか？」と、訂正した内容をユーザー自身の言葉で説明させる質問を出している。",
+              "decided_by": "screen",
+              "screen_holds": true,
+              "screen_detail": "AI応答は「サーバーの台数を増やして負荷を分散するのは水平スケーリング」「垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と、ユーザーの誤りを明確に訂正しており、その後「データベースを動かす1台のサーバーでメモリ不足が起きたとき、垂直スケーリングでどう対処するか説明できますか？」と、訂正した内容をユーザー自身の言葉で説明させる質問を出している。"
+            },
+            {
+              "assertion_id": "r1",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": null,
+              "judged": "na",
+              "human": null,
+              "detail": "applies_when: ユーザーの直前の説明に、訂正を要する事実誤認が含まれていない。",
+              "decided_by": "na",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r2",
+              "type": "deterministic",
+              "polarity": "must_not",
+              "holds": false,
+              "judged": "pass",
+              "human": null,
+              "detail": "matched_phrases=[]",
+              "decided_by": "check",
+              "screen_holds": null,
+              "screen_detail": null
+            },
+            {
+              "assertion_id": "r3",
+              "type": "judge",
+              "polarity": "must_not",
+              "holds": true,
+              "judged": "fail",
+              "human": null,
+              "detail": "応答は「垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と述べており、その直後の質問「1台のサーバーでメモリ不足が起きたとき、垂直スケーリングでどう対処するか」の中核的な答え（そのサーバーのメモリ等リソースを増設する）を既に提示している。",
+              "decided_by": "confirm",
+              "screen_holds": true,
+              "screen_detail": "AI は「垂直スケーリングでは、サーバーの台数は増やさず、1台のCPUやメモリなどのリソースを増やします」と述べており、その後「データベースを動かす1台のサーバーでメモリ不足が起きたとき、垂直スケーリングでどう対処するか説明できますか？」と質問を投げかけています。この質問は、垂直スケーリングの対処方法（メモリを増やすこと）の中核をすでに述べた上で、ユーザーに具体例での説明を求めるものです。"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "assertion_pass_rates": [
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "a1",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "a3",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "a4",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-c7718f93__t4",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-c7718f93__t4",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-c7718f93__t4",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-6c938091__t4",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-6c938091__t4",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-6c938091__t4",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "assertion_id": "a3",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "assertion_id": "a4",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 3,
+        "passed": 0,
+        "pass_rate": null
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "assertion_id": "a3",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "assertion_id": "a4",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 3,
+        "passed": 0,
+        "pass_rate": null
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "assertion_id": "a3",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "assertion_id": "a4",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 3,
+        "passed": 0,
+        "pass_rate": null
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "assertion_id": "a1",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 0,
+        "pass_rate": 0.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "assertion_id": "a2",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 0,
+        "pass_rate": 0.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 3,
+        "passed": 0,
+        "pass_rate": null
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "assertion_id": "a1",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "assertion_id": "a2",
+        "scope": "failure_mode",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "assertion_id": "r1",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 3,
+        "passed": 0,
+        "pass_rate": null
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "assertion_id": "r2",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "assertion_id": "r3",
+        "scope": "rubric",
+        "runs": 3,
+        "not_applicable": 0,
+        "passed": 1,
+        "pass_rate": 0.3333333333333333
+      }
+    ],
+    "rubric_pass_rates": [
+      {
+        "assertion_id": "r1",
+        "runs": 24,
+        "not_applicable": 6,
+        "passed": 18,
+        "pass_rate": 1.0
+      },
+      {
+        "assertion_id": "r2",
+        "runs": 24,
+        "not_applicable": 0,
+        "passed": 24,
+        "pass_rate": 1.0
+      },
+      {
+        "assertion_id": "r3",
+        "runs": 24,
+        "not_applicable": 0,
+        "passed": 22,
+        "pass_rate": 0.9166666666666666
+      }
+    ],
+    "failure_mode_pass_rates": [
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "runs": 3,
+        "passed": 3,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "runs": 6,
+        "passed": 6,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "runs": 9,
+        "passed": 9,
+        "pass_rate": 1.0
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "runs": 6,
+        "passed": 1,
+        "pass_rate": 0.16666666666666666
+      }
+    ],
+    "coverage_stability": [
+      {
+        "failure_mode": "accurate_multi_concept_overexplain",
+        "source_trace_id": "2026-09-17-0f43b9c0__t4",
+        "runs": 3,
+        "mean_jaccard": 1.0,
+        "aspect_sets": [
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ],
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ],
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-c7718f93__t4",
+        "runs": 3,
+        "mean_jaccard": 1.0,
+        "aspect_sets": [
+          [
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ],
+          [
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ],
+          [
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "overexplained_correct_content",
+        "source_trace_id": "2026-09-21-6c938091__t4",
+        "runs": 3,
+        "mean_jaccard": 0.0,
+        "aspect_sets": [
+          [
+            "データ損失回避と信頼性の向上",
+            "マスター・スレーブ構成の定義",
+            "可用性の向上（オフライン耐性）",
+            "役割分担（書き込み/読み込み）",
+            "読み込み分散とパフォーマンス向上"
+          ],
+          [
+            "レプリケーション定義",
+            "信頼性",
+            "可用性",
+            "役割分担",
+            "性能向上"
+          ],
+          [
+            "データベースレプリケーション"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-17-0f43b9c0__t6",
+        "runs": 3,
+        "mean_jaccard": 1.0,
+        "aspect_sets": [
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ],
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ],
+          [
+            "カーネル",
+            "プログラム",
+            "プロセス"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-c7718f93__t10",
+        "runs": 3,
+        "mean_jaccard": 0.7333333333333334,
+        "aspect_sets": [
+          [
+            "ロードバランサー",
+            "ロードバランサー連携",
+            "垂直スケーリング",
+            "水平スケーリング",
+            "自動スケーリング"
+          ],
+          [
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ],
+          [
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "self_answered_question",
+        "source_trace_id": "2026-09-21-6c938091__t6",
+        "runs": 3,
+        "mean_jaccard": 1.0,
+        "aspect_sets": [
+          [
+            "レプリケーション",
+            "信頼性",
+            "可用性",
+            "役割分担",
+            "読み込み分散"
+          ],
+          [
+            "レプリケーション",
+            "信頼性",
+            "可用性",
+            "役割分担",
+            "読み込み分散"
+          ],
+          [
+            "レプリケーション",
+            "信頼性",
+            "可用性",
+            "役割分担",
+            "読み込み分散"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-17-0f43b9c0__t8",
+        "runs": 3,
+        "mean_jaccard": 0.8333333333333334,
+        "aspect_sets": [
+          [
+            "アプリの仲介",
+            "カーネル",
+            "ハードウェアの管理",
+            "プログラム",
+            "プロセス",
+            "プロセスの管理",
+            "並列処理",
+            "並行処理"
+          ],
+          [
+            "アプリの仲介",
+            "カーネル",
+            "ハードウェアの管理",
+            "プログラム",
+            "プロセス",
+            "プロセスの管理"
+          ],
+          [
+            "アプリの仲介",
+            "カーネル",
+            "ハードウェアの管理",
+            "プログラム",
+            "プロセス",
+            "プロセスの管理"
+          ]
+        ]
+      },
+      {
+        "failure_mode": "uncorrected_misconception",
+        "source_trace_id": "2026-09-21-c7718f93__t8",
+        "runs": 3,
+        "mean_jaccard": 1.0,
+        "aspect_sets": [
+          [
+            "オートスケーリング",
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ],
+          [
+            "オートスケーリング",
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ],
+          [
+            "オートスケーリング",
+            "ロードバランサー",
+            "垂直スケーリング",
+            "水平スケーリング"
+          ]
+        ]
+      }
+    ]
+  },
+  "errors": [
+    "overexplained_correct_content/2026-09-21-6c938091__t12: RuntimeError: judge failed for assertion r3 after 3 attempts: 1 validation error for JudgeResult\nholds\n  Field required [type=missing, input_value={'reason': 'AI の応答...ていないため。'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"
+  ],
+  "skipped": [
+    {
+      "failure_mode": "accurate_multi_concept_overexplain",
+      "source_trace_id": "2026-07-08-ddia-ch1-perf__t3",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "accurate_multi_concept_overexplain",
+      "source_trace_id": "2026-07-08-ddia-ch1-perf__t3-exemplar",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "self_answered_question",
+      "source_trace_id": "2026-07-14-os-process__t1",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "self_answered_question",
+      "source_trace_id": "2026-07-14-os-process__t1-exemplar",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "uncorrected_misconception",
+      "source_trace_id": "2026-09-17-0f43b9c0__t8-exemplar",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "uncorrected_misconception",
+      "source_trace_id": "2026-07-14-os-process__t1-rerun01",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    },
+    {
+      "failure_mode": "uncorrected_misconception",
+      "source_trace_id": "2026-07-14-os-process__t1-rerun02",
+      "reason": "capture 由来でないため conversation_history が本番の state と 1:1 でない"
+    }
+  ]
+}

@@ -96,6 +96,7 @@ class TestLearningDialogue:
 class TestLearningDialogueCoverage:
     _ANALYSIS = DialogueTurnAnalysis(
         observations=[AspectObservation(aspect="計算量", reached_depth="defined")],
+        has_misconception=False,
         response_mode="expand",
         selected_aspect="計算量",
     )
@@ -181,6 +182,7 @@ class TestLearningDialogueTurnAnalysisRecord:
 
     _ANALYSIS = DialogueTurnAnalysis(
         observations=[AspectObservation(aspect="計算量", reached_depth="defined")],
+        has_misconception=True,
         response_mode="reinforce",
         selected_aspect="計算量",
         error_summary="O(n) と混同している",
@@ -202,6 +204,7 @@ class TestLearningDialogueTurnAnalysisRecord:
         assert result["turn_analysis"] == {
             "response_mode": "reinforce",
             "selected_aspect": "計算量",
+            "has_misconception": True,
             "error_summary": "O(n) と混同している",
         }
 

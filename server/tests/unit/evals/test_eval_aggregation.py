@@ -562,6 +562,32 @@ def test_to_turn_plan_restores_the_saved_decision() -> None:
     assert plan.analysis.response_mode == "expand"
     assert plan.analysis.selected_aspect == "スループット"
     assert plan.analysis.observations == []
+    # 誤り判定を足す前に capture したレコードにはこのキーが無い。落とさず未検出として再生する
+    assert plan.analysis.has_misconception is False
+
+
+def test_to_turn_plan_restores_a_flagged_misconception() -> None:
+    trace = SourceTrace(
+        trace_id="t",
+        turn=4,
+        meta={},
+        input={"graph_state": {"topic": "x", "covered_aspects": []}},
+        observed_output="o",
+        turn_decision={
+            "response_mode": "reinforce",
+            "selected_aspect": "プロセスの管理",
+            "has_misconception": True,
+            "error_summary": "並行処理を仕組みそのものとして述べている",
+            "covered_aspects": [],
+        },
+        has_turn_decision=True,
+    )
+
+    plan = to_turn_plan(trace)
+
+    assert plan.analysis is not None
+    assert plan.analysis.has_misconception is True
+    assert plan.analysis.error_summary == "並行処理を仕組みそのものとして述べている"
 
 
 def test_to_turn_plan_falls_back_to_the_input_coverage_when_no_analysis_ran() -> None:

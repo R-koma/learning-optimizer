@@ -74,19 +74,29 @@ class DialogueTurnAnalysis(BaseModel):
         default_factory=list,
         description="直近のユーザー発言で言及・説明された観点と到達度。ユーザーが実際に発言した内容のみから判定する",
     )
+    # 誤りの判定を response_mode より前に置く。structured output は宣言順に値を埋めるので、
+    # この順序がモードを決める前に誤りを見ることを強制する（後ろに置くと深さだけでモードが決まる）
+    has_misconception: bool = Field(
+        ...,
+        description="直近のユーザー発言に、訂正を要する誤り・混同が含まれるか。"
+        "手段と結果の取り違え、問いの一部だけで全体に答える、別概念の説明を当てる等を含む。"
+        "説明が浅い・言葉足らずなだけで内容が正しいものは誤りに含めない",
+    )
+    error_summary: str = Field(
+        "",
+        description="has_misconception が true のとき、誤りの内容を1文で。false のときは空文字",
+    )
     response_mode: ResponseMode = Field(
         ...,
-        description="次の AI 応答のモード。reinforce=明確な誤り・重大な混同の訂正 / "
-        "deepen=誤りはないが単一観点の説明が目標レベルに未達なので深掘り / "
-        "expand=誤りがなく直近の説明が十分なので別観点へ展開または選んだ観点を深める",
+        description="次の AI 応答のモード。has_misconception が true なら必ず reinforce。"
+        "false のときだけ deepen / expand を深さで選ぶ。"
+        "reinforce=誤り・混同の訂正 / "
+        "deepen=単一観点の説明が目標レベルに未達なので深掘り / "
+        "expand=直近の説明が十分なので別観点へ展開または選んだ観点を深める",
     )
     selected_aspect: str = Field(
         ...,
         description="次の応答で焦点を当てる観点を1つ。日本語の短い名詞句で、observations と同じ表記を使う",
-    )
-    error_summary: str = Field(
-        "",
-        description="response_mode が reinforce の場合のみ、誤りの内容を1文で。それ以外は空文字",
     )
 
 

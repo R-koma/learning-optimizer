@@ -162,7 +162,7 @@ class InstanceResult:
     runs: list[RunResult] = field(default_factory=list)
 
 
-_TEMPERATURE_UNSUPPORTED: frozenset[str] = frozenset({"claude-opus-5", "claude-sonnet-5"})
+_TEMPERATURE_UNSUPPORTED: frozenset[str] = frozenset({"claude-opus-5", "claude-opus-5-5", "claude-sonnet-5"})
 
 
 def resolve_judge(model: str | None) -> BaseChatModel:
@@ -174,11 +174,11 @@ def resolve_judge(model: str | None) -> BaseChatModel:
     return ChatAnthropic(model=model, temperature=0)
 
 
-_DEFAULT_CONFIRM_MODEL = "claude-opus-5"
+_DEFAULT_CONFIRM_MODEL = "claude-opus-5-5"
 
 
 def resolve_confirm_judge(model: str | None, *, cascade: bool) -> BaseChatModel | None:
-    """`--no-cascade` なら None（従来の単一 judge）。既定の confirm モデルは claude-opus-5。"""
+    """`--no-cascade` なら None（従来の単一 judge）。既定の confirm モデルは claude-opus-5-5。"""
     if not cascade:
         return None
     return resolve_judge(model if model is not None else _DEFAULT_CONFIRM_MODEL)

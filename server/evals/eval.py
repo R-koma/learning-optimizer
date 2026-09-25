@@ -4,7 +4,7 @@ import json
 import logging
 import math
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +16,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import BaseModel, Field
 
+from evals.checkpoint import CheckpointStore, ManifestMismatch, dataset_content_hash, sha256_bytes
 from evals.checks import check_fingerprint, run_check
 from evals.golden_yaml import dump_copy_block
 from evals.rubric import FAILURE_MODE_SCOPE, RUBRIC_SCOPE, load_rubric, merge_assertions
@@ -29,13 +30,35 @@ from graph.state import LearningState
 logger = logging.getLogger(__name__)
 
 _GOLDEN_DIR = Path(__file__).parent / "datasets" / "golden"
+_RUBRIC_DIR = Path(__file__).parent / "datasets" / "rubric"
 _JSONL_PATH = Path(__file__).parent / "datasets" / "generate_questions.jsonl"
 _REPORTS_DIR = Path(__file__).parent / "reports"
 
 _JUDGE_MAX_ATTEMPTS = 3
+_GENERATE_MAX_ATTEMPTS = 3
+_RETRY_BASE_DELAY_SECONDS = 1.0
 _EVAL_USER_ID = "eval-regression"
 _NOT_APPLICABLE = "na"
 _VALID_VERDICTS = frozenset({"pass", "fail", _NOT_APPLICABLE})
+
+# openai / anthropic の両 SDK が同名で持つ、再試行してよい一時的なエラーの型名
+_TRANSIENT_ERROR_TYPES = frozenset({"APIConnectionError", "APITimeoutError", "RateLimitError", "InternalServerError"})
+# エラーメッセージに現れる課金枯渇の目印。再試行しても直らないので実行全体を止める
+_QUOTA_EXHAUSTED_MARKERS = ("insufficient_quota", "credit balance is too low", "exceeded your current quota")
+
+
+class QuotaExhausted(RuntimeError):
+    """API の課金上限・クレジット枯渇。再試行では直らないため、呼び出し元は実行全体を止める。"""
+
+
+def _is_transient(exc: Exception) -> bool:
+    return type(exc).__name__ in _TRANSIENT_ERROR_TYPES
+
+
+def _is_quota_exhausted(exc: Exception) -> bool:
+    text = str(exc)
+    return any(marker in text for marker in _QUOTA_EXHAUSTED_MARKERS)
+
 
 JUDGE_PROMPT = """\
 ## 役割
@@ -230,6 +253,13 @@ class JudgeUsage:
             report[model] = {**stats, "estimated_cost_usd": cost}
         return report
 
+    def merge(self, report: dict[str, dict[str, Any]]) -> None:
+        """他の `to_report()` の結果を積算する（checkpoint 再開でキャッシュを使った分の使用量）。"""
+        for model, stats in report.items():
+            total = self.per_model.setdefault(model, {"calls": 0, "input_tokens": 0, "output_tokens": 0})
+            for key in ("calls", "input_tokens", "output_tokens"):
+                total[key] += stats.get(key, 0)
+
 
 def load_golden_records() -> Iterator[dict[str, Any]]:
     """active な golden を、共通 assertion（rubric）を混ぜた状態で返す。"""
@@ -397,13 +427,7 @@ def message_text(message: BaseMessage) -> str:
     return "".join(parts)
 
 
-async def generate_output(trace: SourceTrace, replay_mode: str = "full") -> Generation:
-    """本番の対話ノードを呼んで応答を作り直す（regression モード）。
-
-    `full` は事前分析込みで実行するのでプロンプト改訂の効果と分析の揺れが両方入る。
-    `pinned` は保存済みの決定（`turn_decision`）を注入して応答生成だけを再実行するので、
-    分析の揺れを除いた「プロンプトを直した効果」だけが見える。
-    """
+async def _generate_output_once(trace: SourceTrace, replay_mode: str) -> Generation:
     state = to_state(trace)
     result = await (respond(state, to_turn_plan(trace)) if replay_mode == "pinned" else learning_dialogue(state))
     return Generation(
@@ -412,6 +436,33 @@ async def generate_output(trace: SourceTrace, replay_mode: str = "full") -> Gene
         covered_aspects=list(result.get("covered_aspects") or []),
         turn_count=result["turn_count"],
     )
+
+
+async def generate_output(trace: SourceTrace, replay_mode: str = "full") -> Generation:
+    """本番の対話ノードを呼んで応答を作り直す（regression モード）。
+
+    `full` は事前分析込みで実行するのでプロンプト改訂の効果と分析の揺れが両方入る。
+    `pinned` は保存済みの決定（`turn_decision`）を注入して応答生成だけを再実行するので、
+    分析の揺れを除いた「プロンプトを直した効果」だけが見える。
+
+    接続断・タイムアウト・レート制限・5xx はバックオフして最大 `_GENERATE_MAX_ATTEMPTS` 回まで
+    再試行する（生成は同じ入力を投げ直すだけで冪等）。課金枯渇は再試行しても直らないので
+    `QuotaExhausted` を送出し、呼び出し元（`run`）で実行全体を止める。
+    """
+    last_error: Exception | None = None
+    for attempt in range(1, _GENERATE_MAX_ATTEMPTS + 1):
+        try:
+            return await _generate_output_once(trace, replay_mode)
+        except Exception as exc:
+            if _is_quota_exhausted(exc):
+                raise QuotaExhausted(str(exc)) from exc
+            if not _is_transient(exc) or attempt == _GENERATE_MAX_ATTEMPTS:
+                raise
+            last_error = exc
+            logger.warning("generate_output attempt %d/%d raised: %s", attempt, _GENERATE_MAX_ATTEMPTS, exc)
+            await asyncio.sleep(_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1)))
+    assert last_error is not None  # ループは return か raise で必ず抜ける
+    raise last_error
 
 
 def to_verdict(polarity: str, holds: bool) -> str:
@@ -482,6 +533,8 @@ async def judge_by_llm(
         try:
             result = await runnable.ainvoke([HumanMessage(content=content)])
         except Exception as exc:
+            if _is_quota_exhausted(exc):
+                raise QuotaExhausted(str(exc)) from exc
             last_error = f"{type(exc).__name__}: {exc}"
             logger.warning("judge attempt %d/%d raised for %s", attempt, _JUDGE_MAX_ATTEMPTS, assertion["id"])
             continue
@@ -585,6 +638,75 @@ async def evaluate_output(
     )
 
 
+async def _checkpointed_generation(
+    trace: SourceTrace,
+    replay_mode: str,
+    checkpoint: CheckpointStore,
+    failure_mode: str,
+    source_trace_id: str,
+    run_index: int,
+) -> Generation:
+    cached = checkpoint.load_generation(failure_mode, source_trace_id, run_index)
+    if cached is not None:
+        return Generation(
+            output=cached["output"],
+            turn_analysis=cached["turn_analysis"],
+            covered_aspects=cached["covered_aspects"],
+            turn_count=cached["turn_count"],
+        )
+    generation = await generate_output(trace, replay_mode)
+    checkpoint.save_generation(failure_mode, source_trace_id, run_index, asdict(generation))
+    return generation
+
+
+async def _checkpointed_outcomes(
+    record: dict[str, Any],
+    instance: dict[str, Any],
+    trace: SourceTrace,
+    output: str,
+    judge: BaseChatModel,
+    *,
+    compare_to_human: bool,
+    confirm_judge: BaseChatModel | None,
+    usage: JudgeUsage | None,
+    checkpoint: CheckpointStore,
+    failure_mode: str,
+    source_trace_id: str,
+    run_index: int,
+) -> list[AssertionOutcome]:
+    generation_sha256 = sha256_bytes(output.encode("utf-8"))
+    cached = checkpoint.load_score(failure_mode, source_trace_id, run_index)
+    if cached is not None and cached.get("generation_sha256") == generation_sha256:
+        if usage is not None:
+            usage.merge(cached.get("judge_usage", {}))
+        return [AssertionOutcome(**outcome) for outcome in cached["assertions"]]
+
+    run_usage = JudgeUsage()
+    outcomes = await evaluate_output(
+        record,
+        instance,
+        trace,
+        output,
+        judge,
+        compare_to_human=compare_to_human,
+        confirm_judge=confirm_judge,
+        usage=run_usage,
+    )
+    checkpoint.save_score(
+        failure_mode,
+        source_trace_id,
+        run_index,
+        {
+            "generation_sha256": generation_sha256,
+            "assertions": [asdict(outcome) for outcome in outcomes],
+            "judge_usage": run_usage.to_report(),
+        },
+    )
+    if usage is not None:
+        usage.merge(run_usage.to_report())
+    return outcomes
+
+
 async def evaluate_instance(
     record: dict[str, Any],
     instance: dict[str, Any],
@@ -596,26 +718,68 @@ async def evaluate_instance(
     confirm_judge: BaseChatModel | None = None,
     usage: JudgeUsage | None = None,
     replay_mode: str = "full",
+    checkpoint: CheckpointStore | None = None,
+    errors: list[str] | None = None,
 ) -> InstanceResult:
+    """golden の 1 instance を評価する。
+
+    run 単位で例外を吸収し、その run だけを結果から除いて次の run へ進む（`errors` に記録）。
+    `QuotaExhausted` だけは吸収せずそのまま上げ、`run()` 側で実行全体を止める。
+    """
+    failure_mode = record["failure_mode"]
+    source_trace_id = instance["source_trace_id"]
+    label = f"{failure_mode}/{source_trace_id}"
     result = InstanceResult(
-        failure_mode=record["failure_mode"],
-        source_trace_id=instance["source_trace_id"],
-        human_pass=instance.get("pass"),
+        failure_mode=failure_mode, source_trace_id=source_trace_id, human_pass=instance.get("pass")
     )
     compare_to_human = mode == "scoring"
     for run_index in range(1, (runs if mode == "regression" else 1) + 1):
-        generation = await generate_output(trace, replay_mode) if mode == "regression" else None
-        output = generation.output if generation else trace.observed_output
-        outcomes = await evaluate_output(
-            record,
-            instance,
-            trace,
-            output,
-            judge,
-            compare_to_human=compare_to_human,
-            confirm_judge=confirm_judge,
-            usage=usage,
-        )
+        try:
+            if mode == "regression":
+                generation = (
+                    await _checkpointed_generation(
+                        trace, replay_mode, checkpoint, failure_mode, source_trace_id, run_index
+                    )
+                    if checkpoint is not None
+                    else await generate_output(trace, replay_mode)
+                )
+                output = generation.output
+            else:
+                generation, output = None, trace.observed_output
+            outcomes = (
+                await _checkpointed_outcomes(
+                    record,
+                    instance,
+                    trace,
+                    output,
+                    judge,
+                    compare_to_human=compare_to_human,
+                    confirm_judge=confirm_judge,
+                    usage=usage,
+                    checkpoint=checkpoint,
+                    failure_mode=failure_mode,
+                    source_trace_id=source_trace_id,
+                    run_index=run_index,
+                )
+                if checkpoint is not None
+                else await evaluate_output(
+                    record,
+                    instance,
+                    trace,
+                    output,
+                    judge,
+                    compare_to_human=compare_to_human,
+                    confirm_judge=confirm_judge,
+                    usage=usage,
+                )
+            )
+        except QuotaExhausted:
+            raise
+        except Exception as exc:
+            logger.exception("run failed: %s run=%d", label, run_index)
+            if errors is not None:
+                errors.append(f"{label} run={run_index}: {type(exc).__name__}: {exc}")
+            continue
         result.runs.append(RunResult(run_index=run_index, output=output, outcomes=outcomes, generation=generation))
     return result
 
@@ -1214,6 +1378,30 @@ def emit_jsonl(path: Path, results: list[InstanceResult], sources: dict[str, dic
     return written
 
 
+def build_manifest(
+    mode: str,
+    runs: int,
+    replay_mode: str,
+    judge: BaseChatModel,
+    confirm_judge: BaseChatModel | None,
+    fingerprints: dict[str, str],
+) -> dict[str, Any]:
+    """checkpoint の実行条件。いずれかが変われば再開を拒否する（`CheckpointStore.ensure_manifest`）。"""
+    return {
+        "mode": mode,
+        "runs": runs,
+        "replay_mode": replay_mode,
+        "judge_screen": judge_model_name(judge),
+        "judge_confirm": judge_model_name(confirm_judge) if confirm_judge is not None else None,
+        "model": llm.model_name,
+        "temperature": llm.temperature,
+        "prompt_version": PROMPT_VERSION,
+        "prompt_fingerprint": PROMPT_FINGERPRINT,
+        "check_fingerprints": fingerprints,
+        "dataset_content_sha256": dataset_content_hash(_GOLDEN_DIR, _RUBRIC_DIR),
+    }
+
+
 async def run(
     mode: str,
     runs: int,
@@ -1222,12 +1410,15 @@ async def run(
     confirm_judge: BaseChatModel | None = None,
     allow_unfaithful: bool = False,
     replay_mode: str = "full",
+    checkpoint: CheckpointStore | None = None,
 ) -> tuple[list[InstanceResult], list[str], dict[str, str], JudgeUsage, list[dict[str, str]]]:
     fingerprints = validate_check_fingerprints()
     records = list(load_golden_records())
     validate_human_verdicts(records)
     sources = load_source_records()
     usage = JudgeUsage()
+    if checkpoint is not None:
+        checkpoint.ensure_manifest(build_manifest(mode, runs, replay_mode, judge, confirm_judge, fingerprints))
 
     results: list[InstanceResult] = []
     errors: list[str] = []
@@ -1272,7 +1463,13 @@ async def run(
                     confirm_judge=confirm_judge,
                     usage=usage,
                     replay_mode=replay_mode,
+                    checkpoint=checkpoint,
+                    errors=errors,
                 )
+            except QuotaExhausted as exc:
+                errors.append(f"{label}: quota exhausted, stopping remaining instances: {exc}")
+                logger.error("quota exhausted, stopping regression early at %s", label)
+                return results, errors, fingerprints, usage, skipped
             except Exception as exc:
                 logger.exception("instance failed: %s", label)
                 errors.append(f"{label}: {type(exc).__name__}: {exc}")
@@ -1327,6 +1524,13 @@ def parse_args() -> argparse.Namespace:
         help="scoring モードで最終判定の校正ゲート（TPR/TNR ≥ 90%% かつ正例レコード全件 pass）が"
         "不合格のとき exit code 1 で終了する",
     )
+    parser.add_argument(
+        "--checkpoint-dir",
+        type=Path,
+        default=None,
+        help="生成・採点の保存先。既定は reports/ 配下に実行ごとに自動生成する。既存のディレクトリを"
+        "指定すると、保存済みの run は作り直さず未完了分だけ実行する（実行条件が前回と違えば拒否する）",
+    )
     return parser.parse_args()
 
 
@@ -1351,14 +1555,23 @@ async def main() -> None:
         f"prompt_version={PROMPT_VERSION} prompt_fingerprint={PROMPT_FINGERPRINT}\n"
     )
 
-    results, errors, fingerprints, usage, skipped = await run(
-        args.mode,
-        args.runs,
-        judge,
-        confirm_judge=confirm_judge,
-        allow_unfaithful=args.allow_unfaithful,
-        replay_mode=args.replay_mode,
-    )
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    checkpoint_dir = args.checkpoint_dir or _REPORTS_DIR / f"{timestamp}-{args.mode}-checkpoint"
+    checkpoint = CheckpointStore(checkpoint_dir)
+    print(f"checkpoint: {checkpoint_dir}\n")
+
+    try:
+        results, errors, fingerprints, usage, skipped = await run(
+            args.mode,
+            args.runs,
+            judge,
+            confirm_judge=confirm_judge,
+            allow_unfaithful=args.allow_unfaithful,
+            replay_mode=args.replay_mode,
+            checkpoint=checkpoint,
+        )
+    except ManifestMismatch as exc:
+        raise SystemExit(str(exc)) from None
     report = build_report(
         results,
         errors,

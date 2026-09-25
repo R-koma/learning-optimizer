@@ -1105,6 +1105,7 @@ def build_report(
                         "verdict": run.verdict,
                         "output": run.output,
                         "turn_analysis": run.generation.turn_analysis if run.generation else None,
+                        "covered_aspects": run.generation.covered_aspects if run.generation else None,
                         "assertions": [
                             {
                                 "assertion_id": o.assertion_id,

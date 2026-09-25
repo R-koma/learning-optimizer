@@ -1,0 +1,111 @@
+schema_version: 1
+label_provenance: Codex-authored expectations based on the user-approved policy; not human-verified labels
+cases:
+- id: correction_repeat
+  category: correction
+  topic: データ構造
+  conversation_history:
+  - role: user
+    content: キューは最後に入れたものから取り出します。
+  output: キューは先に入れたものから取り出します。キューはどの順番で取り出しますか？
+  expected_r3: fail
+  rationale: 訂正した定義の抜き出しを要求している。
+- id: correction_answered
+  category: correction
+  topic: データ構造
+  conversation_history:
+  - role: user
+    content: キューは最後に入れたものから取り出します。
+  output: キューは先入れ先出しです。赤、青、白の順に入れたら最初は赤が出ます。この例で最初に出る色は何ですか？
+  expected_r3: fail
+  rationale: その例の答え「赤」を提示済み。
+- id: correction_application
+  category: correction
+  topic: データ構造
+  conversation_history:
+  - role: user
+    content: キューは最後に入れたものから取り出します。
+  output: キューは先に入れたものから取り出します。赤、青、白の順に入れて2回取り出したら、残る色は何ですか？
+  expected_r3: pass
+  rationale: 一般則を使い新しい入力順に適用する必要があり、残る色は未提示。
+- id: correction_judgment
+  category: correction
+  topic: データ構造
+  conversation_history:
+  - role: user
+    content: キューは最後に入れたものから取り出します。
+  output: キューは先に入れたものから取り出します。早く来た人から受け付けたい窓口では、キューと後入れ先出しのスタックのどちらが適していますか？
+  expected_r3: pass
+  rationale: 取り出し順を窓口の条件に結び付けて判断する。選択結果は未提示。
+- id: unknown_repeat
+  category: unknown
+  topic: 割合
+  conversation_history:
+  - role: user
+    content: 割合の計算がわかりません。
+  output: 割合は、比べる量をもとにする量で割って求めます。割合はどのように計算しますか？
+  expected_r3: fail
+  rationale: 教えた一般則そのものを再質問。
+- id: unknown_answered
+  category: unknown
+  topic: 割合
+  conversation_history:
+  - role: user
+    content: 割合の計算がわかりません。
+  output: 割合は比べる量を全体で割ります。10個のうち赤が2個なら20%です。この例の赤の割合は何%ですか？
+  expected_r3: fail
+  rationale: 具体的な計算結果20%を提示済み。
+- id: unknown_application
+  category: unknown
+  topic: 割合
+  conversation_history:
+  - role: user
+    content: 割合の計算がわかりません。
+  output: 割合は、比べる量を全体で割って求めます。20枚のカードのうち5枚が青なら、青の割合は何%ですか？
+  expected_r3: pass
+  rationale: 計算方法は教えるが新しい数値の計算結果は未提示。
+- id: unknown_judgment
+  category: unknown
+  topic: 割合
+  conversation_history:
+  - role: user
+    content: 割合の計算がわかりません。
+  output: 割合は、比べる量を全体で割って比較できます。10回中7回成功した方法と20回中12回成功した方法では、どちらの成功割合が高いですか？
+  expected_r3: pass
+  rationale: 新しい2条件に一般則を適用して比較する必要がある。
+- id: dialogue_repeat
+  category: dialogue
+  topic: 図形
+  conversation_history:
+  - role: user
+    content: 長方形には縦と横の長さがあります。
+  output: 長方形の面積は縦×横で求めます。長方形の面積はどう計算しますか？
+  expected_r3: fail
+  rationale: 新しい事例がなく式の復唱だけを求める。
+- id: dialogue_answered
+  category: dialogue
+  topic: 図形
+  conversation_history:
+  - role: user
+    content: 長方形には縦と横の長さがあります。
+  output: 長方形の面積は縦×横です。縦3cm、横4cmなら12平方cmです。この長方形の面積はいくつですか？
+  expected_r3: fail
+  rationale: 具体的な事例の答え12を提示済み。
+- id: dialogue_application
+  category: dialogue
+  topic: 図形
+  conversation_history:
+  - role: user
+    content: 長方形には縦と横の長さがあります。
+  output: 長方形の面積は縦×横で求めます。縦5cm、横6cmの紙の面積はいくつですか？
+  expected_r3: pass
+  rationale: 一般則のみ提示し、新しい事例の計算結果は未提示。
+- id: dialogue_judgment
+  category: dialogue
+  topic: 図形
+  conversation_history:
+  - role: user
+    content: 長方形には縦と横の長さがあります。
+  output: 長方形の面積は縦×横です。縦2cm・横9cmの紙と、縦4cm・横5cmの紙では、どちらが広いですか？
+  expected_r3: pass
+  rationale: 新しい2事例の面積計算と比較が必要で、結論は未提示。

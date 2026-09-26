@@ -197,11 +197,16 @@ def resolve_judge(model: str | None) -> BaseChatModel:
     return ChatAnthropic(model=model, temperature=0)
 
 
-_DEFAULT_CONFIRM_MODEL = "claude-opus-5-5"
+_DEFAULT_CONFIRM_MODEL = "claude-opus-5"
 
 
 def resolve_confirm_judge(model: str | None, *, cascade: bool) -> BaseChatModel | None:
-    """`--no-cascade` なら None（従来の単一 judge）。既定の confirm モデルは claude-opus-5-5。"""
+    """`--no-cascade` なら None（従来の単一 judge）。既定の confirm モデルは claude-opus-5。
+
+    claude-opus-5-5 は `--confirm-judge-model` で明示すれば使えるが、既定には採用していない。
+    scoring で final TPR が 93%→82%（閾値 90%）に落ちる劣化を 2026-09-26 に確認した
+    （screen の正しい fail 判定を pass へ誤って覆す）。
+    """
     if not cascade:
         return None
     return resolve_judge(model if model is not None else _DEFAULT_CONFIRM_MODEL)
@@ -517,6 +522,9 @@ async def judge_by_llm(
     judge は必須フィールド `holds` を落とした tool_call を返すことがある。temperature 0 では
     同じプロンプトを投げ直しても同じ欠落が再現するため、リトライでは欠けたフィールドを
     名指しした追記を足して入力を変える。
+
+    `method="json_schema"` を明示するのは、既定の `function_calling`（強制 tool_choice）が
+    claude-opus-5-5 では 400 エラーになるため（他の judge モデルでは両方式とも動く）。
     """
     prompt = JUDGE_PROMPT.format(
         topic=trace.input["graph_state"]["topic"],
@@ -524,7 +532,7 @@ async def judge_by_llm(
         observed_output=output,
         criterion=assertion["criterion"].strip(),
     )
-    runnable = judge.with_structured_output(JudgeResult, include_raw=True)
+    runnable = judge.with_structured_output(JudgeResult, include_raw=True, method="json_schema")
     model_name = judge_model_name(judge)
 
     last_error: str = "unknown"
